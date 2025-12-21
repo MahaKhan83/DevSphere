@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { register, login, forgotPassword } from "../services/api";
@@ -8,16 +9,19 @@ import logo from "../assets/logo.png";
 import illustration from "../assets/illustration.png";
 
 const Login = () => {
-  const [currentState, setCurrentState] = useState("Login");
+  const [currentState, setCurrentState] = useState("Login"); // "Login" | "Sign Up"
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
+
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
@@ -30,12 +34,15 @@ const Login = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       if (currentState === "Sign Up") {
         const res = await register(formData);
-        if (!res || res.error) toast.error(res?.error || "Signup failed");
-        else {
-          toast.success("Registration successful! Please login.");
+
+        if (!res || res.error) {
+          toast.error(res?.error || "Signup failed");
+        } else {
+          toast.success(res.message || "Registration successful! Please login.");
           setCurrentState("Login");
           setFormData({ name: "", email: "", password: "" });
         }
@@ -44,12 +51,18 @@ const Login = () => {
           email: formData.email,
           password: formData.password,
         });
-        if (!res || res.error) toast.error(res?.error || "Login failed");
-        else {
-          if (res.token) localStorage.setItem("token", res.token);
-          if (setUser && res.user) setUser(res.user);
+
+        if (!res || res.error) {
+          toast.error(res?.error || "Login failed");
+        } else {
+          if (res.token) {
+            localStorage.setItem("token", res.token);
+          }
+          if (setUser && res.user) {
+            setUser(res.user);
+          }
           toast.success(res.message || "Login successful!");
-          navigate("/");
+          navigate("/dashboard");
         }
       }
     } catch (err) {
@@ -68,8 +81,9 @@ const Login = () => {
     }
     setForgotPasswordLoading(true);
     const res = await forgotPassword(forgotPasswordEmail);
-    if (res?.error) toast.error(res.error);
-    else {
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
       toast.success(res.message || "Reset link sent");
       setShowForgotPassword(false);
       setForgotPasswordEmail("");
@@ -80,15 +94,15 @@ const Login = () => {
   return (
     <>
       <div className="min-h-screen bg-slate-200 flex flex-col overflow-hidden">
-        {/* HEADER */}
+        {/* PAGE HEADER (same style we use everywhere) */}
         <header className="w-full bg-slate-900/95 backdrop-blur flex items-center justify-between px-6 md:px-10 py-3 shadow-lg animate-headerIn">
           <div className="flex items-center gap-3">
             <img
               src={logo}
               alt="DevSphere"
-              className="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover shadow-lg transform transition-transform duration-500 hover:scale-110 hover:rotate-3 animate-logoPop"
+              className="w-16 h-16 object-contain shadow-lg transform transition-transform duration-500 hover:scale-110 hover:rotate-1 animate-logoPop"
             />
-            <h1 className="text-white text-2xl md:text-3xl font-bold tracking-wide drop-shadow-md ml-2">
+            <h1 className="text-white text-2xl md:text-3xl font-bold tracking-wide drop-shadow-md">
               Dev<span className="text-cyan-300">Sphere</span>
             </h1>
           </div>
@@ -97,28 +111,32 @@ const Login = () => {
           </p>
         </header>
 
-        {/* MAIN SECTION */}
-        <main className="flex-1 flex items-center justify-center p-4 md:p-8 fade-in-up">
-          <div className="w-full max-w-5xl flex flex-col md:flex-row bg-slate-900 rounded-3xl shadow-2xl border-[5px] border-slate-800 overflow-hidden min-h-[520px] transition-all duration-1000 hover:shadow-cyan-500/20">
-            {/* LEFT SIDE - Illustration */}
-            <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-slate-900 to-slate-950 items-center justify-center relative p-8 overflow-hidden">
-              <div className="absolute -top-16 -right-8 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl animate-glowPulse" />
-              <div className="illustration-slide relative z-10 flex flex-col items-center gap-4">
-                <div className="w-72 h-72 flex items-center justify-center rounded-2xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.35)] bg-slate-950/40 border border-slate-600/60 transition-transform duration-700 hover:-translate-y-1 hover:scale-105 animate-float">
+        {/* MAIN CARD */}
+        <main className="flex-1 flex items-center justify-center px-4 py-8 md:py-12 fade-in-up">
+          <div className="w-full max-w-5xl bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 flex flex-col md:flex-row overflow-hidden">
+            {/* LEFT SIDE – Illustration (moved up & to the right with blur blend) */}
+            <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-slate-900 to-slate-950 items-center justify-center relative px-8 py-10">
+              {/* soft blur/glow behind illustration */}
+              <div className="absolute -top-10 right-4 w-60 h-60 bg-cyan-400/25 rounded-full blur-3xl" />
+              <div className="absolute top-10 right-10 w-72 h-72 bg-sky-500/10 rounded-[2.5rem] blur-3xl" />
+
+              <div className="illustration-slide relative z-10 flex flex-col items-end gap-5 mr-2">
+                <div className="relative bg-slate-950/60 rounded-[2rem] border border-slate-700/70 shadow-[0_18px_45px_rgba(0,0,0,0.55)] p-4 -mt-4">
                   <img
                     src={illustration}
-                    alt="DevSphere Illustration"
-                    className="w-[270px] rounded-2xl"
+                    alt="DevSphere illustration"
+                    className="w-[320px] h-auto rounded-[1.6rem] object-contain"
                   />
                 </div>
-                <p className="text-slate-200 text-sm text-center leading-relaxed max-w-xs animate-textFade">
+
+                <p className="text-slate-200 text-sm max-w-xs text-right leading-relaxed animate-textFade">
                   Build portfolios, join live coding rooms, and collaborate in
                   real time — all inside DevSphere.
                 </p>
               </div>
             </div>
 
-            {/* RIGHT SIDE - FORM */}
+            {/* RIGHT SIDE – FORM */}
             <div className="w-full md:w-1/2 bg-slate-900 px-6 md:px-10 py-8 flex flex-col justify-center gap-6 animate-formFadeIn">
               <div>
                 <p className="text-xs tracking-[0.4em] text-cyan-200 uppercase">
@@ -165,15 +183,24 @@ const Login = () => {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-slate-200 text-sm">Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={onChangeHandler}
-                    placeholder="••••••••"
-                    className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={onChangeHandler}
+                      placeholder="••••••••"
+                      className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-3 flex items-center text-lg text-slate-300 hover:text-white transition"
+                    >
+                      {showPassword ? "🙈" : "👁️"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
@@ -214,74 +241,141 @@ const Login = () => {
                       ? "Sign In"
                       : "Sign Up"}
                   </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 opacity-0 hover:opacity-40 animate-gradientMove"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 opacity-0 hover:opacity-40 animate-gradientMove" />
                 </button>
               </form>
             </div>
           </div>
         </main>
+
+        {/* FORGOT PASSWORD MODAL */}
+        {showForgotPassword && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Reset password
+                </h3>
+                <button
+                  onClick={() => setShowForgotPassword(false)}
+                  className="text-slate-400 text-xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <p className="text-slate-400 text-sm">
+                  Enter your email and we'll send you a reset link.
+                </p>
+                <input
+                  type="email"
+                  className="form-input bg-slate-800/70 border border-slate-600 rounded-lg px-3 py-2 text-white w-full focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  placeholder="you@example.com"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  required
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(false)}
+                    className="flex-1 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-800 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotPasswordLoading}
+                    className="flex-1 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white transition disabled:opacity-50"
+                  >
+                    {forgotPasswordLoading ? "Sending..." : "Send link"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ANIMATIONS */}
       <style>{`
-        /* Slide in from left + slow motion */
         @keyframes slideFromLeftSlow {
           0% { opacity: 0; transform: translateX(-180px); }
           60% { opacity: 0.9; transform: translateX(20px); }
           80% { transform: translateX(-5px); }
           100% { opacity: 1; transform: translateX(0); }
         }
-        .illustration-slide { animation: slideFromLeftSlow 2s ease-out both; }
+        .illustration-slide {
+          animation: slideFromLeftSlow 2s ease-out both;
+        }
 
-        /* Floating loop */
         @keyframes float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-12px); }
         }
-        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
 
-        /* Glow pulse */
         @keyframes glowPulse {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.8; }
         }
-        .animate-glowPulse { animation: glowPulse 3s ease-in-out infinite; }
+        .animate-glowPulse {
+          animation: glowPulse 3s ease-in-out infinite;
+        }
 
-        /* Form fade */
         @keyframes fadeInUp {
           0% { opacity: 0; transform: translateY(30px); }
           100% { opacity: 1; transform: translateY(0); }
         }
-        .fade-in-up { animation: fadeInUp 1.2s ease forwards; }
+        .fade-in-up {
+          animation: fadeInUp 1.2s ease forwards;
+        }
 
-        /* Button glowing pulse */
         @keyframes buttonGlow {
           0%, 100% { box-shadow: 0 0 0px rgba(34,211,238,0); }
           50% { box-shadow: 0 0 20px rgba(34,211,238,0.6); }
         }
-        .animate-buttonGlow { animation: buttonGlow 4s ease-in-out infinite; }
+        .animate-buttonGlow {
+          animation: buttonGlow 4s ease-in-out infinite;
+        }
 
-        /* Gradient shimmer */
         @keyframes gradientMove {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
-        .animate-gradientMove { animation: gradientMove 3s linear infinite; }
+        .animate-gradientMove {
+          animation: gradientMove 3s linear infinite;
+        }
 
-        /* Logo + header fade */
         @keyframes logoPop {
           0% { transform: scale(0.6); opacity: 0; }
           100% { transform: scale(1); opacity: 1; }
         }
         .animate-logoPop { animation: logoPop 1s ease-out forwards; }
-        .animate-headerIn { animation: fadeInUp 1.5s ease-out forwards; }
 
-        /* Text fade-in */
+        @keyframes headerIn {
+          0% { opacity: 0; transform: translateY(-20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-headerIn { animation: headerIn 0.9s ease-out forwards; }
+
         @keyframes textFade {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
-        .animate-textFade { animation: textFade 2.5s ease forwards; }
+        .animate-textFade {
+          animation: textFade 2.5s ease forwards;
+        }
+
+        @keyframes formFadeIn {
+          0% { opacity: 0; transform: translateY(25px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-formFadeIn {
+          animation: formFadeIn 1s ease-out forwards;
+        }
       `}</style>
     </>
   );
