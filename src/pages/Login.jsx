@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { register, login, forgotPassword } from "../services/api";
@@ -10,25 +9,22 @@ import illustration from "../assets/illustration.png";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login"); // "Login" | "Sign Up"
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
-  const [showPassword, setShowPassword] = useState(false);
+  // ✅ only ONE visibility state
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
   const setUser = auth?.setUser;
 
   const onChangeHandler = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
   const onSubmitHandler = async (e) => {
@@ -45,6 +41,7 @@ const Login = () => {
           toast.success(res.message || "Registration successful! Please login.");
           setCurrentState("Login");
           setFormData({ name: "", email: "", password: "" });
+          setIsPasswordVisible(false);
         }
       } else {
         const res = await login({
@@ -76,18 +73,22 @@ const Login = () => {
       toast.error("Please enter your email");
       return;
     }
+
     setForgotPasswordLoading(true);
-
-    const res = await forgotPassword(forgotPasswordEmail);
-    if (res?.error) {
-      toast.error(res.error);
-    } else {
-      toast.success(res.message || "Reset link sent");
-      setShowForgotPassword(false);
-      setForgotPasswordEmail("");
+    try {
+      const res = await forgotPassword(forgotPasswordEmail);
+      if (res?.error) toast.error(res.error);
+      else {
+        toast.success(res.message || "Reset link sent");
+        setShowForgotPassword(false);
+        setForgotPasswordEmail("");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    } finally {
+      setForgotPasswordLoading(false);
     }
-
-    setForgotPasswordLoading(false);
   };
 
   return (
@@ -128,8 +129,7 @@ const Login = () => {
                 </div>
 
                 <p className="text-slate-200 text-sm max-w-xs text-right leading-relaxed animate-textFade">
-                  Build portfolios, join live coding rooms, and collaborate in
-                  real time — all inside DevSphere.
+                  Build portfolios, join live coding rooms, and collaborate in real time — all inside DevSphere.
                 </p>
               </div>
             </div>
@@ -179,28 +179,46 @@ const Login = () => {
                   />
                 </div>
 
+                {/* ✅ PASSWORD (FIXED: two inputs + key forces re-mount) */}
                 <div className="flex flex-col gap-1">
                   <label className="text-slate-200 text-sm">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={onChangeHandler}
-                      placeholder="••••••••"
-                      className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                      required
-                    />
+
+                  <div className="relative isolate">
+                    {isPasswordVisible ? (
+                      <input
+                        key="password-text"
+                        type="text"
+                        name="password"
+                        value={formData.password}
+                        onChange={onChangeHandler}
+                        placeholder="Enter password"
+                        className="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        autoComplete="off"
+                        required
+                      />
+                    ) : (
+                      <input
+                        key="password-hidden"
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={onChangeHandler}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        autoComplete="current-password"
+                        required
+                      />
+                    )}
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-white transition"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      title={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setIsPasswordVisible((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition"
+                      aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                      title={isPasswordVisible ? "Hide password" : "Show password"}
                     >
-                      {!showPassword ? (
-                        // Eye (hidden)
+                      {isPasswordVisible ? (
+                        // Eye icon - when password IS visible, show "eye" (means you can hide it)
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="18"
@@ -216,7 +234,7 @@ const Login = () => {
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       ) : (
-                        // Eye Off (visible)
+                        // Eye Off icon - when password is NOT visible, show "eye off" (means you can show it)
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="18"
@@ -248,86 +266,79 @@ const Login = () => {
                   </button>
 
                   {currentState === "Login" ? (
-                    <span
-                      onClick={() => setCurrentState("Sign Up")}
-                      className="text-slate-300 hover:text-white cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentState("Sign Up");
+                        setIsPasswordVisible(false);
+                      }}
+                      className="text-slate-300 hover:text-white transition"
                     >
                       Create account
-                    </span>
+                    </button>
                   ) : (
-                    <span
-                      onClick={() => setCurrentState("Login")}
-                      className="text-slate-300 hover:text-white cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentState("Login");
+                        setIsPasswordVisible(false);
+                      }}
+                      className="text-slate-300 hover:text-white transition"
                     >
                       Already have an account?
-                    </span>
+                    </button>
                   )}
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="relative overflow-hidden w-full bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg shadow transition-all duration-500 hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed animate-buttonGlow"
+                  className="relative overflow-hidden w-full bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg shadow transition-all duration-500 hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span className="relative z-10">
-                    {loading
-                      ? "Processing..."
-                      : currentState === "Login"
-                      ? "Sign In"
-                      : "Sign Up"}
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 opacity-0 hover:opacity-40 animate-gradientMove" />
+                  {loading ? "Processing..." : currentState === "Login" ? "Sign In" : "Sign Up"}
                 </button>
               </form>
             </div>
           </div>
         </main>
 
-        {/* ✅ NON-FIXED FOOTER (everything clickable, no layout change) */}
+        {/* FOOTER (NON-FIXED) */}
         <footer className="w-full bg-slate-900 border-t border-slate-800">
-          <div className="max-w-6xl mx-auto px-6 py-4">
-            <div className="footer-wrap">
-              {/* clickable tagline */}
-              <Link to="/" className="footer-linkBlock">
-                <p className="footer-tagline">
-                  Developer Collaboration & Portfolio Platform
-                </p>
-              </Link>
-
-              {/* clickable copyright */}
-              <Link to="/" className="footer-linkBlock">
-                <p className="footer-copy">
-                  © {new Date().getFullYear()} DevSphere
-                </p>
-              </Link>
-
-              {/* clickable menu */}
-              <div className="footer-links">
-                <Link to="/privacy" className="footer-link">
-                  Privacy
-                </Link>
-                <span className="footer-sep">|</span>
-                <Link to="/terms" className="footer-link">
-                  Terms
-                </Link>
-                <span className="footer-sep">|</span>
-                <Link to="/support" className="footer-link footer-link-accent">
-                  Support
-                </Link>
-              </div>
-            </div>
-          </div>
-        </footer>
-
+                <div className="max-w-6xl mx-auto px-6 py-4">
+                  <div className="footer-wrap">
+                    <Link to="/" className="footer-linkBlock">
+                      <p className="footer-tagline">
+                        Developer Collaboration & Portfolio Platform
+                      </p>
+                    </Link>
+        
+                    <Link to="/" className="footer-linkBlock">
+                      <p className="footer-copy">
+                        © {new Date().getFullYear()} DevSphere
+                      </p>
+                    </Link>
+        
+                    <div className="footer-links">
+                      <Link to="/privacy" className="footer-link">Privacy</Link>
+                      <span className="footer-sep">|</span>
+                      <Link to="/terms" className="footer-link">Terms</Link>
+                      <span className="footer-sep">|</span>
+                      <Link to="/support" className="footer-link footer-link-accent">
+                        Support
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </footer>
+        
         {/* FORGOT PASSWORD MODAL */}
         {showForgotPassword && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">
-                  Reset password
-                </h3>
+                <h3 className="text-lg font-semibold text-white">Reset password</h3>
                 <button
+                  type="button"
                   onClick={() => setShowForgotPassword(false)}
                   className="text-slate-400 text-xl leading-none"
                 >
@@ -337,16 +348,18 @@ const Login = () => {
 
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <p className="text-slate-400 text-sm">
-                  Enter your email and we'll send you a reset link.
+                  Enter your email and we will send you a reset link.
                 </p>
+
                 <input
                   type="email"
-                  className="form-input bg-slate-800/70 border border-slate-600 rounded-lg px-3 py-2 text-white w-full focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="bg-slate-800/70 border border-slate-600 rounded-lg px-3 py-2 text-white w-full focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   placeholder="you@example.com"
                   value={forgotPasswordEmail}
                   onChange={(e) => setForgotPasswordEmail(e.target.value)}
                   required
                 />
+
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -355,6 +368,7 @@ const Login = () => {
                   >
                     Cancel
                   </button>
+
                   <button
                     type="submit"
                     disabled={forgotPasswordLoading}
@@ -368,123 +382,6 @@ const Login = () => {
           </div>
         )}
       </div>
-
-      {/* ANIMATIONS + FOOTER CSS */}
-      <style>{`
-        @keyframes slideFromLeftSlow {
-          0% { opacity: 0; transform: translateX(-180px); }
-          60% { opacity: 0.9; transform: translateX(20px); }
-          80% { transform: translateX(-5px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        .illustration-slide { animation: slideFromLeftSlow 2s ease-out both; }
-
-        @keyframes fadeInUp {
-          0% { opacity: 0; transform: translateY(30px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in-up { animation: fadeInUp 1.2s ease forwards; }
-
-        @keyframes buttonGlow {
-          0%, 100% { box-shadow: 0 0 0px rgba(34,211,238,0); }
-          50% { box-shadow: 0 0 20px rgba(34,211,238,0.6); }
-        }
-        .animate-buttonGlow { animation: buttonGlow 4s ease-in-out infinite; }
-
-        @keyframes gradientMove {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-gradientMove { animation: gradientMove 3s linear infinite; }
-
-        @keyframes logoPop {
-          0% { transform: scale(0.6); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-logoPop { animation: logoPop 1s ease-out forwards; }
-
-        @keyframes headerIn {
-          0% { opacity: 0; transform: translateY(-20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-headerIn { animation: headerIn 0.9s ease-out forwards; }
-
-        @keyframes textFade {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        .animate-textFade { animation: textFade 2.5s ease forwards; }
-
-        @keyframes formFadeIn {
-          0% { opacity: 0; transform: translateY(25px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-formFadeIn { animation: formFadeIn 1s ease-out forwards; }
-
-        /* Footer */
-        .footer-wrap{
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-          justify-content:center;
-          gap:6px;
-          text-align:center;
-          animation: footerFadeIn 0.9s ease-out both;
-        }
-        .footer-linkBlock{
-          text-decoration: none;
-          display: inline-block;
-        }
-        .footer-linkBlock:hover .footer-tagline,
-        .footer-linkBlock:hover .footer-copy{
-          color: #fff;
-          transform: translateY(-1px);
-        }
-
-        .footer-tagline{
-          color: rgba(226,232,240,0.85);
-          font-size: 13px;
-          letter-spacing: 0.02em;
-          transform: translateY(10px);
-          opacity: 0;
-          transition: 250ms ease;
-          animation: footerSlideUp 0.9s ease-out 0.05s both;
-        }
-        .footer-copy{
-          color: rgba(148,163,184,0.9);
-          font-size: 12px;
-          transform: translateY(10px);
-          opacity: 0;
-          transition: 250ms ease;
-          animation: footerSlideUp 0.9s ease-out 0.15s both;
-        }
-        .footer-links{
-          display:flex;
-          align-items:center;
-          gap:10px;
-          margin-top: 6px;
-          transform: translateY(10px);
-          opacity: 0;
-          animation: footerSlideUp 0.9s ease-out 0.25s both;
-        }
-        .footer-link{
-          color: rgba(148,163,184,0.95);
-          font-size: 13px;
-          cursor: pointer;
-          transition: color 250ms ease, transform 250ms ease;
-          text-decoration: none;
-        }
-        .footer-link:hover{
-          color: #ffffff;
-          transform: translateY(-1px);
-        }
-        .footer-link-accent{ color: rgba(34,211,238,0.95); }
-        .footer-link-accent:hover{ color: #ffffff; }
-        .footer-sep{ color: rgba(71,85,105,1); font-size: 12px; }
-
-        @keyframes footerFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes footerSlideUp { to { opacity: 1; transform: translateY(0); } }
-      `}</style>
     </>
   );
 };

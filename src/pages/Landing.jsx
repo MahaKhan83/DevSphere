@@ -1,6 +1,6 @@
 // src/pages/Landing.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import illustration from "../assets/illustration2.png";
 
@@ -34,7 +34,7 @@ const Landing = () => {
       {/* MAIN SECTION */}
       <div className="min-h-screen w-screen bg-[#eef3f7] pt-32 flex flex-col overflow-x-hidden">
         <main className="flex-1 w-screen flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16 px-6 md:px-16 pb-10">
-
+          
           {/* LEFT CONTENT */}
           <section className="w-full md:w-1/2 space-y-6 text-center md:text-left">
             <p className="text-xs tracking-[0.35em] text-slate-500 uppercase fadeUp-1">
@@ -47,8 +47,7 @@ const Landing = () => {
             </h1>
 
             <p className="text-slate-700 text-sm md:text-lg max-w-xl md:max-w-md mx-auto md:mx-0 fadeUp-3">
-              A modern workspace where teams code, collaborate, and ship
-              together — all in one place.
+              A modern workspace where teams code, collaborate, and ship together — all in one place.
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center md:justify-start fadeUp-4">
@@ -59,15 +58,13 @@ const Landing = () => {
                 Get started
               </button>
 
-              <button
-                className="px-6 py-3 rounded-full border border-slate-400 text-slate-800 text-sm md:text-base bg-white/80 backdrop-blur-sm hover:bg-white hover:border-slate-500 transition-all duration-300 hover:-translate-y-[2px]"
-              >
+              <button className="px-6 py-3 rounded-full border border-slate-400 text-slate-800 text-sm md:text-base bg-white/80 backdrop-blur-sm hover:bg-white hover:border-slate-500 transition-all duration-300 hover:-translate-y-[2px]">
                 Explore features
               </button>
             </div>
           </section>
 
-          {/* RIGHT ILLUSTRATION (BLENDED) */}
+          {/* RIGHT ILLUSTRATION */}
           <section className="w-full md:w-1/2 flex justify-end items-center">
             <div className="max-w-md w-full flex justify-end">
               <img
@@ -80,18 +77,36 @@ const Landing = () => {
         </main>
       </div>
 
-      {/* FULL-WIDTH FOOTER */}
-      <footer className="w-screen bg-slate-900 text-slate-300 py-4 px-6 md:px-10 flex flex-col md:flex-row items-center justify-between text-xs md:text-sm">
-        <p>© {new Date().getFullYear()} DevSphere. All rights reserved.</p>
+      {/* FOOTER */}
+      <footer className="w-full bg-slate-900 border-t border-slate-800">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="footer-wrap">
+            <Link to="/" className="footer-linkBlock">
+              <p className="footer-tagline">
+                Developer Collaboration & Portfolio Platform
+              </p>
+            </Link>
 
-        <div className="flex gap-4">
-          <button className="hover:text-white transition">Privacy</button>
-          <button className="hover:text-white transition">Terms</button>
-          <button className="hover:text-white transition">Contact</button>
+            <Link to="/" className="footer-linkBlock">
+              <p className="footer-copy">
+                © {new Date().getFullYear()} DevSphere
+              </p>
+            </Link>
+
+            <div className="footer-links">
+              <Link to="/privacy" className="footer-link">Privacy</Link>
+              <span className="footer-sep">|</span>
+              <Link to="/terms" className="footer-link">Terms</Link>
+              <span className="footer-sep">|</span>
+              <Link to="/support" className="footer-link footer-link-accent">
+                Support
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
 
-      {/* SMOOTH TEXT ANIMATIONS */}
+      {/* ANIMATIONS */}
       <style>{`
         @keyframes fadeUp {
           0% { opacity: 0; transform: translateY(25px); }
@@ -101,6 +116,43 @@ const Landing = () => {
         .fadeUp-2 { animation: fadeUp 1s ease-out forwards; }
         .fadeUp-3 { animation: fadeUp 1.2s ease-out forwards; }
         .fadeUp-4 { animation: fadeUp 1.4s ease-out forwards; }
+
+        .footer-wrap{
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          gap:6px;
+          text-align:center;
+        }
+        .footer-tagline{
+          color: rgba(226,232,240,0.85);
+          font-size: 13px;
+        }
+        .footer-copy{
+          color: rgba(148,163,184,0.9);
+          font-size: 12px;
+        }
+        .footer-links{
+          display:flex;
+          gap:10px;
+          margin-top: 6px;
+        }
+        .footer-link{
+          color: rgba(148,163,184,0.95);
+          font-size: 13px;
+          text-decoration:none;
+          transition: color 0.3s ease;
+        }
+        .footer-link:hover{
+          color:#fff;
+        }
+        .footer-link-accent{
+          color: rgba(34,211,238,0.95);
+        }
+        .footer-sep{
+          color: rgba(71,85,105,1);
+          font-size: 12px;
+        }
       `}</style>
     </>
   );
