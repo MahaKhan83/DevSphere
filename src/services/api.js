@@ -1,9 +1,12 @@
 // src/services/api.js
 import axios from "axios";
 
+// ==============================
+// 🌐 BASE CONFIG
+// ==============================
 const API_BASE_URL = "http://localhost:5000/api";
 
-// ✅ Axios instance (clean + reusable)
+// Reusable axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,14 +14,21 @@ const api = axios.create({
   },
 });
 
-// ✅ Auto attach token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// ==============================
+// 🔐 AUTO ATTACH JWT TOKEN
+// ==============================
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// ✅ Helper: Extract proper backend error
+// ==============================
+// ❗ ERROR HANDLER
+// ==============================
 const getErrorMessage = (err, fallback = "Something went wrong") => {
   return (
     err?.response?.data?.error ||
@@ -28,60 +38,65 @@ const getErrorMessage = (err, fallback = "Something went wrong") => {
   );
 };
 
-// ------------------------------
-// ✅ REGISTER
-// ------------------------------
+// ======================================================
+// 🔐 AUTH MODULE
+// ======================================================
+
+// REGISTER
 export const register = async (data) => {
   try {
     const res = await api.post("/auth/register", data);
     return res.data;
   } catch (err) {
-    console.error("REGISTER ERROR:", err.response?.data || err.message);
+    console.error("REGISTER ERROR:", err);
     return { error: getErrorMessage(err, "Signup failed") };
   }
 };
 
-// ------------------------------
-// ✅ LOGIN
-// ------------------------------
+// LOGIN
 export const login = async (data) => {
   try {
     const res = await api.post("/auth/login", data);
 
-    // ✅ Save token if backend returns it
-    if (res.data?.token) localStorage.setItem("token", res.data.token);
+    // Save token
+    if (res.data?.token) {
+      localStorage.setItem("token", res.data.token);
+    }
 
     return res.data;
   } catch (err) {
-    console.error("LOGIN ERROR:", err.response?.data || err.message);
+    console.error("LOGIN ERROR:", err);
     return { error: getErrorMessage(err, "Login failed") };
   }
 };
 
-// ------------------------------
-// ✅ FORGOT PASSWORD
-// ------------------------------
+// LOGOUT
+export const logout = () => {
+  localStorage.removeItem("token");
+};
+
+// FORGOT PASSWORD
 export const forgotPassword = async (email) => {
   try {
     const res = await api.post("/auth/forgot-password", { email });
     return res.data;
   } catch (err) {
-    console.error("FORGOT PASSWORD ERROR:", err.response?.data || err.message);
+    console.error("FORGOT PASSWORD ERROR:", err);
     return { error: getErrorMessage(err, "Failed to send reset email") };
   }
 };
 
-// ------------------------------
-// ✅ GET DASHBOARD DATA
-// ------------------------------
+// ======================================================
+// 📊 DASHBOARD MODULE
+// ======================================================
 export const getDashboardData = async () => {
   try {
     const res = await api.get("/dashboard");
     return res.data;
   } catch (err) {
-    console.warn("DASHBOARD ERROR (Fallback):", err.response?.data || err.message);
+    console.warn("DASHBOARD ERROR → Using fallback data");
 
-    // ✅ Fallback (frontend demo data)
+    // Fallback demo data
     return {
       announcements: [
         {
@@ -94,11 +109,6 @@ export const getDashboardData = async () => {
           desc: "Frontend stand-up moved to 10:00 AM.",
           time: "Yesterday",
         },
-        {
-          title: "Scheduled maintenance",
-          desc: "Downtime Saturday 01:00 – 02:00 AM UTC.",
-          time: "3 days ago",
-        },
       ],
       meetings: [
         { title: "Introduction call", time: "08:00 – 08:50" },
@@ -107,11 +117,131 @@ export const getDashboardData = async () => {
       projects: [
         { name: "Website redesign", progress: 75 },
         { name: "Mobile app", progress: 25 },
-        { name: "Dashboard UI", progress: 50 },
       ],
     };
   }
 };
 
-// ✅ Export axios instance if you want to use directly later
+// ======================================================
+// 👤 PORTFOLIO BUILDER MODULE
+// ======================================================
+export const getPortfolio = async () => {
+  try {
+    const res = await api.get("/portfolio");
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to load portfolio") };
+  }
+};
+
+export const savePortfolio = async (portfolioData) => {
+  try {
+    const res = await api.post("/portfolio", portfolioData);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to save portfolio") };
+  }
+};
+
+// ======================================================
+// 🤝 REAL-TIME COLLAB ROOMS
+// ======================================================
+export const getCollabRooms = async () => {
+  try {
+    const res = await api.get("/collaboration/rooms");
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to load rooms") };
+  }
+};
+
+export const createCollabRoom = async (data) => {
+  try {
+    const res = await api.post("/collaboration/rooms", data);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to create room") };
+  }
+};
+
+// ======================================================
+// 🚀 SHOWCASE FEED
+// ======================================================
+export const getShowcaseFeed = async () => {
+  try {
+    const res = await api.get("/showcase");
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to load showcase") };
+  }
+};
+
+export const postShowcase = async (data) => {
+  try {
+    const res = await api.post("/showcase", data);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to post project") };
+  }
+};
+
+export const likeShowcase = async (id) => {
+  try {
+    const res = await api.post(`/showcase/${id}/like`);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to like post") };
+  }
+};
+
+// ======================================================
+// 🔔 NOTIFICATIONS
+// ======================================================
+export const getNotifications = async () => {
+  try {
+    const res = await api.get("/notifications");
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to load notifications") };
+  }
+};
+
+export const markNotificationRead = async (id) => {
+  try {
+    const res = await api.patch(`/notifications/${id}/read`);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to update notification") };
+  }
+};
+// ------------------------------
+//  CLEAR ALL NOTIFICATIONS
+// ------------------------------
+export const clearAllNotifications = async () => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await axios.delete(`${API_BASE_URL}/notifications/clear`, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    console.error(
+      "CLEAR NOTIFICATIONS ERROR:",
+      err.response?.data || err.message
+    );
+
+    return {
+      error:
+        err.response?.data?.message || "Failed to clear notifications",
+    };
+  }
+};
+
+// ======================================================
+// 🔁 EXPORT AXIOS INSTANCE
+// ======================================================
 export default api;

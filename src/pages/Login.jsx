@@ -363,7 +363,8 @@ const Login = () => {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowForgotPassword(false)}
+
+                    onClick={() => navigate("/reset-password")}
                     className="flex-1 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-800 transition"
                   >
                     Cancel

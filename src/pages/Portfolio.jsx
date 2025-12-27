@@ -1,18 +1,21 @@
 // src/pages/Portfolio.jsx
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import logo from "../assets/logo.png";
 
 /**
- * DevSphere – Portfolio Builder (Improved UI)
- * ✅ More visible theme (better contrast)
- * ✅ Dashboard-like sidebar (icons + professional)
- * ✅ Sidebar collapse/expand (full width preview)
- * ✅ Smooth transitions / animations
+ * DevSphere – Portfolio Builder (Dashboard + Navy Animations)
+ * ✅ Same DevSphere sidebar (like Notifications/Settings)
+ * ✅ Navy blue animated background + shimmer + border pulse
+ * ✅ Sidebar collapse/expand
+ * ✅ Smooth entry animations
+ * ✅ Fixed route: /collaboration
  */
 
-const STORAGE_KEY = "devsphere_portfolio_builder_v7";
+const STORAGE_KEY = "devsphere_portfolio_builder_v8";
 
 /* ------------------ Section Templates ------------------ */
 
@@ -140,43 +143,92 @@ const DEFAULT_PROFILE = {
   photo: "",
 };
 
-// ✅ MORE VISIBLE THEME (better contrast)
 const DEFAULT_THEME = {
-  // App background (dashboard dark)
   appBg: "#0B1220",
-
-  // Paper + cards brighter
   paperBg: "#FFFFFF",
   cardBg: "#F8FAFC",
-
-  // Text stronger
   ink: "#0F172A",
   muted: "#475569",
   line: "#E2E8F0",
-
   accent: "#38BDF8",
-
   radius: 16,
   spacing: 16,
   fontSize: 15,
   font: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
-
-  viewMode: "FULL", // default full for better visibility
+  viewMode: "FULL",
   headerStyle: "clean",
   showDividers: true,
-
   cardShadow: 18,
   cardOpacity: 1,
-
   density: "comfortable",
   skillsStyle: "badges",
   sectionTitleCase: "title",
 };
 
+/* ------------------ Sidebar Icons (Professional) ------------------ */
+
+const DashboardIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
+  </svg>
+);
+
+const PortfolioIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
+  </svg>
+);
+
+const ShowcaseIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
+  </svg>
+);
+
+const CollabIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+  </svg>
+);
+
+const IconWrap = ({ children }) => (
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+    {children}
+  </span>
+);
+
+const NavItem = ({ active, icon, label, onClick, collapsed }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+      active
+        ? "bg-slate-800 text-slate-50 font-semibold"
+        : "text-slate-200/90 hover:bg-slate-800/60"
+    }`}
+    title={collapsed ? label : undefined}
+  >
+    <IconWrap>{icon}</IconWrap>
+    {!collapsed && <span className="truncate">{label}</span>}
+  </button>
+);
+
 /* ------------------ Component ------------------ */
 
 export default function Portfolio() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useContext(AuthContext);
 
   const printRef = useRef(null);
@@ -199,15 +251,19 @@ export default function Portfolio() {
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState("");
 
-  // ✅ NEW: Sidebar collapse state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const selectedSection = useMemo(
     () => sections.find((s) => s.instanceId === selectedInstanceId) || null,
     [sections, selectedInstanceId]
   );
 
-  // Auto-fill from logged-in user
   useEffect(() => {
     if (!user) return;
     setProfile((p) => {
@@ -224,7 +280,6 @@ export default function Portfolio() {
     });
   }, [user]);
 
-  // Load from localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
@@ -233,23 +288,26 @@ export default function Portfolio() {
       if (parsed?.sections?.length) setSections(parsed.sections);
       if (parsed?.profile) setProfile((p) => ({ ...p, ...parsed.profile }));
       if (parsed?.theme) setTheme((t) => ({ ...t, ...parsed.theme }));
-      if (typeof parsed?.sidebarCollapsed === "boolean") setSidebarCollapsed(parsed.sidebarCollapsed);
+      if (typeof parsed?.sidebarOpen === "boolean") setSidebarOpen(parsed.sidebarOpen);
     } catch (e) {
       console.warn("Failed to load builder state:", e);
     }
   }, []);
 
   const save = () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ sections, profile, theme, sidebarCollapsed })
-    );
-    alert("Saved successfully ✅");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections, profile, theme, sidebarOpen }));
+    toast("Saved successfully ✅");
   };
 
   const reset = () => {
     setSections(
-      [cloneTemplate("about"), cloneTemplate("projects"), cloneTemplate("skills"), cloneTemplate("github"), cloneTemplate("testimonials")].filter(Boolean)
+      [
+        cloneTemplate("about"),
+        cloneTemplate("projects"),
+        cloneTemplate("skills"),
+        cloneTemplate("github"),
+        cloneTemplate("testimonials"),
+      ].filter(Boolean)
     );
     setProfile((p) => ({
       ...DEFAULT_PROFILE,
@@ -259,14 +317,14 @@ export default function Portfolio() {
     }));
     setTheme(DEFAULT_THEME);
     setSelectedInstanceId(null);
-    setSidebarCollapsed(false);
+    setSidebarOpen(true);
     localStorage.removeItem(STORAGE_KEY);
-    alert("Reset done ✅");
+    toast("Reset done ✅");
   };
 
   const publish = () => {
     save();
-    alert("Published (demo) ✅ Your layout is saved.");
+    toast("Published (demo) ✅ Your layout is saved.");
   };
 
   const removeSection = (instanceId) => {
@@ -308,7 +366,7 @@ export default function Portfolio() {
   const copyShareLink = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
-      alert("Link copied ✅");
+      toast("Link copied ✅");
     } catch {
       alert("Copy failed. Please copy manually:\n" + shareLink);
     }
@@ -390,472 +448,553 @@ export default function Portfolio() {
     }
   `;
 
-  // ✅ Small animation css
-  const animCss = `
-    @keyframes popIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes softFade { from { opacity: 0; } to { opacity: 1; } }
-  `;
+  const NAV_ITEMS = [
+    { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
+    { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
+    { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
+    { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
+    { label: "Notifications", icon: <BellIcon />, to: "/notifications" },
+    { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
+  ];
+
+  const isActive = (to) => location.pathname === to;
 
   return (
-    <div
-      className="min-h-screen w-full app-shell"
-      style={{
-        background: theme.appBg,
-        fontFamily: theme.font,
-        fontSize: theme.fontSize,
-        color: theme.ink,
-      }}
-    >
-      <style>{printCss}</style>
-      <style>{animCss}</style>
+    <>
+      <div
+        className="min-h-screen w-full app-shell"
+        style={{
+          background: theme.appBg,
+          fontFamily: theme.font,
+          fontSize: theme.fontSize,
+          color: theme.ink,
+        }}
+      >
+        <style>{printCss}</style>
 
-      <div className="min-h-screen w-full flex">
-        {/* ✅ SIDEBAR (Dashboard-like) */}
-        <aside
-          className={`no-print bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 transition-all duration-300 ease-in-out
-          ${sidebarCollapsed ? "w-20" : "w-[280px]"}`}
-        >
-          {/* Brand */}
-          <div className="px-4 py-5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 grid place-items-center font-black text-sky-300 shadow">
-              DS
+        {/* ✅ Navy animated background */}
+        <div className="pointer-events-none fixed inset-0">
+          <div className="sfBlob sfBlob1" />
+          <div className="sfBlob sfBlob2" />
+          <div className="sfShimmer" />
+        </div>
+
+        <div className="min-h-screen w-full flex relative">
+          {/* ✅ LEFT APP SIDEBAR */}
+          <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"} no-print`}>
+            <div className="flex items-center gap-3 px-2 mb-8">
+              {/* ✅ FIXED: require removed */}
+              <img
+                src={logo}
+                alt="DevSphere"
+                className="w-10 h-10 object-contain drop-shadow-md"
+              />
+              <span className="text-xl font-semibold">
+                Dev<span className="text-cyan-300">Sphere</span>
+              </span>
             </div>
 
-            {!sidebarCollapsed && (
-              <div className="animate-[softFade_.3s_ease-out]">
-                <div className="font-bold leading-tight text-white">
-                  Dev<span className="text-sky-300">Sphere</span>
-                </div>
-                <div className="text-xs text-slate-300">Portfolio Builder</div>
+            <nav className="flex-1 space-y-2">
+              {NAV_ITEMS.map((item) => (
+                <NavItem
+                  key={item.to}
+                  active={isActive(item.to)}
+                  icon={item.icon}
+                  label={item.label}
+                  collapsed={!sidebarOpen}
+                  onClick={() => navigate(item.to)}
+                />
+              ))}
+            </nav>
+
+            <div className="mt-6 flex items-center gap-3 px-2">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold overflow-hidden">
+                {profile.photo ? (
+                  <img src={profile.photo} alt="User" className="w-full h-full object-cover" />
+                ) : (
+                  (profile.name || user?.name || user?.email || "U").trim().slice(0, 1).toUpperCase()
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Nav */}
-          <nav className={`px-2 py-2 flex-1 space-y-1 ${sidebarCollapsed ? "items-center" : ""}`}>
-            <SideBtnPro collapsed={sidebarCollapsed} label="Dashboard" icon="🏠" onClick={() => navigate("/dashboard")} />
-            <SideBtnPro collapsed={sidebarCollapsed} label="Build Portfolio" icon="🧩" active onClick={() => navigate("/portfolio")} />
-            <SideBtnPro collapsed={sidebarCollapsed} label="Showcase Feed" icon="🚀" onClick={() => navigate("/showcase")} />
-            <SideBtnPro collapsed={sidebarCollapsed} label="Collab Rooms" icon="🤝" onClick={() => navigate("/collab")} />
-            <SideBtnPro collapsed={sidebarCollapsed} label="Notifications" icon="🔔" onClick={() => navigate("/notifications")} />
-            <SideBtnPro collapsed={sidebarCollapsed} label="Settings" icon="⚙️" onClick={() => navigate("/settings")} />
-          </nav>
-
-          {/* User */}
-          <div className={`px-4 py-4 border-t border-slate-800 flex items-center gap-3 ${sidebarCollapsed ? "justify-center" : ""}`}>
-            <div className="w-10 h-10 rounded-full bg-slate-700 grid place-items-center overflow-hidden">
-              {profile.photo ? (
-                <img src={profile.photo} alt="User" className="w-full h-full object-cover" />
-              ) : (
-                <span className="font-bold">
-                  {(profile.name || user?.name || user?.email || "U").trim().slice(0, 1).toUpperCase()}
-                </span>
+              {sidebarOpen && (
+                <div>
+                  <p className="text-sm font-medium truncate max-w-[140px]">
+                    {profile.name || user?.name || user?.email || "Guest"}
+                  </p>
+                  <p className="text-xs text-slate-300">Signed in</p>
+                </div>
               )}
             </div>
+          </aside>
 
-            {!sidebarCollapsed && (
-              <div className="min-w-0 animate-[softFade_.3s_ease-out]">
-                <div className="text-sm font-semibold truncate">
-                  {profile.name || user?.name || user?.email || "Guest"}
-                </div>
-                <div className="text-xs text-slate-300">Signed in</div>
-              </div>
-            )}
-          </div>
-        </aside>
+          {/* MAIN */}
+          <div className="flex-1 min-w-0">
+            {/* ✅ TOP BAR */}
+            <div className="no-print sticky top-0 z-40 w-full bg-slate-900/90 backdrop-blur border-b border-slate-800">
+              <div className={`px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 ${mounted ? "sfIn" : "sfPre"}`}>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSidebarOpen((v) => !v)}
+                    className="w-10 h-10 rounded-xl bg-white/5 border border-slate-700 text-white hover:bg-white/10 transition grid place-items-center"
+                    title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                  >
+                    {sidebarOpen ? "⟨⟨" : "⟩⟩"}
+                  </button>
 
-        {/* MAIN */}
-        <div className="flex-1 min-w-0">
-          {/* ✅ TOP BAR + SIDEBAR TOGGLE */}
-          <div className="no-print sticky top-0 z-40 w-full bg-slate-900/90 backdrop-blur border-b border-slate-800">
-            <div className="px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setSidebarCollapsed((p) => !p)}
-                  className="w-10 h-10 rounded-xl bg-white/5 border border-slate-700 text-white hover:bg-white/10 transition grid place-items-center"
-                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                  {sidebarCollapsed ? "→" : "☰"}
-                </button>
-
-                <div>
-                  <h1 className="text-white font-bold text-lg tracking-wide">
-                    Build Portfolio
-                  </h1>
-                  <div className="text-xs text-slate-300">
-                    Drag sections • Customize • Export PDF
+                  <div>
+                    <h1 className="text-white font-bold text-lg tracking-wide">Build Portfolio</h1>
+                    <div className="text-xs text-slate-300">Drag sections • Customize • Export PDF</div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setTheme((t) => ({ ...t, viewMode: t.viewMode === "A4" ? "FULL" : "A4" }))}
-                  className="px-4 py-2 rounded-full text-xs font-semibold border border-slate-700 bg-white/5 text-white hover:bg-white/10 transition"
-                  title="Toggle A4 / Full width"
-                >
-                  {isA4 ? "A4 Mode ✅" : "Full Width ✅"}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setTheme((t) => ({ ...t, viewMode: t.viewMode === "A4" ? "FULL" : "A4" }))}
+                    className="px-4 py-2 rounded-full text-xs font-semibold border border-slate-700 bg-white/5 text-white hover:bg-white/10 transition"
+                    title="Toggle A4 / Full width"
+                  >
+                    {isA4 ? "A4 Mode ✅" : "Full Width ✅"}
+                  </button>
 
-                <button
-                  onClick={downloadAsPDF}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-sky-400 text-slate-900 hover:bg-sky-300 transition shadow"
-                >
-                  Download PDF
-                </button>
+                  <button
+                    onClick={downloadAsPDF}
+                    className="px-4 py-2 rounded-full text-xs font-semibold bg-sky-400 text-slate-900 hover:bg-sky-300 transition shadow"
+                  >
+                    Download PDF
+                  </button>
 
-                <button
-                  onClick={save}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-400/20 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-400/30 transition"
-                >
-                  Save
-                </button>
+                  <button
+                    onClick={save}
+                    className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-400/20 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-400/30 transition"
+                  >
+                    Save
+                  </button>
 
-                <button
-                  onClick={reset}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-200 border border-rose-400/20 hover:bg-rose-500/25 transition"
-                >
-                  Reset
-                </button>
+                  <button
+                    onClick={reset}
+                    className="px-4 py-2 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-200 border border-rose-400/20 hover:bg-rose-500/25 transition"
+                  >
+                    Reset
+                  </button>
 
-                <button
-                  onClick={publish}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-400 text-slate-900 hover:bg-emerald-300 transition shadow"
-                >
-                  Publish
-                </button>
+                  <button
+                    onClick={publish}
+                    className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-400 text-slate-900 hover:bg-emerald-300 transition shadow"
+                  >
+                    Publish
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* CONTENT */}
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="paper-wrap px-4 sm:px-6 py-6">
-              <div className="mx-auto max-w-7xl animate-[popIn_.35s_ease-out]">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* PREVIEW */}
-                  <div className="lg:col-span-8">
-                    <div
-                      ref={printRef}
-                      className="paper mx-auto overflow-hidden"
-                      style={{
-                        background: theme.paperBg,
-                        borderRadius: theme.radius,
-                        border: `1px solid ${theme.line}`,
-                        boxShadow: `0 ${theme.cardShadow}px ${theme.cardShadow * 2.3}px rgba(0,0,0,0.22)`,
-                        width: isA4 ? "210mm" : "100%",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      <div style={{ padding: isA4 ? "14mm" : density.pad }}>
-                        <HeaderPro
-                          profile={profile}
-                          theme={theme}
-                          density={density}
-                          onPickPhoto={onPickPhoto}
-                          clearPhoto={clearPhoto}
-                        />
+            {/* CONTENT */}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="paper-wrap px-4 sm:px-6 py-6">
+                <div className={`mx-auto max-w-7xl ${mounted ? "sfIn2" : "sfPre"}`}>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* PREVIEW */}
+                    <div className="lg:col-span-8">
+                      <div
+                        ref={printRef}
+                        className="paper mx-auto overflow-hidden sfPulseBorder"
+                        style={{
+                          background: theme.paperBg,
+                          borderRadius: theme.radius,
+                          border: `1px solid ${theme.line}`,
+                          boxShadow: `0 ${theme.cardShadow}px ${theme.cardShadow * 2.3}px rgba(0,0,0,0.22)`,
+                          width: isA4 ? "210mm" : "100%",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        <div style={{ padding: isA4 ? "14mm" : density.pad }}>
+                          <HeaderPro
+                            profile={profile}
+                            theme={theme}
+                            density={density}
+                            onPickPhoto={onPickPhoto}
+                            clearPhoto={clearPhoto}
+                          />
 
-                        {theme.showDividers ? (
-                          <div style={{ marginTop: density.gap, borderTop: `1px solid ${theme.line}` }} />
-                        ) : null}
+                          {theme.showDividers ? (
+                            <div style={{ marginTop: density.gap, borderTop: `1px solid ${theme.line}` }} />
+                          ) : null}
 
-                        {/* Share Link */}
-                        <div className="no-print mt-5">
-                          <div className="text-xs font-extrabold text-slate-600">
-                            Shareable Portfolio Link
-                          </div>
-                          <div className="mt-2 flex gap-2">
-                            <input
-                              value={shareLink}
-                              readOnly
-                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none text-sm"
-                            />
-                            <button
-                              onClick={copyShareLink}
-                              className="px-4 py-2 rounded-xl font-extrabold text-sm text-white shadow hover:opacity-95 transition"
-                              style={{ background: theme.accent }}
-                            >
-                              Copy
-                            </button>
-                          </div>
-
-                          <div className="mt-3">
-                            <div className="text-xs font-extrabold text-slate-600 mb-1">Slug</div>
-                            <input
-                              value={profile.portfolioSlug}
-                              onChange={(e) => setProfile((p) => ({ ...p, portfolioSlug: e.target.value }))}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none text-sm"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Preview Sections */}
-                        <div style={{ marginTop: density.gap }}>
-                          <Droppable droppableId="preview">
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="grid transition-all"
-                                style={{
-                                  gap: density.gap,
-                                  outline: snapshot.isDraggingOver ? `2px dashed ${theme.accent}` : "none",
-                                  borderRadius: 14,
-                                  padding: 2,
-                                }}
+                          {/* Share Link */}
+                          <div className="no-print mt-5">
+                            <div className="text-xs font-extrabold text-slate-600">Shareable Portfolio Link</div>
+                            <div className="mt-2 flex gap-2">
+                              <input
+                                value={shareLink}
+                                readOnly
+                                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none text-sm"
+                              />
+                              <button
+                                onClick={copyShareLink}
+                                className="px-4 py-2 rounded-xl font-extrabold text-sm text-white shadow hover:opacity-95 transition"
+                                style={{ background: theme.accent }}
                               >
-                                {sections.map((sec, index) => (
-                                  <Draggable key={sec.instanceId} draggableId={sec.instanceId} index={index}>
-                                    {(prov, snap) => (
-                                      <div ref={prov.innerRef} {...prov.draggableProps} style={{ ...prov.draggableProps.style }}>
-                                        <div
-                                          onClick={() => setSelectedInstanceId(sec.instanceId)}
-                                          className={`group cursor-pointer transition-all ${
-                                            selectedInstanceId === sec.instanceId ? "ring-2" : ""
-                                          }`}
-                                          style={{
-                                            border: `1px solid ${theme.line}`,
-                                            borderRadius: theme.radius,
-                                            padding: density.pad * 0.9,
-                                            background: withOpacity(theme.cardBg, theme.cardOpacity),
-                                            boxShadow: snap.isDragging
-                                              ? "0 14px 34px rgba(15, 23, 42, 0.16)"
-                                              : "0 10px 25px rgba(15, 23, 42, 0.06)",
-                                            transform: snap.isDragging ? "scale(1.01)" : "scale(1)",
-                                            transition: "transform .18s ease, box-shadow .18s ease",
-                                            outlineColor: theme.accent,
-                                          }}
-                                        >
-                                          <div className="flex justify-between items-start gap-3">
-                                            <div className="flex items-center gap-3">
-                                              <div
-                                                className="w-9 h-9 rounded-xl grid place-items-center font-black"
-                                                style={{ background: "rgba(56,189,248,0.16)" }}
-                                              >
-                                                {sec.icon}
+                                Copy
+                              </button>
+                            </div>
+
+                            <div className="mt-3">
+                              <div className="text-xs font-extrabold text-slate-600 mb-1">Slug</div>
+                              <input
+                                value={profile.portfolioSlug}
+                                onChange={(e) => setProfile((p) => ({ ...p, portfolioSlug: e.target.value }))}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Preview Sections */}
+                          <div style={{ marginTop: density.gap }}>
+                            <Droppable droppableId="preview">
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className="grid transition-all"
+                                  style={{
+                                    gap: density.gap,
+                                    outline: snapshot.isDraggingOver ? `2px dashed ${theme.accent}` : "none",
+                                    borderRadius: 14,
+                                    padding: 2,
+                                  }}
+                                >
+                                  {sections.map((sec, index) => (
+                                    <Draggable key={sec.instanceId} draggableId={sec.instanceId} index={index}>
+                                      {(prov, snap) => (
+                                        <div ref={prov.innerRef} {...prov.draggableProps} style={{ ...prov.draggableProps.style }}>
+                                          <div
+                                            onClick={() => setSelectedInstanceId(sec.instanceId)}
+                                            className={`group cursor-pointer transition-all ${
+                                              selectedInstanceId === sec.instanceId ? "ring-2 ring-sky-300/50" : ""
+                                            }`}
+                                            style={{
+                                              border: `1px solid ${theme.line}`,
+                                              borderRadius: theme.radius,
+                                              padding: density.pad * 0.9,
+                                              background: withOpacity(theme.cardBg, theme.cardOpacity),
+                                              boxShadow: snap.isDragging
+                                                ? "0 14px 34px rgba(15, 23, 42, 0.16)"
+                                                : "0 10px 25px rgba(15, 23, 42, 0.06)",
+                                              transform: snap.isDragging ? "scale(1.01)" : "scale(1)",
+                                              transition: "transform .18s ease, box-shadow .18s ease",
+                                              outlineColor: theme.accent,
+                                            }}
+                                          >
+                                            <div className="flex justify-between items-start gap-3">
+                                              <div className="flex items-center gap-3">
+                                                <div
+                                                  className="w-9 h-9 rounded-xl grid place-items-center font-black"
+                                                  style={{ background: "rgba(56,189,248,0.16)" }}
+                                                >
+                                                  {sec.icon}
+                                                </div>
+                                                <div className="font-extrabold text-sm text-slate-900">
+                                                  {formatTitle(sec.data.headline || sec.title, theme.sectionTitleCase)}
+                                                </div>
                                               </div>
-                                              <div className="font-extrabold text-sm text-slate-900">
-                                                {formatTitle(sec.data.headline || sec.title, theme.sectionTitleCase)}
+
+                                              <div className="no-print flex items-center gap-2">
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeSection(sec.instanceId);
+                                                  }}
+                                                  className="px-3 py-1.5 rounded-lg text-xs font-extrabold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
+                                                >
+                                                  Remove
+                                                </button>
+
+                                                <div
+                                                  {...prov.dragHandleProps}
+                                                  className="px-3 py-1.5 rounded-lg text-xs font-extrabold border border-slate-200 bg-white text-slate-600 select-none hover:bg-slate-50 transition"
+                                                  title="Drag to reorder"
+                                                >
+                                                  ⋮⋮
+                                                </div>
                                               </div>
                                             </div>
 
-                                            <div className="no-print flex items-center gap-2">
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  removeSection(sec.instanceId);
-                                                }}
-                                                className="px-3 py-1.5 rounded-lg text-xs font-extrabold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
-                                              >
-                                                Remove
-                                              </button>
-
-                                              <div
-                                                {...prov.dragHandleProps}
-                                                className="px-3 py-1.5 rounded-lg text-xs font-extrabold border border-slate-200 bg-white text-slate-600 select-none hover:bg-slate-50 transition"
-                                                title="Drag to reorder"
-                                              >
-                                                ⋮⋮
-                                              </div>
+                                            <div className="mt-3">
+                                              <SectionPreviewPro section={sec} theme={theme} />
                                             </div>
-                                          </div>
-
-                                          <div className="mt-3">
-                                            <SectionPreviewPro section={sec} theme={theme} />
                                           </div>
                                         </div>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </div>
+
+                          <div className="no-print mt-4 text-xs text-slate-600">
+                            Tip: <b>A4 Mode</b> ON for perfect PDF export.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Editor Panel */}
+                      <div className={`no-print mt-5 ${mounted ? "sfIn3" : "sfPre"}`}>
+                        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white shadow sfPulseBorder">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-extrabold">Edit Section</div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={save}
+                                className="px-4 py-2 rounded-xl text-xs font-extrabold bg-emerald-400/20 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-400/30 transition"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={reset}
+                                className="px-4 py-2 rounded-xl text-xs font-extrabold bg-white/5 text-white border border-slate-700 hover:bg-white/10 transition"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          </div>
+
+                          {!selectedSection ? (
+                            <div className="mt-2 text-sm text-slate-300">
+                              Preview me section pe click karo, yahan edit hoga.
+                            </div>
+                          ) : (
+                            <div className="mt-4">
+                              <SectionEditorPro
+                                section={selectedSection}
+                                onChange={(updated) => {
+                                  setSections((prev) =>
+                                    prev.map((s) => (s.instanceId === updated.instanceId ? updated : s))
+                                  );
+                                }}
+                                profile={profile}
+                                setProfile={setProfile}
+                                onPickPhoto={onPickPhoto}
+                                clearPhoto={clearPhoto}
+                                onFetchGithub={fetchGithubRepos}
+                                githubLoading={githubLoading}
+                                githubError={githubError}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT PANEL */}
+                    <div className="lg:col-span-4 no-print">
+                      <Panel title="Available Sections" subtitle="Drag and drop into the preview">
+                        <Droppable droppableId="available" isDropDisabled={true}>
+                          {(provided) => (
+                            <div ref={provided.innerRef} {...provided.droppableProps} className="grid gap-2">
+                              {available.map((item, index) => (
+                                <Draggable key={item.id} draggableId={item.id} index={index}>
+                                  {(prov, snap) => (
+                                    <div
+                                      ref={prov.innerRef}
+                                      {...prov.draggableProps}
+                                      {...prov.dragHandleProps}
+                                      className={`flex items-center gap-3 p-3 rounded-xl border border-slate-700/60 transition ${
+                                        snap.isDragging ? "bg-sky-500/20" : "bg-white/5 hover:bg-white/10"
+                                      }`}
+                                      style={{ ...prov.draggableProps.style }}
+                                    >
+                                      <div className="w-10 h-10 rounded-xl grid place-items-center font-black bg-sky-400/20 text-sky-200">
+                                        {item.icon}
                                       </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </div>
-
-                        <div className="no-print mt-4 text-xs text-slate-600">
-                          Tip: <b>A4 Mode</b> ON for perfect PDF export.
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Editor Panel */}
-                    <div className="no-print mt-5">
-                      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white shadow">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="font-extrabold">Edit Section</div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={save}
-                              className="px-4 py-2 rounded-xl text-xs font-extrabold bg-emerald-400/20 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-400/30 transition"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={reset}
-                              className="px-4 py-2 rounded-xl text-xs font-extrabold bg-white/5 text-white border border-slate-700 hover:bg-white/10 transition"
-                            >
-                              Reset
-                            </button>
-                          </div>
-                        </div>
-
-                        {!selectedSection ? (
-                          <div className="mt-2 text-sm text-slate-300">
-                            Preview me section pe click karo, yahan edit hoga.
-                          </div>
-                        ) : (
-                          <div className="mt-4">
-                            <SectionEditorPro
-                              section={selectedSection}
-                              onChange={(updated) => {
-                                setSections((prev) =>
-                                  prev.map((s) => (s.instanceId === updated.instanceId ? updated : s))
-                                );
-                              }}
-                              profile={profile}
-                              setProfile={setProfile}
-                              onPickPhoto={onPickPhoto}
-                              clearPhoto={clearPhoto}
-                              onFetchGithub={fetchGithubRepos}
-                              githubLoading={githubLoading}
-                              githubError={githubError}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT PANEL */}
-                  <div className="lg:col-span-4 no-print">
-                    <Panel title="Available Sections" subtitle="Drag and drop into the preview">
-                      <Droppable droppableId="available" isDropDisabled={true}>
-                        {(provided) => (
-                          <div ref={provided.innerRef} {...provided.droppableProps} className="grid gap-2">
-                            {available.map((item, index) => (
-                              <Draggable key={item.id} draggableId={item.id} index={index}>
-                                {(prov, snap) => (
-                                  <div
-                                    ref={prov.innerRef}
-                                    {...prov.draggableProps}
-                                    {...prov.dragHandleProps}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border border-slate-700/60 transition ${
-                                      snap.isDragging ? "bg-sky-500/20" : "bg-white/5 hover:bg-white/10"
-                                    }`}
-                                    style={{ ...prov.draggableProps.style }}
-                                  >
-                                    <div className="w-10 h-10 rounded-xl grid place-items-center font-black bg-sky-400/20 text-sky-200">
-                                      {item.icon}
+                                      <div className="font-extrabold text-sm text-white">{item.title}</div>
+                                      <div className="ml-auto opacity-70">⠿</div>
                                     </div>
-                                    <div className="font-extrabold text-sm text-white">{item.title}</div>
-                                    <div className="ml-auto opacity-70">⠿</div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </Panel>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </Panel>
 
-                    <Panel title="Customization (Advanced)" subtitle="Theme ko readable & visible banao">
-                      <ColorRow label="App Background" value={theme.appBg} onChange={(v) => setTheme((t) => ({ ...t, appBg: v }))} />
-                      <ColorRow label="Paper Background" value={theme.paperBg} onChange={(v) => setTheme((t) => ({ ...t, paperBg: v }))} />
-                      <ColorRow label="Card Background" value={theme.cardBg} onChange={(v) => setTheme((t) => ({ ...t, cardBg: v }))} />
-                      <ColorRow label="Text Color" value={theme.ink} onChange={(v) => setTheme((t) => ({ ...t, ink: v }))} />
-                      <ColorRow label="Muted Text" value={theme.muted} onChange={(v) => setTheme((t) => ({ ...t, muted: v }))} />
-                      <ColorRow label="Border Line" value={theme.line} onChange={(v) => setTheme((t) => ({ ...t, line: v }))} />
-                      <ColorRow label="Accent" value={theme.accent} onChange={(v) => setTheme((t) => ({ ...t, accent: v }))} />
+                      <Panel title="Customization (Advanced)" subtitle="Theme ko readable & visible banao">
+                        <ColorRow label="App Background" value={theme.appBg} onChange={(v) => setTheme((t) => ({ ...t, appBg: v }))} />
+                        <ColorRow label="Paper Background" value={theme.paperBg} onChange={(v) => setTheme((t) => ({ ...t, paperBg: v }))} />
+                        <ColorRow label="Card Background" value={theme.cardBg} onChange={(v) => setTheme((t) => ({ ...t, cardBg: v }))} />
+                        <ColorRow label="Text Color" value={theme.ink} onChange={(v) => setTheme((t) => ({ ...t, ink: v }))} />
+                        <ColorRow label="Muted Text" value={theme.muted} onChange={(v) => setTheme((t) => ({ ...t, muted: v }))} />
+                        <ColorRow label="Border Line" value={theme.line} onChange={(v) => setTheme((t) => ({ ...t, line: v }))} />
+                        <ColorRow label="Accent" value={theme.accent} onChange={(v) => setTheme((t) => ({ ...t, accent: v }))} />
 
-                      <RangeRow label="Radius" min={10} max={24} value={theme.radius} onChange={(v) => setTheme((t) => ({ ...t, radius: v }))} />
-                      <RangeRow label="Spacing" min={10} max={28} value={theme.spacing} onChange={(v) => setTheme((t) => ({ ...t, spacing: v }))} />
-                      <RangeRow label="Font Size" min={13} max={19} value={theme.fontSize} onChange={(v) => setTheme((t) => ({ ...t, fontSize: v }))} />
-                      <RangeRow label="Card Shadow" min={0} max={30} value={theme.cardShadow} onChange={(v) => setTheme((t) => ({ ...t, cardShadow: v }))} />
-                      <RangeRow
-                        label="Card Opacity"
-                        min={60}
-                        max={100}
-                        value={Math.round(theme.cardOpacity * 100)}
-                        onChange={(v) => setTheme((t) => ({ ...t, cardOpacity: v / 100 }))}
-                      />
+                        <RangeRow label="Radius" min={10} max={24} value={theme.radius} onChange={(v) => setTheme((t) => ({ ...t, radius: v }))} />
+                        <RangeRow label="Spacing" min={10} max={28} value={theme.spacing} onChange={(v) => setTheme((t) => ({ ...t, spacing: v }))} />
+                        <RangeRow label="Font Size" min={13} max={19} value={theme.fontSize} onChange={(v) => setTheme((t) => ({ ...t, fontSize: v }))} />
+                        <RangeRow label="Card Shadow" min={0} max={30} value={theme.cardShadow} onChange={(v) => setTheme((t) => ({ ...t, cardShadow: v }))} />
+                        <RangeRow
+                          label="Card Opacity"
+                          min={60}
+                          max={100}
+                          value={Math.round(theme.cardOpacity * 100)}
+                          onChange={(v) => setTheme((t) => ({ ...t, cardOpacity: v / 100 }))}
+                        />
 
-                      <SelectRow
-                        label="Density"
-                        value={theme.density}
-                        onChange={(v) => setTheme((t) => ({ ...t, density: v }))}
-                        options={[
-                          ["compact", "Compact"],
-                          ["comfortable", "Comfortable"],
-                          ["spacious", "Spacious"],
-                        ]}
-                      />
+                        <SelectRow
+                          label="Density"
+                          value={theme.density}
+                          onChange={(v) => setTheme((t) => ({ ...t, density: v }))}
+                          options={[
+                            ["compact", "Compact"],
+                            ["comfortable", "Comfortable"],
+                            ["spacious", "Spacious"],
+                          ]}
+                        />
 
-                      <SelectRow
-                        label="Header Style"
-                        value={theme.headerStyle}
-                        onChange={(v) => setTheme((t) => ({ ...t, headerStyle: v }))}
-                        options={[
-                          ["clean", "Clean"],
-                          ["accent", "Accent"],
-                          ["minimal", "Minimal"],
-                        ]}
-                      />
+                        <SelectRow
+                          label="Header Style"
+                          value={theme.headerStyle}
+                          onChange={(v) => setTheme((t) => ({ ...t, headerStyle: v }))}
+                          options={[
+                            ["clean", "Clean"],
+                            ["accent", "Accent"],
+                            ["minimal", "Minimal"],
+                          ]}
+                        />
 
-                      <SelectRow
-                        label="Skills Style"
-                        value={theme.skillsStyle}
-                        onChange={(v) => setTheme((t) => ({ ...t, skillsStyle: v }))}
-                        options={[
-                          ["badges", "Badges"],
-                          ["chips", "Chips"],
-                          ["minimal", "Minimal"],
-                        ]}
-                      />
+                        <SelectRow
+                          label="Skills Style"
+                          value={theme.skillsStyle}
+                          onChange={(v) => setTheme((t) => ({ ...t, skillsStyle: v }))}
+                          options={[
+                            ["badges", "Badges"],
+                            ["chips", "Chips"],
+                            ["minimal", "Minimal"],
+                          ]}
+                        />
 
-                      <SelectRow
-                        label="Section Titles"
-                        value={theme.sectionTitleCase}
-                        onChange={(v) => setTheme((t) => ({ ...t, sectionTitleCase: v }))}
-                        options={[
-                          ["title", "Title Case"],
-                          ["upper", "UPPERCASE"],
-                        ]}
-                      />
+                        <SelectRow
+                          label="Section Titles"
+                          value={theme.sectionTitleCase}
+                          onChange={(v) => setTheme((t) => ({ ...t, sectionTitleCase: v }))}
+                          options={[
+                            ["title", "Title Case"],
+                            ["upper", "UPPERCASE"],
+                          ]}
+                        />
 
-                      <ToggleRow label="Show dividers" checked={theme.showDividers} onChange={(v) => setTheme((t) => ({ ...t, showDividers: v }))} />
+                        <ToggleRow
+                          label="Show dividers"
+                          checked={theme.showDividers}
+                          onChange={(v) => setTheme((t) => ({ ...t, showDividers: v }))}
+                        />
 
-                      <div className="mt-3 text-xs text-slate-300">
-                        Best look: <b>Paper = White</b> + <b>Card = Light</b> + <b>Medium shadow</b>
-                      </div>
-                    </Panel>
+                        <div className="mt-3 text-xs text-slate-300">
+                          Best look: <b>Paper = White</b> + <b>Card = Light</b> + <b>Medium shadow</b>
+                        </div>
+                      </Panel>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </DragDropContext>
+            </DragDropContext>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* ------------------ Sidebar Button (Professional) ------------------ */
+      {/* ✅ SAME ANIMATIONS (NAVY) */}
+      <style>{`
+        .sidebar{
+          background: #0f172a;
+          color: #f8fafc;
+          display:flex;
+          flex-direction:column;
+          padding: 24px 16px;
+          overflow:hidden;
+          transition: width .25s ease, padding .25s ease, opacity .25s ease;
+          z-index: 10;
+          width: 288px;
+        }
+        .sidebarOpen{ width: 288px; opacity:1; }
+        .sidebarClosed{ width: 86px; opacity:1; }
 
-function SideBtnPro({ label, icon, onClick, active, collapsed }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition
-        ${active ? "bg-slate-800 text-white" : "text-slate-200/90 hover:bg-slate-800/60"}`}
-      title={collapsed ? label : undefined}
-    >
-      <span className="w-8 text-center text-lg">{icon}</span>
-      {!collapsed && <span>{label}</span>}
-    </button>
+        .sfBlob{
+          position:absolute;
+          width: 560px;
+          height: 560px;
+          border-radius: 999px;
+          filter: blur(95px);
+          opacity: .34;
+          animation: sfFloat 14s ease-in-out infinite;
+          background: radial-gradient(circle at 30% 30%,
+            rgba(12, 42, 92, 0.65),
+            rgba(6, 22, 58, 0.35),
+            rgba(3, 12, 28, 0)
+          );
+        }
+        .sfBlob1{ left: -180px; top: -180px; }
+        .sfBlob2{
+          right: -220px; bottom: -260px;
+          width: 650px; height: 650px;
+          opacity: .28;
+          animation-duration: 18s;
+        }
+
+        .sfShimmer{
+          position:absolute;
+          inset:-2px;
+          pointer-events:none;
+          background:
+            linear-gradient(120deg,
+              rgba(3, 12, 28, 0) 0%,
+              rgba(12, 42, 92, 0.22) 45%,
+              rgba(3, 12, 28, 0) 70%
+            );
+          mix-blend-mode: multiply;
+          opacity: .55;
+          transform: translateX(-30%);
+          animation: sfSweep 6.5s ease-in-out infinite;
+        }
+
+        @keyframes sfFloat{
+          0%{ transform: translate(0px,0px) scale(1); }
+          50%{ transform: translate(32px,-28px) scale(1.06); }
+          100%{ transform: translate(0px,0px) scale(1); }
+        }
+        @keyframes sfSweep{
+          0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+          50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
+          100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+        }
+
+        .sfPre{ opacity: 0; transform: translateY(12px); }
+        .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
+        .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
+        .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
+
+        .sfPulseBorder{ position: relative; overflow: hidden; }
+        .sfPulseBorder::before{
+          content:"";
+          position:absolute;
+          inset:-1px;
+          border-radius: 18px;
+          background: linear-gradient(120deg,
+            rgba(8, 30, 68, 0.85),
+            rgba(12, 42, 92, 0.35),
+            rgba(8, 30, 68, 0.85)
+          );
+          opacity: .22;
+          filter: blur(10px);
+          pointer-events:none;
+          animation: sfBorderPulse 4.2s ease-in-out infinite;
+        }
+        .sfPulseBorder > * { position: relative; z-index: 1; }
+
+        @keyframes sfBorderPulse{
+          0%,100%{ opacity: .16; transform: scale(1); }
+          50%{ opacity: .36; transform: scale(1.01); }
+        }
+      `}</style>
+    </>
   );
 }
 
@@ -907,26 +1046,16 @@ function HeaderPro({ profile, theme, density, onPickPhoto, clearPhoto }) {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-black/40 flex items-center justify-center gap-2">
             <label className="px-3 py-1.5 rounded-lg bg-white/90 text-slate-900 text-xs font-extrabold cursor-pointer">
               Upload
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onPickPhoto(e.target.files?.[0])}
-              />
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickPhoto(e.target.files?.[0])} />
             </label>
-            <button
-              onClick={clearPhoto}
-              className="px-3 py-1.5 rounded-lg bg-rose-200 text-rose-900 text-xs font-extrabold"
-            >
+            <button onClick={clearPhoto} className="px-3 py-1.5 rounded-lg bg-rose-200 text-rose-900 text-xs font-extrabold">
               Remove
             </button>
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-3xl font-black tracking-tight text-slate-900">
-            {profile.name || "Your Name"}
-          </div>
+          <div className="text-3xl font-black tracking-tight text-slate-900">{profile.name || "Your Name"}</div>
           <div className="text-sm font-extrabold" style={{ color: theme.muted }}>
             {profile.role || "Full-Stack Developer"}
           </div>
@@ -981,21 +1110,12 @@ function SectionPreviewPro({ section, theme }) {
             <div
               key={i}
               className="rounded-xl p-3 transition hover:-translate-y-[1px]"
-              style={{
-                border: `1px solid ${theme.line}`,
-                background: "white",
-              }}
+              style={{ border: `1px solid ${theme.line}`, background: "white" }}
             >
               <div className="flex justify-between gap-3">
                 <div className="font-extrabold text-sm">{p.name}</div>
                 {p.link ? (
-                  <a
-                    href={p.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-extrabold"
-                    style={{ color: theme.accent }}
-                  >
+                  <a href={p.link} target="_blank" rel="noreferrer" className="text-xs font-extrabold" style={{ color: theme.accent }}>
                     View
                   </a>
                 ) : null}
@@ -1045,11 +1165,7 @@ function SectionPreviewPro({ section, theme }) {
 
           {section.data.repos?.length ? (
             section.data.repos.slice(0, 6).map((r, i) => (
-              <div
-                key={i}
-                className="rounded-xl p-3"
-                style={{ border: `1px solid ${theme.line}`, background: "white" }}
-              >
+              <div key={i} className="rounded-xl p-3" style={{ border: `1px solid ${theme.line}`, background: "white" }}>
                 <div className="flex justify-between gap-3">
                   <a href={r.url} target="_blank" rel="noreferrer" className="font-extrabold text-sm" style={{ color: theme.accent }}>
                     {r.name}
@@ -1077,11 +1193,7 @@ function SectionPreviewPro({ section, theme }) {
       return (
         <div className="grid gap-2">
           {section.data.items?.slice(0, 4)?.map((t, i) => (
-            <div
-              key={i}
-              className="rounded-xl p-3"
-              style={{ border: `1px solid ${theme.line}`, background: "white" }}
-            >
+            <div key={i} className="rounded-xl p-3" style={{ border: `1px solid ${theme.line}`, background: "white" }}>
               <div className="font-extrabold text-sm">{t.name}</div>
               <div className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>
                 “{t.quote}”
@@ -1092,7 +1204,11 @@ function SectionPreviewPro({ section, theme }) {
       );
 
     default:
-      return <div className="text-xs" style={{ color: muted }}>Preview unavailable.</div>;
+      return (
+        <div className="text-xs" style={{ color: muted }}>
+          Preview unavailable.
+        </div>
+      );
   }
 }
 
@@ -1172,17 +1288,9 @@ function SectionEditorPro({
         </div>
       )}
 
-      {section.templateId === "skills" && (
-        <SkillsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />
-      )}
-
-      {section.templateId === "projects" && (
-        <ProjectsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />
-      )}
-
-      {section.templateId === "testimonials" && (
-        <TestimonialsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />
-      )}
+      {section.templateId === "skills" && <SkillsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+      {section.templateId === "projects" && <ProjectsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+      {section.templateId === "testimonials" && <TestimonialsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
 
       {section.templateId === "github" && (
         <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
@@ -1192,8 +1300,9 @@ function SectionEditorPro({
           <button
             onClick={onFetchGithub}
             disabled={githubLoading}
-            className={`mt-3 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-900 transition shadow
-              ${githubLoading ? "bg-slate-500 cursor-not-allowed" : "bg-sky-300 hover:bg-sky-200"}`}
+            className={`mt-3 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-900 transition shadow ${
+              githubLoading ? "bg-slate-500 cursor-not-allowed" : "bg-sky-300 hover:bg-sky-200"
+            }`}
           >
             {githubLoading ? "Fetching..." : "Fetch GitHub Repos"}
           </button>
@@ -1244,11 +1353,7 @@ function SkillsEditorPro({ items, onChange }) {
             className="px-3 py-1.5 rounded-full bg-sky-400/20 border border-slate-700 text-xs font-extrabold text-sky-100 inline-flex items-center gap-2"
           >
             {s}
-            <button
-              onClick={() => onChange(items.filter((_, idx) => idx !== i))}
-              className="text-sky-100 hover:text-white transition font-black"
-              title="Remove"
-            >
+            <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-sky-100 hover:text-white transition font-black" title="Remove">
               ✕
             </button>
           </span>
@@ -1260,12 +1365,7 @@ function SkillsEditorPro({ items, onChange }) {
 
 function ProjectsEditorPro({ items, onChange }) {
   const add = () => onChange([{ name: "New Project", desc: "Write project description...", link: "" }, ...items]);
-
-  const updateItem = (index, patch) => {
-    const next = items.map((it, i) => (i === index ? { ...it, ...patch } : it));
-    onChange(next);
-  };
-
+  const updateItem = (index, patch) => onChange(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   const remove = (index) => onChange(items.filter((_, i) => i !== index));
 
   return (
@@ -1317,12 +1417,7 @@ function ProjectsEditorPro({ items, onChange }) {
 
 function TestimonialsEditorPro({ items, onChange }) {
   const add = () => onChange([{ name: "Name", quote: "Write testimonial..." }, ...items]);
-
-  const updateItem = (index, patch) => {
-    const next = items.map((it, i) => (i === index ? { ...it, ...patch } : it));
-    onChange(next);
-  };
-
+  const updateItem = (index, patch) => onChange(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   const remove = (index) => onChange(items.filter((_, i) => i !== index));
 
   return (
@@ -1369,7 +1464,7 @@ function TestimonialsEditorPro({ items, onChange }) {
 
 function Panel({ title, subtitle, children }) {
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white mb-4 shadow">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white mb-4 shadow sfPulseBorder">
       <div className="font-extrabold">{title}</div>
       {subtitle ? <div className="text-sm text-slate-300 mt-1 mb-3">{subtitle}</div> : null}
       {children}
@@ -1440,11 +1535,7 @@ function Field({ label, value, onChange }) {
   return (
     <div>
       <div className="text-xs font-extrabold text-slate-300 mb-2">{label}</div>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
-      />
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none" />
     </div>
   );
 }

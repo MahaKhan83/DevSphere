@@ -8,6 +8,15 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Portfolio from "./pages/Portfolio";
 import ShowcaseFeed from "./pages/ShowcaseFeed"; // ✅ create this page
+import CollaborationRoom from "./pages/CollaborationRoom";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
+import Features from "./pages/Features";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Support from "./pages/Support";
+
+
 
 import { AuthProvider } from "./context/AuthContext";
 import "react-toastify/dist/ReactToastify.css";
@@ -53,7 +62,43 @@ export default function App() {
                 <ShowcaseFeed />
               </ProtectedRoute>
             }
+            
           />
+           {/* ✅ Collaboration Room route */}
+          <Route
+  path="/collaboration"
+  element={
+    <ProtectedRoute>
+      <CollaborationRoom />
+    </ProtectedRoute>
+  }
+/>
+ {/* Notification page route */}
+ <Route
+  path="/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
+ {/* ✅ Settings page route */}
+ <Route
+  path="/settings"
+  element={
+    <ProtectedRoute>
+      <Settings />
+    </ProtectedRoute>
+  }
+/>
+{/* ✅ features page route */}
+<Route path="/features" element={<Features />} />
+{/* ✅ privacy page route */}
+<Route path="/privacy" element={<Privacy />} />
+{/* ✅ terms page route */}
+<Route path="/terms" element={<Terms />} />
+{/* ✅ support page route */}
+<Route path="/support" element={<Support />} />
         </Routes>
       </Router>
     </AuthProvider>

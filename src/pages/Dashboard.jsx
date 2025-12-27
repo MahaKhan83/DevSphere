@@ -5,138 +5,54 @@ import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { getDashboardData } from "../services/api";
 
-// ---------- Simple Icon Components ----------
-const IconWrap = ({ children }) => (
-  <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100">
-    {children}
-  </span>
-);
-
-const PortfolioIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 7h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-    <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+// ---------- Professional SVG Icons (ShowcaseFeed style) ----------
+const DashboardIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
   </svg>
 );
 
-const DashboardIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="7" height="9" rx="1" />
-    <rect x="14" y="3" width="7" height="5" rx="1" />
-    <rect x="14" y="11" width="7" height="10" rx="1" />
-    <rect x="3" y="15" width="7" height="6" rx="1" />
+const PortfolioIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
   </svg>
 );
 
 const CollabIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 5h9a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
-    <path d="M17 9h3a2 2 0 0 1 2 2v3l2 2v-2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-7" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
   </svg>
 );
 
 const ShowcaseIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="4" width="18" height="14" rx="2" />
-    <path d="M3 12h18" />
-    <path d="M8 20h8" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
   </svg>
 );
 
 const BellIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-
-const TeamsIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="8" cy="8" r="3" />
-    <circle cx="16" cy="8" r="3" />
-    <path d="M4 19a4 4 0 0 1 4-4" />
-    <path d="M12 19a4 4 0 0 1 4-4" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="4" width="18" height="17" rx="2" />
-    <path d="M8 2v4" />
-    <path d="M16 2v4" />
-    <path d="M3 10h18" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 2v3M17 2v3M3.5 7h17M3.5 4.5h17v17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-17ZM7.5 11h4M7.5 15h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
   </svg>
 );
 
 const SettingsIcon = () => (
-  <svg
-    className="w-4 h-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1.82v.08a2 2 0 1 1-4 0v-.08A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.82-.33h-.08a2 2 0 1 1 0-4h.08A1.65 1.65 0 0 0 4 9a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 5a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 5.93 2.6V2.5a2 2 0 1 1 4 0v.08A1.65 1.65 0 0 0 13 4.6a1.65 1.65 0 0 0 1-.6 1.65 1.65 0 0 0 .33-1.82V2.1a2 2 0 1 1 4 0v.08A1.65 1.65 0 0 0 19.4 5a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 23.4 9a1.65 1.65 0 0 0 .6 1 1.65 1.65 0 0 0 1.82.33h.08a2 2 0 1 1 0 4h-.08A1.65 1.65 0 0 0 23.4 15z" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
+);
+
+// ---------- Updated IconWrap Component (ShowcaseFeed style) ----------
+const IconWrap = ({ children }) => (
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+    {children}
+  </span>
 );
 
 // ---------- Reusable Nav Item ----------
@@ -185,6 +101,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      setLoading(true);
+
+      // ✅ Default projects (from your image)
+      const defaultProjects = [
+        { name: "Website redesign", progress: 75 },
+        { name: "Mobile app", progress: 25 },
+        { name: "Dashboard UI", progress: 50 },
+        { name: "Portfolio Builder", progress: 60 },
+        { name: "Collaboration Module", progress: 40 },
+        { name: "Notification System", progress: 30 },
+      ];
+
       try {
         const res = await getDashboardData();
 
@@ -210,24 +138,28 @@ const Dashboard = () => {
 
         setMeetings(
           res?.meetings ?? [
-            { title: "Introduction call", time: "08:00 – 08:50" },
+            { title: "Introduction call", time: "08:00 – 08:30" },
             { title: "Sprint planning", time: "14:00 – 15:00" },
           ]
         );
 
-        // ✅ Added more projects (so list is longer)
-        setProjects(
-          res?.projects ?? [
-            { name: "Website redesign", progress: 75 },
-            { name: "Mobile app", progress: 25 },
-            { name: "Dashboard UI", progress: 50 },
-            { name: "Portfolio Builder", progress: 60 },
-            { name: "Collaboration Module", progress: 40 },
-            { name: "Notification System", progress: 30 },
-          ]
-        );
+        // ✅ Always use default projects if API doesn't return any
+        if (res?.projects && Array.isArray(res.projects) && res.projects.length > 0) {
+          setProjects(res.projects);
+        } else {
+          setProjects(defaultProjects);
+        }
       } catch (e) {
         console.error(e);
+        // On error, use default projects
+        setProjects([
+          { name: "Website redesign", progress: 75 },
+          { name: "Mobile app", progress: 25 },
+          { name: "Dashboard UI", progress: 50 },
+          { name: "Portfolio Builder", progress: 60 },
+          { name: "Collaboration Module", progress: 40 },
+          { name: "Notification System", progress: 30 },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -245,7 +177,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* ✅ Page background = half-white / off-white */}
+      {/* ✅ Page background = off-white */}
       <div className="min-h-screen bg-slate-100 flex">
         {/* SIDEBAR (toggleable) */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
@@ -275,37 +207,31 @@ const Dashboard = () => {
               onClick={() => navigate("/portfolio")}
             />
             <NavItem
-              active={false}
-              icon={<CollabIcon />}
-              label="Collab rooms"
-              onClick={() => navigate("/rooms")}
-            />
+  active={location.pathname === "/collaboration"}
+  icon={<CollabIcon />}
+  label="Collab rooms"
+  onClick={() => navigate("/collaboration")}
+/>
             <NavItem
-              active={false}
+              active={location.pathname === "/showcase"}
               icon={<ShowcaseIcon />}
               label="Showcase feed"
               onClick={() => navigate("/showcase")}
             />
             <NavItem
-              active={false}
+              active={location.pathname === "/notifications"}
               icon={<BellIcon />}
               label="Notifications"
               onClick={() => navigate("/notifications")}
             />
             <NavItem
-              active={false}
+              active={location.pathname === "/calendar"}
               icon={<CalendarIcon />}
               label="Calendar"
               onClick={() => navigate("/calendar")}
             />
             <NavItem
-              active={false}
-              icon={<TeamsIcon />}
-              label="Teams"
-              onClick={() => navigate("/teams")}
-            />
-            <NavItem
-              active={false}
+              active={location.pathname === "/settings"}
               icon={<SettingsIcon />}
               label="Settings"
               onClick={() => navigate("/settings")}
@@ -391,13 +317,11 @@ const Dashboard = () => {
                           <p className="text-sm font-semibold text-slate-900">
                             {item.title}
                           </p>
-                          {/* ✅ darker desc */}
                           <p className="text-xs text-slate-800 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
 
-                        {/* ✅ visible time */}
                         <span className="text-xs text-slate-800 font-semibold whitespace-nowrap">
                           {item.time}
                         </span>
@@ -406,9 +330,9 @@ const Dashboard = () => {
                   </div>
                 </section>
 
-                {/* Recent Projects (✅ STRETCH FIX HERE) */}
+                {/* Recent Projects - FIXED SECTION */}
                 <section className="cardShell p-5 animate-cardIn delay-2 min-h-[420px]">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-slate-900">
                       Recent projects
                     </h2>
@@ -417,30 +341,63 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  {/* ✅ a bit more spacing so it looks taller */}
                   <div className="space-y-5">
-                    {projects.map((project, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => alert(`Open project: ${project.name}`)}
-                        className="w-full text-left rounded-xl p-3 hover:bg-slate-50 transition"
-                      >
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-slate-900 font-medium">
-                            {project.name}
-                          </span>
-                          <span className="text-slate-900 font-semibold">
-                            {project.progress}%
-                          </span>
+                    {projects.length > 0 ? (
+                      projects.map((project, idx) => (
+                        <div
+                          key={`${project.name}-${idx}`}
+                          className="w-full rounded-xl p-4 hover:bg-slate-50 transition border border-slate-200"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+                                <span className="text-sky-600 font-bold text-sm">
+                                  {project.name.charAt(0)}
+                                </span>
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-semibold text-slate-900">
+                                  {project.name}
+                                </h3>
+                                <p className="text-xs text-slate-600">
+                                  Last updated: Today
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-bold text-slate-900">
+                              {project.progress}%
+                            </span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-500 transition-all duration-500"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between mt-2">
+                            <span className="text-xs text-slate-600">
+                              Progress
+                            </span>
+                            <button
+                              onClick={() => alert(`Open project: ${project.name}`)}
+                              className="text-xs text-sky-600 hover:text-sky-700 font-medium"
+                            >
+                              View details →
+                            </button>
+                          </div>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-sky-500"
-                            style={{ width: `${project.progress}%` }}
-                          />
-                        </div>
-                      </button>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-slate-600">No projects yet</p>
+                        <button
+                          onClick={() => alert("Create new project")}
+                          className="mt-2 text-sm text-sky-600 hover:text-sky-700 font-medium"
+                        >
+                          + Create your first project
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </section>
               </div>
@@ -473,7 +430,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                         <button
-                          onClick={() => navigate("/rooms")}
+                          onClick={() => navigate("/collaboration")}
                           className="text-xs px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition"
                         >
                           Join
@@ -543,7 +500,7 @@ const Dashboard = () => {
                   </div>
                 </section>
 
-                {/* ✅ BLUE BOX below Showcase - SAME WIDTH */}
+                {/* CTA Box */}
                 <section className="ctaBox animate-cardIn delay-5">
                   <h3 className="ctaTitle">All your modules in one place</h3>
                   <p className="ctaDesc">
@@ -565,7 +522,7 @@ const Dashboard = () => {
 
       {/* Styles */}
       <style>{`
-        /* ✅ Sidebar show/hide */
+        /* Sidebar show/hide */
         .sidebar{
           background: #0f172a;
           color: #f8fafc;
@@ -578,7 +535,7 @@ const Dashboard = () => {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* ✅ Cards: Glowy gray + navy border + glow */
+        /* Cards */
         .cardShell{
           background: rgba(248,250,252,0.92);
           border-radius: 18px;
@@ -614,7 +571,7 @@ const Dashboard = () => {
             0 0 22px rgba(56,189,248,0.22);
         }
 
-        /* ✅ CTA Box: same width as Showcase */
+        /* CTA Box */
         .ctaBox{
           width: 100%;
           border-radius: 18px;
@@ -636,7 +593,7 @@ const Dashboard = () => {
         }
         .ctaBtn:hover{ transform: translateY(-2px); filter: brightness(0.98); }
 
-        /* ---- Animations ---- */
+        /* Animations */
         @keyframes pageIn { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: translateY(0);} }
         .animate-pageIn { animation: pageIn .55s cubic-bezier(.2,.8,.2,1) both; }
 
