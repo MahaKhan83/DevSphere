@@ -1,23 +1,66 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
 export default function Privacy() {
   const navigate = useNavigate();
 
+  const TOC = useMemo(
+    () => [
+      { id: "intro", title: "1. Introduction" },
+      { id: "collect", title: "2. Information We Collect" },
+      { id: "use", title: "3. How We Use Your Information" },
+      { id: "security", title: "4. Data Security" },
+      { id: "cookies", title: "5. Cookies" },
+      { id: "rights", title: "6. Your Rights" },
+      { id: "changes", title: "7. Changes to This Policy" },
+      { id: "contact", title: "8. Contact Us" },
+    ],
+    []
+  );
+
+  const [activeId, setActiveId] = useState("intro");
+  const [clickedId, setClickedId] = useState(null);
+
+  useEffect(() => {
+    const ids = TOC.map((t) => t.id);
+    const sections = ids.map((id) => document.getElementById(id)).filter(Boolean);
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0))[0];
+        if (visible?.target?.id) setActiveId(visible.target.id);
+      },
+      { root: null, rootMargin: "-30% 0px -60% 0px", threshold: [0.08, 0.12, 0.2, 0.35] }
+    );
+
+    sections.forEach((sec) => obs.observe(sec));
+    return () => obs.disconnect();
+  }, [TOC]);
+
+  const handleTocClick = (id) => {
+    setClickedId(id);
+    setTimeout(() => setClickedId(null), 260);
+
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveId(id);
+  };
+
   return (
     <div className="min-h-screen bg-[#eef3f7] relative overflow-hidden">
-      {/* ✅ BACKGROUND FX (same navy blue animations) */}
+      {/* ✅ BACKGROUND (STATIC — no moving animations) */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="sfBlob sfBlob1" />
-        <div className="sfBlob sfBlob2" />
-        <div className="sfBlob sfBlob3" />
-        <div className="pageShimmer" />
-        <div className="pageGrid" />
-        <div className="sfGrain" />
+        <div className="bgBlob bgBlob1" />
+        <div className="bgBlob bgBlob2" />
+        <div className="bgBlob bgBlob3" />
+        <div className="bgGridStatic" />
+        <div className="bgGrainStatic" />
       </div>
 
-      {/* HEADER (recommended) */}
+      {/* ✅ HEADER */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur shadow-lg">
         <div className="w-full px-6 md:px-10 py-3 flex items-center justify-between relative">
           {/* Left: Logo */}
@@ -25,7 +68,7 @@ export default function Privacy() {
             <img
               src={logo}
               alt="DevSphere"
-              className="w-10 h-10 md:w-11 md:h-11 object-contain transition-transform duration-500 hover:scale-110 hover:rotate-1"
+              className="w-10 h-10 md:w-11 md:h-11 object-contain"
             />
             <span className="text-white text-lg md:text-xl font-semibold tracking-wide">
               Dev<span className="text-cyan-300">Sphere</span>
@@ -34,315 +77,271 @@ export default function Privacy() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3">
+            {/* ✅ NEAT Back button (no arrow) */}
             <button
-              onClick={() => navigate(-1)}
-              className="px-4 py-2 rounded-full border border-white/20 text-white/90 hover:text-white hover:border-white/30 transition text-sm navyBtnGlowSoft"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center px-4 py-2 rounded-full
+                         bg-white/10 hover:bg-white/15
+                         border border-white/20 hover:border-white/30
+                         text-white text-sm font-medium
+                         transition"
             >
-              ← Back
+              Back
             </button>
 
             <button
               onClick={() => navigate("/login")}
-              className="px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-400 text-white text-sm font-medium shadow transition navyBtnGlow"
+              className="px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-400 text-white text-sm font-medium shadow transition"
             >
               Log in
             </button>
           </div>
 
-          {/* underline glow */}
-          <div className="navyGlowLine" />
+          {/* underline (static) */}
+          <div className="navyGlowLineStatic" />
         </div>
       </header>
 
-      {/* PAGE BODY */}
+      {/* ✅ PAGE BODY */}
       <div className="pt-28 md:pt-32 px-6 pb-10">
-        <div className="max-w-4xl mx-auto">
-          {/* ✅ Card (animated like notification theme) */}
-          <div className="policyCard bg-white/90 backdrop-blur rounded-3xl shadow-xl border border-slate-200 p-8 md:p-10 relative overflow-hidden">
-            {/* shimmer on card */}
-            <div className="cardShimmer" />
-
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 fadeUp-1">
+        <div className="max-w-6xl mx-auto">
+          {/* ✅ HERO (centered like screenshot) */}
+          <div className="text-center mb-14">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900">
               Privacy Policy
             </h1>
-            <p className="mt-3 text-slate-600 text-sm md:text-base fadeUp-2">
+            <p className="mt-4 text-lg md:text-xl text-slate-700">
+              How DevSphere handles your data
+            </p>
+            <p className="mt-3 text-sm text-slate-500">
               Last updated: {new Date().toLocaleDateString()}
             </p>
+          </div>
 
-            {/* Content */}
-            <div className="mt-8 space-y-7 text-slate-700 leading-relaxed fadeUp-3">
-              <section className="sectionPop">
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  1. Introduction
-                </h2>
-                <p>
-                  Welcome to <strong>DevSphere</strong>. Your privacy matters to
-                  us. This policy explains how we collect, use, and protect your
-                  information when you use our developer collaboration and
-                  portfolio platform.
-                </p>
-              </section>
+          {/* ✅ Two-column layout (content + sticky TOC) */}
+          <div className="grid lg:grid-cols-[1fr_340px] gap-8 items-start">
+            {/* LEFT: Main Card */}
+            <div className="bg-white/90 backdrop-blur rounded-3xl shadow-xl border border-slate-200 p-8 md:p-10 relative overflow-hidden">
+              {/* ✅ Mobile TOC */}
+              <div className="lg:hidden">
+                <div className="tocBox rounded-2xl border border-slate-200 bg-white/80 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Table of Contents
+                    </h2>
+                    <span className="text-xs text-slate-500">Tap to jump</span>
+                  </div>
 
-              <section className="sectionPop" style={{ animationDelay: "80ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  2. Information We Collect
-                </h2>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Name, email address, and account credentials</li>
-                  <li>Profile details and portfolio content you add</li>
-                  <li>Usage data (pages visited, actions performed)</li>
-                </ul>
-              </section>
+                  <div className="mt-4 grid sm:grid-cols-2 gap-2">
+                    {TOC.map((item) => {
+                      const isActive = activeId === item.id;
+                      const isClicked = clickedId === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleTocClick(item.id)}
+                          className={[
+                            "w-full text-left rounded-xl px-4 py-3",
+                            "border bg-white hover:bg-slate-50 transition",
+                            isActive ? "border-sky-300 ring-2 ring-sky-200/60" : "border-slate-200",
+                            isClicked ? "tocClicked" : "",
+                          ].join(" ")}
+                        >
+                          <span className="text-slate-800 font-medium">
+                            {item.title}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
-              <section className="sectionPop" style={{ animationDelay: "160ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  3. How We Use Your Information
-                </h2>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>To provide and improve DevSphere services</li>
-                  <li>To enable collaboration features and portfolio sharing</li>
-                  <li>To send important updates and security notifications</li>
-                </ul>
-              </section>
+              {/* ✅ Content */}
+              <div className="mt-8 space-y-7 text-slate-700 leading-relaxed">
+                <section id="intro" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    1. Introduction
+                  </h2>
+                  <p>
+                    Welcome to <strong>DevSphere</strong>. Your privacy matters to us.
+                    This policy explains how we collect, use, and protect your information
+                    when you use our developer collaboration and portfolio platform.
+                  </p>
+                </section>
 
-              <section className="sectionPop" style={{ animationDelay: "240ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  4. Data Security
-                </h2>
-                <p>
-                  We use reasonable security measures to protect your data.
-                  However, no system can be guaranteed 100% secure.
-                </p>
-              </section>
+                <section id="collect" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    2. Information We Collect
+                  </h2>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Name, email address, and account credentials</li>
+                    <li>Profile details and portfolio content you add</li>
+                    <li>Usage data (pages visited, actions performed)</li>
+                  </ul>
+                </section>
 
-              <section className="sectionPop" style={{ animationDelay: "320ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  5. Cookies
-                </h2>
-                <p>
-                  DevSphere may use cookies to enhance user experience and
-                  improve platform performance. You can disable cookies in your
-                  browser settings.
-                </p>
-              </section>
+                <section id="use" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    3. How We Use Your Information
+                  </h2>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>To provide and improve DevSphere services</li>
+                    <li>To enable collaboration features and portfolio sharing</li>
+                    <li>To send important updates and security notifications</li>
+                  </ul>
+                </section>
 
-              <section className="sectionPop" style={{ animationDelay: "400ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  6. Your Rights
-                </h2>
-                <p>
-                  You can access, update, or delete your personal data. You can
-                  also request account deletion via DevSphere support.
-                </p>
-              </section>
+                <section id="security" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    4. Data Security
+                  </h2>
+                  <p>
+                    We use reasonable security measures to protect your data. However,
+                    no system can be guaranteed 100% secure.
+                  </p>
+                </section>
 
-              <section className="sectionPop" style={{ animationDelay: "480ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  7. Changes to This Policy
-                </h2>
-                <p>
-                  We may update this policy occasionally. Changes will appear
-                  here with a new revision date.
-                </p>
-              </section>
+                <section id="cookies" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    5. Cookies
+                  </h2>
+                  <p>
+                    DevSphere may use cookies to enhance user experience and improve
+                    platform performance. You can disable cookies in your browser settings.
+                  </p>
+                </section>
 
-              <section className="sectionPop" style={{ animationDelay: "560ms" }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">
-                  8. Contact Us
-                </h2>
-                <p>Questions? Contact us through the DevSphere support page.</p>
-              </section>
+                <section id="rights" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    6. Your Rights
+                  </h2>
+                  <p>
+                    You can access, update, or delete your personal data. You can also
+                    request account deletion via DevSphere support.
+                  </p>
+                </section>
+
+                <section id="changes" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    7. Changes to This Policy
+                  </h2>
+                  <p>
+                    We may update this policy occasionally. Changes will appear here with a
+                    new revision date.
+                  </p>
+                </section>
+
+                <section id="contact" className="scrollMT">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                    8. Contact Us
+                  </h2>
+                  <p>Questions? Contact us through the DevSphere support page.</p>
+                </section>
+              </div>
+
+              <div className="mt-10">
+                {/* ✅ no arrow */}
+                <Link
+                  to="/"
+                  className="inline-flex items-center text-sky-600 hover:text-sky-700 font-medium transition"
+                >
+                  Back to Home
+                </Link>
+              </div>
             </div>
 
-            {/* Bottom link */}
-            <div className="mt-10 fadeUp-4 relative">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 text-sky-600 hover:text-sky-700 font-medium transition navyLink"
-              >
-                ← Back to Home
-              </Link>
-            </div>
+            {/* RIGHT: Sticky TOC (desktop) */}
+            <aside className="hidden lg:block stickyTOC">
+              <div className="tocBox rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    Table of Contents
+                  </h2>
+                  <span className="text-sm text-slate-500">Jump</span>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {TOC.map((item) => {
+                    const isActive = activeId === item.id;
+                    const isClicked = clickedId === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleTocClick(item.id)}
+                        className={[
+                          "w-full text-left rounded-xl px-4 py-3",
+                          "border bg-white hover:bg-slate-50 transition",
+                          isActive ? "border-sky-300 ring-2 ring-sky-200/60" : "border-slate-200",
+                          isClicked ? "tocClicked" : "",
+                        ].join(" ")}
+                      >
+                        <span className="text-slate-800 font-medium">
+                          {item.title}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 text-xs text-slate-500">
+                  Tip: Contents stays visible while you scroll.
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>
 
-      {/* ✅ CSS (same navy blue background + card animations) */}
+      {/* ✅ CSS (STATIC) */}
       <style>{`
-        /* ---------- Entry (like your landing/features) ---------- */
-        @keyframes fadeUp {
-          0% { opacity: 0; transform: translateY(22px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .fadeUp-1 { animation: fadeUp .8s ease-out forwards; }
-        .fadeUp-2 { animation: fadeUp 1s ease-out forwards; }
-        .fadeUp-3 { animation: fadeUp 1.2s ease-out forwards; }
-        .fadeUp-4 { animation: fadeUp 1.4s ease-out forwards; }
+        .scrollMT { scroll-margin-top: 110px; }
 
-        @keyframes cardIn {
-          0% { opacity: 0; transform: translateY(16px) scale(.99); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .policyCard{
-          animation: cardIn .75s cubic-bezier(.2,.9,.2,1) forwards;
-          transition: transform .25s ease, box-shadow .25s ease;
-        }
-        .policyCard:hover{
-          transform: translateY(-6px);
-          box-shadow:
-            0 18px 45px rgba(12,42,92,.16),
-            0 0 0 1px rgba(12,42,92,.08);
+        .stickyTOC{
+          position: sticky;
+          top: 118px;
+          align-self: start;
+          height: fit-content;
         }
 
-        /* sections pop (subtle) */
-        @keyframes softPop {
-          0% { opacity: 0; transform: translateY(10px); }
-          100% { opacity: 1; transform: translateY(0); }
+        /* Small click feedback only */
+        @keyframes tocTap {
+          0% { transform: scale(1); }
+          40% { transform: scale(0.985); }
+          100% { transform: scale(1); }
         }
-        .sectionPop{
-          opacity: 0;
-          animation: softPop .65s ease-out forwards;
-        }
-        .fadeUp-3 .sectionPop{ opacity: 1; } /* in case browser optimizes */
-        .sectionPop{ animation-delay: 40ms; }
-        .sectionPop:nth-child(2){ animation-delay: 120ms; }
-        .sectionPop:nth-child(3){ animation-delay: 200ms; }
-        .sectionPop:nth-child(4){ animation-delay: 280ms; }
-        .sectionPop:nth-child(5){ animation-delay: 360ms; }
-        .sectionPop:nth-child(6){ animation-delay: 440ms; }
-        .sectionPop:nth-child(7){ animation-delay: 520ms; }
-        .sectionPop:nth-child(8){ animation-delay: 600ms; }
+        .tocClicked{ animation: tocTap .26s ease-out; }
 
-        /* ---------- Card shimmer (navy) ---------- */
-        .cardShimmer{
-          position:absolute;
-          inset:-2px;
-          background:linear-gradient(120deg,
-            rgba(12,42,92,0) 0%,
-            rgba(12,42,92,.14) 38%,
-            rgba(56,189,248,.10) 50%,
-            rgba(12,42,92,0) 72%
-          );
-          transform:translateX(-60%) skewX(-10deg);
-          opacity:.45;
-          pointer-events:none;
-          animation: shimmerSweep 6.2s ease-in-out infinite;
-          mix-blend-mode: multiply;
-        }
-        @keyframes shimmerSweep{
-          0%{ transform:translateX(-70%) skewX(-10deg); }
-          50%{ transform:translateX(55%) skewX(-10deg); }
-          100%{ transform:translateX(-70%) skewX(-10deg); }
-        }
-
-        /* ---------- Header underline glow ---------- */
-        .navyGlowLine{
+        .navyGlowLineStatic{
           position:absolute;
           left:0; right:0; bottom:-1px;
           height:2px;
           background: linear-gradient(90deg,
             rgba(12,42,92,0) 0%,
-            rgba(12,42,92,0.85) 30%,
-            rgba(56,189,248,0.65) 50%,
-            rgba(12,42,92,0.85) 70%,
+            rgba(12,42,92,0.75) 30%,
+            rgba(56,189,248,0.55) 50%,
+            rgba(12,42,92,0.75) 70%,
             rgba(12,42,92,0) 100%
           );
-          animation: glowSweep 3.8s ease-in-out infinite;
-        }
-        @keyframes glowSweep{
-          0%{ opacity:.25; transform: translateX(-18%); }
-          50%{ opacity:.85; transform: translateX(18%); }
-          100%{ opacity:.25; transform: translateX(-18%); }
+          opacity:.9;
         }
 
-        /* ---------- Buttons glow (same vibe) ---------- */
-        .navyBtnGlow, .navyBtnGlowSoft{ position:relative; overflow:hidden; }
-        .navyBtnGlow::after{
-          content:"";
-          position:absolute; inset:-2px;
-          background:linear-gradient(90deg,
-            rgba(12,42,92,0),
-            rgba(56,189,248,.22),
-            rgba(12,42,92,0)
-          );
-          transform:translateX(-70%);
-          animation: btnSheen 3.8s ease-in-out infinite;
-          pointer-events:none;
-        }
-        .navyBtnGlowSoft::after{
-          content:"";
-          position:absolute; inset:-2px;
-          background:linear-gradient(90deg,
-            rgba(12,42,92,0),
-            rgba(12,42,92,.22),
-            rgba(12,42,92,0)
-          );
-          transform:translateX(-70%);
-          animation: btnSheen 4.4s ease-in-out infinite;
-          pointer-events:none;
-        }
-        @keyframes btnSheen{
-          0%{ transform:translateX(-70%); }
-          50%{ transform:translateX(70%); }
-          100%{ transform:translateX(-70%); }
-        }
-
-        .navyLink{ position:relative; }
-        .navyLink::after{
-          content:"";
-          position:absolute;
-          left:0; bottom:-6px;
-          width:100%; height:2px;
-          background:linear-gradient(90deg, rgba(12,42,92,0), rgba(56,189,248,.65), rgba(12,42,92,0));
-          opacity:.0;
-          transition:opacity .25s ease;
-        }
-        .navyLink:hover::after{ opacity:.9; }
-
-        /* ---------- PAGE BACKGROUND (navy animated) ---------- */
-        .sfBlob{
+        .bgBlob{
           position:absolute;
           border-radius:999px;
           filter: blur(95px);
-          opacity:.50;
+          opacity:.42;
           background: radial-gradient(circle at 30% 30%,
-            rgba(12,42,92,.9),
-            rgba(6,22,58,.55),
+            rgba(12,42,92,.85),
+            rgba(6,22,58,.45),
             rgba(3,12,28,0)
           );
-          animation: sfFloat 14s ease-in-out infinite;
         }
-        .sfBlob1{ left:-240px; top:-260px; width:720px; height:720px; }
-        .sfBlob2{ right:-280px; bottom:-320px; width:780px; height:780px; opacity:.42; animation-duration:18s; }
-        .sfBlob3{ left:22%; bottom:-360px; width:720px; height:720px; opacity:.28; animation-duration:22s; }
-        @keyframes sfFloat{
-          0%{ transform:translate(0,0) scale(1); }
-          50%{ transform:translate(50px,-35px) scale(1.08); }
-          100%{ transform:translate(0,0) scale(1); }
-        }
+        .bgBlob1{ left:-240px; top:-260px; width:720px; height:720px; }
+        .bgBlob2{ right:-280px; bottom:-320px; width:780px; height:780px; opacity:.30; }
+        .bgBlob3{ left:22%; bottom:-360px; width:720px; height:720px; opacity:.22; }
 
-        .pageShimmer{
-          position:absolute;
-          inset:-40px;
-          background:linear-gradient(120deg,
-            rgba(12,42,92,0) 0%,
-            rgba(12,42,92,.18) 40%,
-            rgba(56,189,248,.10) 52%,
-            rgba(12,42,92,0) 74%
-          );
-          transform: translateX(-60%) skewX(-10deg);
-          opacity:.55;
-          animation: pageSweep 6.2s ease-in-out infinite;
-          mix-blend-mode: multiply;
-        }
-        @keyframes pageSweep{
-          0%{ transform:translateX(-70%) skewX(-10deg); }
-          50%{ transform:translateX(60%) skewX(-10deg); }
-          100%{ transform:translateX(-70%) skewX(-10deg); }
-        }
-
-        .pageGrid{
+        .bgGridStatic{
           position:absolute;
           inset:0;
           opacity:.10;
@@ -350,14 +349,9 @@ export default function Privacy() {
             linear-gradient(to right, rgba(12,42,92,.25) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(12,42,92,.25) 1px, transparent 1px);
           background-size: 64px 64px;
-          animation: gridMove 18s linear infinite;
-        }
-        @keyframes gridMove{
-          0%{ transform: translate3d(0,0,0); }
-          100%{ transform: translate3d(64px,64px,0); }
         }
 
-        .sfGrain{
+        .bgGrainStatic{
           position:absolute;
           inset:0;
           opacity:.10;
