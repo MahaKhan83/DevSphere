@@ -42,6 +42,12 @@ const SettingsIcon = () => (
   </svg>
 );
 
+const PlugIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M8 2h2v6h4V2h2v6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6h-1v4H9v-4H8a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2h2V2Zm-4 10a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4v-2H4v2Z" />
+  </svg>
+);
+
 /* ---------- Sidebar UI helpers ---------- */
 const IconWrap = ({ children }) => (
   <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
@@ -155,8 +161,16 @@ export default function Settings() {
     { id: "security", label: "Security" },
     { id: "notifications", label: "Notifications" },
     { id: "appearance", label: "Appearance" },
+    { id: "integrations", label: "Integrations" }, // ✅ ADDED
   ];
+
   const [activeTab, setActiveTab] = useState("profile");
+
+  // ✅ If Dashboard sends: state: { tab: "integrations" }, open that tab
+  useEffect(() => {
+    const incoming = location?.state?.tab;
+    if (incoming) setActiveTab(incoming);
+  }, [location?.state?.tab]);
 
   // Demo state
   const [profile, setProfile] = useState({
@@ -188,6 +202,35 @@ export default function Settings() {
     theme: "Light",
     density: "Comfortable",
   });
+
+  /* =========================
+     ✅ Integrations: GitHub
+     Simple username connect (FYP friendly)
+  ========================= */
+  const [githubUsername, setGithubUsername] = useState(() => {
+    const fromUser = user?.githubUsername || "";
+    const fromLocal = localStorage.getItem("devsphere_github_username") || "";
+    const fromProfileField = (profile.github || "").replace("https://github.com/", "").replace("github.com/", "");
+    return fromUser || fromLocal || fromProfileField || "";
+  });
+
+  const githubConnected = !!localStorage.getItem("devsphere_github_username");
+
+  const connectGitHub = () => {
+    const u = (githubUsername || "").trim().replace("https://github.com/", "").replace("github.com/", "");
+    if (!u) {
+      toast.error("Please enter a GitHub username.");
+      return;
+    }
+    localStorage.setItem("devsphere_github_username", u);
+    toast.success("GitHub connected ✅ (username saved)");
+  };
+
+  const disconnectGitHub = () => {
+    localStorage.removeItem("devsphere_github_username");
+    setGithubUsername("");
+    toast.info("GitHub disconnected");
+  };
 
   // ✅ App routes sidebar (same as Notifications.jsx)
   const NAV_ITEMS = [
@@ -512,6 +555,76 @@ export default function Settings() {
                   </div>
                 </SectionShell>
               )}
+
+              {/* ✅ NEW: Integrations Tab */}
+              {activeTab === "integrations" && (
+                <SectionShell
+                  title="Integrations"
+                  desc="Connect external tools like GitHub (DevSphere requirement)."
+                >
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 md:p-5 sfCardHover">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+                          <PlugIcon />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">GitHub</p>
+                          <p className="text-xs text-slate-600 mt-1">
+                            Username connect karein — Dashboard GitHub card isi se data show karega.
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          githubConnected
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-white text-slate-700 border border-slate-200"
+                        }`}
+                      >
+                        {githubConnected ? "Connected" : "Not connected"}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2">
+                        <Input
+                          label="GitHub Username"
+                          value={githubUsername}
+                          onChange={(e) => setGithubUsername(e.target.value)}
+                          placeholder="e.g. octocat"
+                        />
+                        <p className="text-xs text-slate-500 mt-2">
+                          Tip: username paste karein, URL nahi. (OAuth later add kar sakte hain)
+                        </p>
+                      </div>
+
+                      <div className="flex md:flex-col gap-2">
+                        <button
+                          onClick={connectGitHub}
+                          className="w-full px-4 py-2.5 rounded-xl bg-sky-500 text-white text-sm font-extrabold hover:bg-sky-400 transition sfShineBtn"
+                        >
+                          Connect
+                        </button>
+                        <button
+                          onClick={disconnectGitHub}
+                          className="w-full px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-extrabold hover:bg-slate-800 transition sfShineBtn"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 text-xs text-slate-500">
+                    <span className="font-semibold text-slate-700">Note:</span> Abhi username localStorage me save ho raha hai:
+                    <code className="ml-2 px-2 py-1 rounded bg-white border border-slate-200">
+                      devsphere_github_username
+                    </code>
+                  </div>
+                </SectionShell>
+              )}
             </div>
 
             {/* RIGHT COLUMN */}
@@ -610,7 +723,6 @@ export default function Settings() {
           animation: sfSweep 6.5s ease-in-out infinite;
         }
 
-        /* ✅ Extra subtle layers */
         .sfGrid{
           position:absolute;
           inset:0;
@@ -684,19 +796,14 @@ export default function Settings() {
           50%{ opacity: .36; transform: scale(1.01); }
         }
 
-        /* ✅ Extra Navy Animations (subtle & professional) */
-        .sfCardHover {
-          transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
-        }
+        .sfCardHover { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
         .sfCardHover:hover {
           transform: translateY(-2px);
           box-shadow: 0 18px 40px rgba(2, 6, 23, 0.12);
           border-color: rgba(12, 42, 92, 0.25);
         }
 
-        .sfBrandGlow {
-          position: relative;
-        }
+        .sfBrandGlow { position: relative; }
         .sfBrandGlow::after {
           content: "";
           position: absolute;
@@ -717,11 +824,7 @@ export default function Settings() {
           50% { opacity: .45; transform: scale(1.02); }
         }
 
-        /* Save button subtle shine */
-        .sfShineBtn {
-          position: relative;
-          overflow: hidden;
-        }
+        .sfShineBtn { position: relative; overflow: hidden; }
         .sfShineBtn::after{
           content:"";
           position:absolute;
@@ -742,15 +845,9 @@ export default function Settings() {
           opacity: 1;
           animation: sfShineSweep 1.1s ease;
         }
-        @keyframes sfShineSweep{
-          0%{ left:-60%; }
-          100%{ left:140%; }
-        }
+        @keyframes sfShineSweep{ 0%{ left:-60%; } 100%{ left:140%; } }
 
-        /* Tabs underline shimmer */
-        .sfTabActive {
-          position: relative;
-        }
+        .sfTabActive { position: relative; }
         .sfTabActive::after{
           content:"";
           position:absolute;

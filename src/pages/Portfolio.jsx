@@ -5,81 +5,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
+import "./Portfolio.css";
 
-/**
- * DevSphere – Portfolio Builder (Dashboard + Navy Animations)
- * ✅ Same DevSphere sidebar (like Notifications/Settings)
- * ✅ Navy blue animated background + shimmer + border pulse
- * ✅ Sidebar collapse/expand
- * ✅ Smooth entry animations
- * ✅ Fixed route: /collaboration
- */
-
-const STORAGE_KEY = "devsphere_portfolio_builder_v8";
-
-/* ------------------ Section Templates ------------------ */
-
-const SECTION_TEMPLATES = [
-  {
-    id: "about",
-    title: "About",
-    icon: "📝",
-    data: {
-      headline: "Professional Summary",
-      text:
-        "I’m a full-stack developer focused on building clean, scalable web applications using the MERN stack. I enjoy solving real problems, designing smooth user experiences, and collaborating with teams.",
-    },
-  },
-  {
-    id: "projects",
-    title: "Projects",
-    icon: "💼",
-    data: {
-      headline: "Projects",
-      items: [
-        {
-          name: "DevSphere",
-          desc:
-            "Developer Collaboration & Portfolio Platform with portfolio builder, showcase feed, and real-time rooms.",
-          link: "",
-        },
-        {
-          name: "Portfolio UI",
-          desc:
-            "Modern responsive portfolio with reusable components, clean typography, and optimized layout.",
-          link: "",
-        },
-      ],
-    },
-  },
-  {
-    id: "skills",
-    title: "Skills",
-    icon: "🧠",
-    data: {
-      headline: "Skills",
-      items: ["React", "Node.js", "MongoDB", "Express", "Tailwind CSS", "Git/GitHub"],
-    },
-  },
-  {
-    id: "github",
-    title: "GitHub Repos",
-    icon: "🐙",
-    data: { headline: "GitHub Repositories", username: "octocat", repos: [] },
-  },
-  {
-    id: "testimonials",
-    title: "Testimonials",
-    icon: "💬",
-    data: {
-      headline: "Testimonials",
-      items: [
-        { name: "Teammate", quote: "Very reliable, communicates well, and delivers quality work." },
-        { name: "Mentor", quote: "Strong fundamentals, clean code style, and great growth mindset." },
-      ],
-    },
-  },
-];
+const STORAGE_KEY = "devsphere_portfolio_builder_v9";
 
 /* ------------------ Helpers ------------------ */
 
@@ -90,18 +18,6 @@ function reorder(list, startIndex, endIndex) {
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
-}
-
-function cloneTemplate(templateId) {
-  const t = SECTION_TEMPLATES.find((x) => x.id === templateId);
-  if (!t) return null;
-  return {
-    instanceId: `${t.id}-${uid()}`,
-    templateId: t.id,
-    title: t.title,
-    icon: t.icon,
-    data: JSON.parse(JSON.stringify(t.data)),
-  };
 }
 
 function withOpacity(hex, opacity) {
@@ -165,7 +81,195 @@ const DEFAULT_THEME = {
   sectionTitleCase: "title",
 };
 
-/* ------------------ Sidebar Icons (Professional) ------------------ */
+/* ------------------ Professional Icons (SVG) ------------------ */
+
+const Svg = ({ children }) => (
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {children}
+  </svg>
+);
+
+const AboutI = () => (
+  <Svg>
+    <path d="M20 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10l6 6v10a2 2 0 0 1-2 2Z" />
+    <path d="M14 3v6h6" />
+    <path d="M8 13h8" />
+    <path d="M8 17h6" />
+  </Svg>
+);
+
+const ProjectsI = () => (
+  <Svg>
+    <path d="M10 6h10" />
+    <path d="M10 12h10" />
+    <path d="M10 18h10" />
+    <path d="M4 6h.01" />
+    <path d="M4 12h.01" />
+    <path d="M4 18h.01" />
+  </Svg>
+);
+
+const SkillsI = () => (
+  <Svg>
+    <path d="M12 2l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5L4.8 7.3l5-.7L12 2z" />
+  </Svg>
+);
+
+const GithubI = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 .5C5.73.5.75 5.48.75 11.75c0 4.86 3.16 8.98 7.55 10.43.55.1.75-.24.75-.53v-1.9c-3.07.67-3.72-1.31-3.72-1.31-.5-1.28-1.22-1.62-1.22-1.62-1-.68.08-.67.08-.67 1.11.08 1.7 1.14 1.7 1.14.98 1.68 2.57 1.2 3.2.92.1-.71.38-1.2.69-1.47-2.45-.28-5.02-1.22-5.02-5.43 0-1.2.43-2.18 1.14-2.95-.11-.28-.5-1.4.11-2.92 0 0 .93-.3 3.04 1.13.88-.24 1.82-.36 2.76-.36.94 0 1.88.12 2.76.36 2.11-1.43 3.04-1.13 3.04-1.13.61 1.52.22 2.64.11 2.92.71.77 1.14 1.75 1.14 2.95 0 4.22-2.58 5.15-5.04 5.42.39.33.74 1 .74 2.02v2.99c0 .29.2.64.76.53 4.39-1.45 7.54-5.57 7.54-10.43C23.25 5.48 18.27.5 12 .5Z" />
+  </svg>
+);
+
+const TestimonialsI = () => (
+  <Svg>
+    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
+    <path d="M8 9h8" />
+    <path d="M8 13h6" />
+  </Svg>
+);
+
+const ExperienceI = () => (
+  <Svg>
+    <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <path d="M4 7h16a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2Z" />
+    <path d="M9 13h6" />
+  </Svg>
+);
+
+const EducationI = () => (
+  <Svg>
+    <path d="M22 10L12 5 2 10l10 5 10-5Z" />
+    <path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" />
+  </Svg>
+);
+
+const ICONS = {
+  about: <AboutI />,
+  projects: <ProjectsI />,
+  skills: <SkillsI />,
+  github: <GithubI />,
+  testimonials: <TestimonialsI />,
+  experience: <ExperienceI />,
+  education: <EducationI />,
+};
+
+/* ------------------ Section Templates (NO EMOJIS) ------------------ */
+
+const SECTION_TEMPLATES = [
+  {
+    id: "about",
+    title: "About",
+    iconKey: "about",
+    data: {
+      headline: "Professional Summary",
+      text:
+        "I’m a full-stack developer focused on building clean, scalable web applications using the MERN stack. I enjoy solving real problems, designing smooth user experiences, and collaborating with teams.",
+    },
+  },
+  {
+    id: "experience",
+    title: "Experience",
+    iconKey: "experience",
+    data: {
+      headline: "Work Experience",
+      items: [
+        {
+          role: "Frontend Developer (Intern)",
+          company: "DevSphere Labs",
+          period: "Jun 2025 — Aug 2025",
+          details: "Built reusable UI components, improved UX flows, and integrated REST APIs using React.",
+        },
+      ],
+    },
+  },
+  {
+    id: "education",
+    title: "Education",
+    iconKey: "education",
+    data: {
+      headline: "Education",
+      items: [
+        {
+          degree: "BS Software Engineering",
+          institute: "Your University",
+          year: "2022 — 2026",
+          details: "Final Year Project: DevSphere – Developer Collaboration & Portfolio Platform",
+        },
+      ],
+    },
+  },
+  {
+    id: "projects",
+    title: "Projects",
+    iconKey: "projects",
+    data: {
+      headline: "Projects",
+      items: [
+        {
+          name: "DevSphere",
+          desc: "Developer Collaboration & Portfolio Platform with portfolio builder, showcase feed, and real-time rooms.",
+          link: "",
+        },
+        {
+          name: "Portfolio UI",
+          desc: "Modern responsive portfolio with reusable components, clean typography, and optimized layout.",
+          link: "",
+        },
+      ],
+    },
+  },
+  {
+    id: "skills",
+    title: "Skills",
+    iconKey: "skills",
+    data: {
+      headline: "Skills",
+      items: ["React", "Node.js", "MongoDB", "Express", "Tailwind CSS", "Git/GitHub"],
+    },
+  },
+  {
+    id: "github",
+    title: "GitHub Repos",
+    iconKey: "github",
+    data: { headline: "GitHub Repositories", username: "octocat", repos: [] },
+  },
+  {
+    id: "testimonials",
+    title: "Testimonials",
+    iconKey: "testimonials",
+    data: {
+      headline: "Testimonials",
+      items: [
+        { name: "Teammate", quote: "Very reliable, communicates well, and delivers quality work." },
+        { name: "Mentor", quote: "Strong fundamentals, clean code style, and great growth mindset." },
+      ],
+    },
+  },
+];
+
+/* ------------------ Clone Template ------------------ */
+
+function cloneTemplate(templateId) {
+  const t = SECTION_TEMPLATES.find((x) => x.id === templateId);
+  if (!t) return null;
+  return {
+    instanceId: `${t.id}-${uid()}`,
+    templateId: t.id,
+    title: t.title,
+    iconKey: t.iconKey,
+    data: JSON.parse(JSON.stringify(t.data)),
+  };
+}
+/* ------------------ Sidebar Icons (App Nav) ------------------ */
 
 const DashboardIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -199,7 +303,7 @@ const BellIcon = () => (
 
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.0 0 0 1 0 7.5Z" />
   </svg>
 );
 
@@ -213,9 +317,7 @@ const NavItem = ({ active, icon, label, onClick, collapsed }) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
-      active
-        ? "bg-slate-800 text-slate-50 font-semibold"
-        : "text-slate-200/90 hover:bg-slate-800/60"
+      active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
     }`}
     title={collapsed ? label : undefined}
   >
@@ -237,6 +339,8 @@ export default function Portfolio() {
   const [sections, setSections] = useState(() =>
     [
       cloneTemplate("about"),
+      cloneTemplate("experience"),
+      cloneTemplate("education"),
       cloneTemplate("projects"),
       cloneTemplate("skills"),
       cloneTemplate("github"),
@@ -252,6 +356,7 @@ export default function Portfolio() {
   const [githubError, setGithubError] = useState("");
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [rightTab, setRightTab] = useState("sections"); // sections | editor | theme
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -263,6 +368,10 @@ export default function Portfolio() {
     () => sections.find((s) => s.instanceId === selectedInstanceId) || null,
     [sections, selectedInstanceId]
   );
+
+  useEffect(() => {
+    if (selectedInstanceId) setRightTab("editor");
+  }, [selectedInstanceId]);
 
   useEffect(() => {
     if (!user) return;
@@ -289,13 +398,16 @@ export default function Portfolio() {
       if (parsed?.profile) setProfile((p) => ({ ...p, ...parsed.profile }));
       if (parsed?.theme) setTheme((t) => ({ ...t, ...parsed.theme }));
       if (typeof parsed?.sidebarOpen === "boolean") setSidebarOpen(parsed.sidebarOpen);
+      if (parsed?.rightTab) setRightTab(parsed.rightTab);
     } catch (e) {
       console.warn("Failed to load builder state:", e);
     }
   }, []);
-
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections, profile, theme, sidebarOpen }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ sections, profile, theme, sidebarOpen, rightTab })
+    );
     toast("Saved successfully ✅");
   };
 
@@ -303,6 +415,8 @@ export default function Portfolio() {
     setSections(
       [
         cloneTemplate("about"),
+        cloneTemplate("experience"),
+        cloneTemplate("education"),
         cloneTemplate("projects"),
         cloneTemplate("skills"),
         cloneTemplate("github"),
@@ -313,11 +427,14 @@ export default function Portfolio() {
       ...DEFAULT_PROFILE,
       name: user?.name || "",
       email: user?.email || "",
-      portfolioSlug: user?.name?.toLowerCase().replace(/\s+/g, "-") || (user?.email ? user.email.split("@")[0] : ""),
+      portfolioSlug:
+        user?.name?.toLowerCase().replace(/\s+/g, "-") ||
+        (user?.email ? user.email.split("@")[0] : ""),
     }));
     setTheme(DEFAULT_THEME);
     setSelectedInstanceId(null);
     setSidebarOpen(true);
+    setRightTab("sections");
     localStorage.removeItem(STORAGE_KEY);
     toast("Reset done ✅");
   };
@@ -336,12 +453,18 @@ export default function Portfolio() {
     const { source, destination } = result;
     if (!destination) return;
 
-    if (source.droppableId === "preview" && destination.droppableId === "preview") {
+    if (
+      source.droppableId === "preview" &&
+      destination.droppableId === "preview"
+    ) {
       setSections((prev) => reorder(prev, source.index, destination.index));
       return;
     }
 
-    if (source.droppableId === "available" && destination.droppableId === "preview") {
+    if (
+      source.droppableId === "available" &&
+      destination.droppableId === "preview"
+    ) {
       const template = available[source.index];
       const newInstance = cloneTemplate(template.id);
       if (!newInstance) return;
@@ -351,6 +474,8 @@ export default function Portfolio() {
         copy.splice(destination.index, 0, newInstance);
         return copy;
       });
+      setSelectedInstanceId(newInstance.instanceId);
+      setRightTab("editor");
     }
   };
 
@@ -360,7 +485,9 @@ export default function Portfolio() {
 
   const shareLink = useMemo(() => {
     const slug = (profile.portfolioSlug || "my-portfolio").trim();
-    return `${window.location.origin}/portfolio/view?u=${encodeURIComponent(slug)}`;
+    return `${window.location.origin}/portfolio/view?u=${encodeURIComponent(
+      slug
+    )}`;
   }, [profile.portfolioSlug]);
 
   const copyShareLink = async () => {
@@ -386,7 +513,9 @@ export default function Portfolio() {
         return;
       }
 
-      const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=10`);
+      const res = await fetch(
+        `https://api.github.com/users/${username}/repos?sort=updated&per_page=10`
+      );
       if (!res.ok) throw new Error("GitHub API error");
 
       const repos = await res.json();
@@ -464,7 +593,7 @@ export default function Portfolio() {
       <div
         className="min-h-screen w-full app-shell"
         style={{
-          background: theme.appBg,
+          background: "#eef2f6",
           fontFamily: theme.font,
           fontSize: theme.fontSize,
           color: theme.ink,
@@ -472,26 +601,34 @@ export default function Portfolio() {
       >
         <style>{printCss}</style>
 
-        {/* ✅ Navy animated background */}
-        <div className="pointer-events-none fixed inset-0">
-          <div className="sfBlob sfBlob1" />
-          <div className="sfBlob sfBlob2" />
-          <div className="sfShimmer" />
-        </div>
-
+        {/* Navy animated background */}
+        <div className="sfBg">
+  <div className="sfBlob sfBlob1" />
+  <div className="sfBlob sfBlob2" />
+  <div className="sfShimmer" />
+  <div className="sfGrid" />
+  <div className="sfGrain" />
+</div>
+        
+          
         <div className="min-h-screen w-full flex relative">
-          {/* ✅ LEFT APP SIDEBAR */}
-          <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"} no-print`}>
+          {/* LEFT SIDEBAR */}
+          <aside
+            className={`sidebar ${
+              sidebarOpen ? "sidebarOpen" : "sidebarClosed"
+            } no-print`}
+          >
             <div className="flex items-center gap-3 px-2 mb-8">
-              {/* ✅ FIXED: require removed */}
               <img
                 src={logo}
                 alt="DevSphere"
                 className="w-10 h-10 object-contain drop-shadow-md"
               />
-              <span className="text-xl font-semibold">
-                Dev<span className="text-cyan-300">Sphere</span>
-              </span>
+              {sidebarOpen && (
+                <span className="text-xl font-semibold text-white">
+                  Dev<span className="text-cyan-300">Sphere</span>
+                </span>
+              )}
             </div>
 
             <nav className="flex-1 space-y-2">
@@ -508,16 +645,24 @@ export default function Portfolio() {
             </nav>
 
             <div className="mt-6 flex items-center gap-3 px-2">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold overflow-hidden text-white">
                 {profile.photo ? (
-                  <img src={profile.photo} alt="User" className="w-full h-full object-cover" />
+                  <img
+                    src={profile.photo}
+                    alt="User"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  (profile.name || user?.name || user?.email || "U").trim().slice(0, 1).toUpperCase()
+                  (profile.name || user?.name || user?.email || "U")
+                    .trim()
+                    .slice(0, 1)
+                    .toUpperCase()
                 )}
               </div>
+
               {sidebarOpen && (
                 <div>
-                  <p className="text-sm font-medium truncate max-w-[140px]">
+                  <p className="text-sm font-medium truncate max-w-[140px] text-white">
                     {profile.name || user?.name || user?.email || "Guest"}
                   </p>
                   <p className="text-xs text-slate-300">Signed in</p>
@@ -528,9 +673,13 @@ export default function Portfolio() {
 
           {/* MAIN */}
           <div className="flex-1 min-w-0">
-            {/* ✅ TOP BAR */}
+            {/* TOP BAR */}
             <div className="no-print sticky top-0 z-40 w-full bg-slate-900/90 backdrop-blur border-b border-slate-800">
-              <div className={`px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 ${mounted ? "sfIn" : "sfPre"}`}>
+              <div
+                className={`px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 ${
+                  mounted ? "sfIn" : "sfPre"
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSidebarOpen((v) => !v)}
@@ -541,14 +690,23 @@ export default function Portfolio() {
                   </button>
 
                   <div>
-                    <h1 className="text-white font-bold text-lg tracking-wide">Build Portfolio</h1>
-                    <div className="text-xs text-slate-300">Drag sections • Customize • Export PDF</div>
+                    <h1 className="text-white font-bold text-lg tracking-wide">
+                      Build Portfolio
+                    </h1>
+                    <div className="text-xs text-slate-300">
+                      Drag sections • Customize • Export PDF
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setTheme((t) => ({ ...t, viewMode: t.viewMode === "A4" ? "FULL" : "A4" }))}
+                    onClick={() =>
+                      setTheme((t) => ({
+                        ...t,
+                        viewMode: t.viewMode === "A4" ? "FULL" : "A4",
+                      }))
+                    }
                     className="px-4 py-2 rounded-full text-xs font-semibold border border-slate-700 bg-white/5 text-white hover:bg-white/10 transition"
                     title="Toggle A4 / Full width"
                   >
@@ -595,12 +753,14 @@ export default function Portfolio() {
                     <div className="lg:col-span-8">
                       <div
                         ref={printRef}
-                        className="paper mx-auto overflow-hidden sfPulseBorder"
+                        className="paper settingsCard w-auto  overflow-hidden sfPulseBorder"
                         style={{
                           background: theme.paperBg,
                           borderRadius: theme.radius,
                           border: `1px solid ${theme.line}`,
-                          boxShadow: `0 ${theme.cardShadow}px ${theme.cardShadow * 2.3}px rgba(0,0,0,0.22)`,
+                          boxShadow: `0 ${theme.cardShadow}px ${
+                            theme.cardShadow * 2.3
+                          }px rgba(0,0,0,0.22)`,
                           width: isA4 ? "210mm" : "100%",
                           maxWidth: "100%",
                         }}
@@ -615,12 +775,19 @@ export default function Portfolio() {
                           />
 
                           {theme.showDividers ? (
-                            <div style={{ marginTop: density.gap, borderTop: `1px solid ${theme.line}` }} />
+                            <div
+                              style={{
+                                marginTop: density.gap,
+                                borderTop: `1px solid ${theme.line}`,
+                              }}
+                            />
                           ) : null}
 
                           {/* Share Link */}
                           <div className="no-print mt-5">
-                            <div className="text-xs font-extrabold text-slate-600">Shareable Portfolio Link</div>
+                            <div className="text-xs font-extrabold text-slate-600">
+                              Shareable Portfolio Link
+                            </div>
                             <div className="mt-2 flex gap-2">
                               <input
                                 value={shareLink}
@@ -637,10 +804,17 @@ export default function Portfolio() {
                             </div>
 
                             <div className="mt-3">
-                              <div className="text-xs font-extrabold text-slate-600 mb-1">Slug</div>
+                              <div className="text-xs font-extrabold text-slate-600 mb-1">
+                                Slug
+                              </div>
                               <input
                                 value={profile.portfolioSlug}
-                                onChange={(e) => setProfile((p) => ({ ...p, portfolioSlug: e.target.value }))}
+                                onChange={(e) =>
+                                  setProfile((p) => ({
+                                    ...p,
+                                    portfolioSlug: e.target.value,
+                                  }))
+                                }
                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none text-sm"
                               />
                             </div>
@@ -656,43 +830,71 @@ export default function Portfolio() {
                                   className="grid transition-all"
                                   style={{
                                     gap: density.gap,
-                                    outline: snapshot.isDraggingOver ? `2px dashed ${theme.accent}` : "none",
+                                    outline: snapshot.isDraggingOver
+                                      ? `2px dashed ${theme.accent}`
+                                      : "none",
                                     borderRadius: 14,
                                     padding: 2,
                                   }}
                                 >
                                   {sections.map((sec, index) => (
-                                    <Draggable key={sec.instanceId} draggableId={sec.instanceId} index={index}>
+                                    <Draggable
+                                      key={sec.instanceId}
+                                      draggableId={sec.instanceId}
+                                      index={index}
+                                    >
                                       {(prov, snap) => (
-                                        <div ref={prov.innerRef} {...prov.draggableProps} style={{ ...prov.draggableProps.style }}>
+                                        <div
+                                          ref={prov.innerRef}
+                                          {...prov.draggableProps}
+                                          style={{ ...prov.draggableProps.style }}
+                                        >
                                           <div
-                                            onClick={() => setSelectedInstanceId(sec.instanceId)}
+                                            onClick={() =>
+                                              setSelectedInstanceId(sec.instanceId)
+                                            }
                                             className={`group cursor-pointer transition-all ${
-                                              selectedInstanceId === sec.instanceId ? "ring-2 ring-sky-300/50" : ""
+                                              selectedInstanceId === sec.instanceId
+                                                ? "ring-2 ring-sky-300/50"
+                                                : ""
                                             }`}
                                             style={{
                                               border: `1px solid ${theme.line}`,
                                               borderRadius: theme.radius,
                                               padding: density.pad * 0.9,
-                                              background: withOpacity(theme.cardBg, theme.cardOpacity),
+                                              background: withOpacity(
+                                                theme.cardBg,
+                                                theme.cardOpacity
+                                              ),
                                               boxShadow: snap.isDragging
                                                 ? "0 14px 34px rgba(15, 23, 42, 0.16)"
                                                 : "0 10px 25px rgba(15, 23, 42, 0.06)",
-                                              transform: snap.isDragging ? "scale(1.01)" : "scale(1)",
-                                              transition: "transform .18s ease, box-shadow .18s ease",
+                                              transform: snap.isDragging
+                                                ? "scale(1.01)"
+                                                : "scale(1)",
+                                              transition:
+                                                "transform .18s ease, box-shadow .18s ease",
                                               outlineColor: theme.accent,
                                             }}
                                           >
                                             <div className="flex justify-between items-start gap-3">
                                               <div className="flex items-center gap-3">
                                                 <div
-                                                  className="w-9 h-9 rounded-xl grid place-items-center font-black"
-                                                  style={{ background: "rgba(56,189,248,0.16)" }}
+                                                  className="w-9 h-9 rounded-xl grid place-items-center"
+                                                  style={{
+                                                    background:
+                                                      "rgba(56,189,248,0.16)",
+                                                    color: theme.ink,
+                                                  }}
                                                 >
-                                                  {sec.icon}
+                                                  {ICONS[sec.iconKey] || <AboutI />}
                                                 </div>
+
                                                 <div className="font-extrabold text-sm text-slate-900">
-                                                  {formatTitle(sec.data.headline || sec.title, theme.sectionTitleCase)}
+                                                  {formatTitle(
+                                                    sec.data.headline || sec.title,
+                                                    theme.sectionTitleCase
+                                                  )}
                                                 </div>
                                               </div>
 
@@ -718,7 +920,10 @@ export default function Portfolio() {
                                             </div>
 
                                             <div className="mt-3">
-                                              <SectionPreviewPro section={sec} theme={theme} />
+                                              <SectionPreviewPro
+                                                section={sec}
+                                                theme={theme}
+                                              />
                                             </div>
                                           </div>
                                         </div>
@@ -736,162 +941,249 @@ export default function Portfolio() {
                           </div>
                         </div>
                       </div>
-
-                      {/* Editor Panel */}
-                      <div className={`no-print mt-5 ${mounted ? "sfIn3" : "sfPre"}`}>
-                        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white shadow sfPulseBorder">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="font-extrabold">Edit Section</div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={save}
-                                className="px-4 py-2 rounded-xl text-xs font-extrabold bg-emerald-400/20 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-400/30 transition"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={reset}
-                                className="px-4 py-2 rounded-xl text-xs font-extrabold bg-white/5 text-white border border-slate-700 hover:bg-white/10 transition"
-                              >
-                                Reset
-                              </button>
-                            </div>
-                          </div>
-
-                          {!selectedSection ? (
-                            <div className="mt-2 text-sm text-slate-300">
-                              Preview me section pe click karo, yahan edit hoga.
-                            </div>
-                          ) : (
-                            <div className="mt-4">
-                              <SectionEditorPro
-                                section={selectedSection}
-                                onChange={(updated) => {
-                                  setSections((prev) =>
-                                    prev.map((s) => (s.instanceId === updated.instanceId ? updated : s))
-                                  );
-                                }}
-                                profile={profile}
-                                setProfile={setProfile}
-                                onPickPhoto={onPickPhoto}
-                                clearPhoto={clearPhoto}
-                                onFetchGithub={fetchGithubRepos}
-                                githubLoading={githubLoading}
-                                githubError={githubError}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
                     </div>
 
-                    {/* RIGHT PANEL */}
+                    {/* RIGHT PANEL (TABS SYSTEM) */}
                     <div className="lg:col-span-4 no-print">
-                      <Panel title="Available Sections" subtitle="Drag and drop into the preview">
-                        <Droppable droppableId="available" isDropDisabled={true}>
-                          {(provided) => (
-                            <div ref={provided.innerRef} {...provided.droppableProps} className="grid gap-2">
-                              {available.map((item, index) => (
-                                <Draggable key={item.id} draggableId={item.id} index={index}>
-                                  {(prov, snap) => (
-                                    <div
-                                      ref={prov.innerRef}
-                                      {...prov.draggableProps}
-                                      {...prov.dragHandleProps}
-                                      className={`flex items-center gap-3 p-3 rounded-xl border border-slate-700/60 transition ${
-                                        snap.isDragging ? "bg-sky-500/20" : "bg-white/5 hover:bg-white/10"
-                                      }`}
-                                      style={{ ...prov.draggableProps.style }}
-                                    >
-                                      <div className="w-10 h-10 rounded-xl grid place-items-center font-black bg-sky-400/20 text-sky-200">
-                                        {item.icon}
+                      <div className="sfTabs">
+                        <button
+                          className={`sfTab ${
+                            rightTab === "sections" ? "sfTabActive" : ""
+                          }`}
+                          onClick={() => setRightTab("sections")}
+                        >
+                          Sections
+                        </button>
+                        <button
+                          className={`sfTab ${
+                            rightTab === "editor" ? "sfTabActive" : ""
+                          }`}
+                          onClick={() => setRightTab("editor")}
+                        >
+                          Editor
+                        </button>
+                        <button
+                          className={`sfTab ${
+                            rightTab === "theme" ? "sfTabActive" : ""
+                          }`}
+                          onClick={() => setRightTab("theme")}
+                        >
+                          Theme
+                        </button>
+                      </div>
+
+                      {rightTab === "sections" && (
+                        <Panel title="Available Sections" subtitle="Drag and drop into the preview">
+                          <Droppable droppableId="available" isDropDisabled={true}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className="grid gap-2"
+                              >
+                                {available.map((item, index) => (
+                                  <Draggable
+                                    key={item.id}
+                                    draggableId={item.id}
+                                    index={index}
+                                  >
+                                    {(prov, snap) => (
+                                      <div
+                                        ref={prov.innerRef}
+                                        {...prov.draggableProps}
+                                        {...prov.dragHandleProps}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border border-slate-700/60 transition ${
+                                          snap.isDragging
+                                            ? "bg-sky-500/20"
+                                            : "bg-white/5 hover:bg-white/10"
+                                        }`}
+                                        style={{ ...prov.draggableProps.style }}
+                                      >
+                                        <div className="w-10 h-10 rounded-xl grid place-items-center bg-sky-400/20 text-sky-200">
+                                          {ICONS[item.iconKey] || <AboutI />}
+                                        </div>
+                                        <div className="font-extrabold text-sm text-white">
+                                          {item.title}
+                                        </div>
+                                        <div className="ml-auto opacity-70">⠿</div>
                                       </div>
-                                      <div className="font-extrabold text-sm text-white">{item.title}</div>
-                                      <div className="ml-auto opacity-70">⠿</div>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </Panel>
+                      )}
+
+                      {rightTab === "editor" && (
+                        <Panel title="Edit Section" subtitle="Preview me section pe click karo">
+                          {!selectedSection ? (
+                            <div className="text-sm text-slate-300">
+                              Preview me section select karo, yahan edit hoga.
                             </div>
+                          ) : (
+                            <SectionEditorPro
+                              section={selectedSection}
+                              onChange={(updated) => {
+                                setSections((prev) =>
+                                  prev.map((s) =>
+                                    s.instanceId === updated.instanceId ? updated : s
+                                  )
+                                );
+                              }}
+                              profile={profile}
+                              setProfile={setProfile}
+                              onPickPhoto={onPickPhoto}
+                              clearPhoto={clearPhoto}
+                              onFetchGithub={fetchGithubRepos}
+                              githubLoading={githubLoading}
+                              githubError={githubError}
+                            />
                           )}
-                        </Droppable>
-                      </Panel>
+                        </Panel>
+                      )}
 
-                      <Panel title="Customization (Advanced)" subtitle="Theme ko readable & visible banao">
-                        <ColorRow label="App Background" value={theme.appBg} onChange={(v) => setTheme((t) => ({ ...t, appBg: v }))} />
-                        <ColorRow label="Paper Background" value={theme.paperBg} onChange={(v) => setTheme((t) => ({ ...t, paperBg: v }))} />
-                        <ColorRow label="Card Background" value={theme.cardBg} onChange={(v) => setTheme((t) => ({ ...t, cardBg: v }))} />
-                        <ColorRow label="Text Color" value={theme.ink} onChange={(v) => setTheme((t) => ({ ...t, ink: v }))} />
-                        <ColorRow label="Muted Text" value={theme.muted} onChange={(v) => setTheme((t) => ({ ...t, muted: v }))} />
-                        <ColorRow label="Border Line" value={theme.line} onChange={(v) => setTheme((t) => ({ ...t, line: v }))} />
-                        <ColorRow label="Accent" value={theme.accent} onChange={(v) => setTheme((t) => ({ ...t, accent: v }))} />
+                      {rightTab === "theme" && (
+                        <Panel title="Customization (Advanced)" subtitle="Theme ko readable & visible banao">
+                          <ColorRow
+                            label="App Background"
+                            value={theme.appBg}
+                            onChange={(v) => setTheme((t) => ({ ...t, appBg: v }))}
+                          />
+                          <ColorRow
+                            label="Paper Background"
+                            value={theme.paperBg}
+                            onChange={(v) => setTheme((t) => ({ ...t, paperBg: v }))}
+                          />
+                          <ColorRow
+                            label="Card Background"
+                            value={theme.cardBg}
+                            onChange={(v) => setTheme((t) => ({ ...t, cardBg: v }))}
+                          />
+                          <ColorRow
+                            label="Text Color"
+                            value={theme.ink}
+                            onChange={(v) => setTheme((t) => ({ ...t, ink: v }))}
+                          />
+                          <ColorRow
+                            label="Muted Text"
+                            value={theme.muted}
+                            onChange={(v) => setTheme((t) => ({ ...t, muted: v }))}
+                          />
+                          <ColorRow
+                            label="Border Line"
+                            value={theme.line}
+                            onChange={(v) => setTheme((t) => ({ ...t, line: v }))}
+                          />
+                          <ColorRow
+                            label="Accent"
+                            value={theme.accent}
+                            onChange={(v) => setTheme((t) => ({ ...t, accent: v }))}
+                          />
 
-                        <RangeRow label="Radius" min={10} max={24} value={theme.radius} onChange={(v) => setTheme((t) => ({ ...t, radius: v }))} />
-                        <RangeRow label="Spacing" min={10} max={28} value={theme.spacing} onChange={(v) => setTheme((t) => ({ ...t, spacing: v }))} />
-                        <RangeRow label="Font Size" min={13} max={19} value={theme.fontSize} onChange={(v) => setTheme((t) => ({ ...t, fontSize: v }))} />
-                        <RangeRow label="Card Shadow" min={0} max={30} value={theme.cardShadow} onChange={(v) => setTheme((t) => ({ ...t, cardShadow: v }))} />
-                        <RangeRow
-                          label="Card Opacity"
-                          min={60}
-                          max={100}
-                          value={Math.round(theme.cardOpacity * 100)}
-                          onChange={(v) => setTheme((t) => ({ ...t, cardOpacity: v / 100 }))}
-                        />
+                          <RangeRow
+                            label="Radius"
+                            min={10}
+                            max={24}
+                            value={theme.radius}
+                            onChange={(v) => setTheme((t) => ({ ...t, radius: v }))}
+                          />
+                          <RangeRow
+                            label="Spacing"
+                            min={10}
+                            max={28}
+                            value={theme.spacing}
+                            onChange={(v) => setTheme((t) => ({ ...t, spacing: v }))}
+                          />
+                          <RangeRow
+                            label="Font Size"
+                            min={13}
+                            max={19}
+                            value={theme.fontSize}
+                            onChange={(v) => setTheme((t) => ({ ...t, fontSize: v }))}
+                          />
+                          <RangeRow
+                            label="Card Shadow"
+                            min={0}
+                            max={30}
+                            value={theme.cardShadow}
+                            onChange={(v) => setTheme((t) => ({ ...t, cardShadow: v }))}
+                          />
+                          <RangeRow
+                            label="Card Opacity"
+                            min={60}
+                            max={100}
+                            value={Math.round(theme.cardOpacity * 100)}
+                            onChange={(v) =>
+                              setTheme((t) => ({ ...t, cardOpacity: v / 100 }))
+                            }
+                          />
 
-                        <SelectRow
-                          label="Density"
-                          value={theme.density}
-                          onChange={(v) => setTheme((t) => ({ ...t, density: v }))}
-                          options={[
-                            ["compact", "Compact"],
-                            ["comfortable", "Comfortable"],
-                            ["spacious", "Spacious"],
-                          ]}
-                        />
+                          <SelectRow
+                            label="Density"
+                            value={theme.density}
+                            onChange={(v) => setTheme((t) => ({ ...t, density: v }))}
+                            options={[
+                              ["compact", "Compact"],
+                              ["comfortable", "Comfortable"],
+                              ["spacious", "Spacious"],
+                            ]}
+                          />
 
-                        <SelectRow
-                          label="Header Style"
-                          value={theme.headerStyle}
-                          onChange={(v) => setTheme((t) => ({ ...t, headerStyle: v }))}
-                          options={[
-                            ["clean", "Clean"],
-                            ["accent", "Accent"],
-                            ["minimal", "Minimal"],
-                          ]}
-                        />
+                          <SelectRow
+                            label="Header Style"
+                            value={theme.headerStyle}
+                            onChange={(v) =>
+                              setTheme((t) => ({ ...t, headerStyle: v }))
+                            }
+                            options={[
+                              ["clean", "Clean"],
+                              ["accent", "Accent"],
+                              ["minimal", "Minimal"],
+                            ]}
+                          />
 
-                        <SelectRow
-                          label="Skills Style"
-                          value={theme.skillsStyle}
-                          onChange={(v) => setTheme((t) => ({ ...t, skillsStyle: v }))}
-                          options={[
-                            ["badges", "Badges"],
-                            ["chips", "Chips"],
-                            ["minimal", "Minimal"],
-                          ]}
-                        />
+                          <SelectRow
+                            label="Skills Style"
+                            value={theme.skillsStyle}
+                            onChange={(v) =>
+                              setTheme((t) => ({ ...t, skillsStyle: v }))
+                            }
+                            options={[
+                              ["badges", "Badges"],
+                              ["chips", "Chips"],
+                              ["minimal", "Minimal"],
+                            ]}
+                          />
 
-                        <SelectRow
-                          label="Section Titles"
-                          value={theme.sectionTitleCase}
-                          onChange={(v) => setTheme((t) => ({ ...t, sectionTitleCase: v }))}
-                          options={[
-                            ["title", "Title Case"],
-                            ["upper", "UPPERCASE"],
-                          ]}
-                        />
+                          <SelectRow
+                            label="Section Titles"
+                            value={theme.sectionTitleCase}
+                            onChange={(v) =>
+                              setTheme((t) => ({ ...t, sectionTitleCase: v }))
+                            }
+                            options={[
+                              ["title", "Title Case"],
+                              ["upper", "UPPERCASE"],
+                            ]}
+                          />
 
-                        <ToggleRow
-                          label="Show dividers"
-                          checked={theme.showDividers}
-                          onChange={(v) => setTheme((t) => ({ ...t, showDividers: v }))}
-                        />
+                          <ToggleRow
+                            label="Show dividers"
+                            checked={theme.showDividers}
+                            onChange={(v) =>
+                              setTheme((t) => ({ ...t, showDividers: v }))
+                            }
+                          />
 
-                        <div className="mt-3 text-xs text-slate-300">
-                          Best look: <b>Paper = White</b> + <b>Card = Light</b> + <b>Medium shadow</b>
-                        </div>
-                      </Panel>
+                          <div className="mt-3 text-xs text-slate-300">
+                            Best look: <b>Paper = White</b> + <b>Card = Light</b> +{" "}
+                            <b>Medium shadow</b>
+                          </div>
+                        </Panel>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -900,100 +1192,6 @@ export default function Portfolio() {
           </div>
         </div>
       </div>
-
-      {/* ✅ SAME ANIMATIONS (NAVY) */}
-      <style>{`
-        .sidebar{
-          background: #0f172a;
-          color: #f8fafc;
-          display:flex;
-          flex-direction:column;
-          padding: 24px 16px;
-          overflow:hidden;
-          transition: width .25s ease, padding .25s ease, opacity .25s ease;
-          z-index: 10;
-          width: 288px;
-        }
-        .sidebarOpen{ width: 288px; opacity:1; }
-        .sidebarClosed{ width: 86px; opacity:1; }
-
-        .sfBlob{
-          position:absolute;
-          width: 560px;
-          height: 560px;
-          border-radius: 999px;
-          filter: blur(95px);
-          opacity: .34;
-          animation: sfFloat 14s ease-in-out infinite;
-          background: radial-gradient(circle at 30% 30%,
-            rgba(12, 42, 92, 0.65),
-            rgba(6, 22, 58, 0.35),
-            rgba(3, 12, 28, 0)
-          );
-        }
-        .sfBlob1{ left: -180px; top: -180px; }
-        .sfBlob2{
-          right: -220px; bottom: -260px;
-          width: 650px; height: 650px;
-          opacity: .28;
-          animation-duration: 18s;
-        }
-
-        .sfShimmer{
-          position:absolute;
-          inset:-2px;
-          pointer-events:none;
-          background:
-            linear-gradient(120deg,
-              rgba(3, 12, 28, 0) 0%,
-              rgba(12, 42, 92, 0.22) 45%,
-              rgba(3, 12, 28, 0) 70%
-            );
-          mix-blend-mode: multiply;
-          opacity: .55;
-          transform: translateX(-30%);
-          animation: sfSweep 6.5s ease-in-out infinite;
-        }
-
-        @keyframes sfFloat{
-          0%{ transform: translate(0px,0px) scale(1); }
-          50%{ transform: translate(32px,-28px) scale(1.06); }
-          100%{ transform: translate(0px,0px) scale(1); }
-        }
-        @keyframes sfSweep{
-          0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
-          50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
-          100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
-        }
-
-        .sfPre{ opacity: 0; transform: translateY(12px); }
-        .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
-        .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
-        .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
-
-        .sfPulseBorder{ position: relative; overflow: hidden; }
-        .sfPulseBorder::before{
-          content:"";
-          position:absolute;
-          inset:-1px;
-          border-radius: 18px;
-          background: linear-gradient(120deg,
-            rgba(8, 30, 68, 0.85),
-            rgba(12, 42, 92, 0.35),
-            rgba(8, 30, 68, 0.85)
-          );
-          opacity: .22;
-          filter: blur(10px);
-          pointer-events:none;
-          animation: sfBorderPulse 4.2s ease-in-out infinite;
-        }
-        .sfPulseBorder > * { position: relative; z-index: 1; }
-
-        @keyframes sfBorderPulse{
-          0%,100%{ opacity: .16; transform: scale(1); }
-          50%{ opacity: .36; transform: scale(1.01); }
-        }
-      `}</style>
     </>
   );
 }
@@ -1002,7 +1200,12 @@ export default function Portfolio() {
 
 function HeaderPro({ profile, theme, density, onPickPhoto, clearPhoto }) {
   const hasAnyContact =
-    profile.email || profile.phone || profile.location || profile.website || profile.linkedin || profile.github;
+    profile.email ||
+    profile.phone ||
+    profile.location ||
+    profile.website ||
+    profile.linkedin ||
+    profile.github;
 
   const headerBg =
     theme.headerStyle === "accent"
@@ -1046,16 +1249,26 @@ function HeaderPro({ profile, theme, density, onPickPhoto, clearPhoto }) {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-black/40 flex items-center justify-center gap-2">
             <label className="px-3 py-1.5 rounded-lg bg-white/90 text-slate-900 text-xs font-extrabold cursor-pointer">
               Upload
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickPhoto(e.target.files?.[0])} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onPickPhoto(e.target.files?.[0])}
+              />
             </label>
-            <button onClick={clearPhoto} className="px-3 py-1.5 rounded-lg bg-rose-200 text-rose-900 text-xs font-extrabold">
+            <button
+              onClick={clearPhoto}
+              className="px-3 py-1.5 rounded-lg bg-rose-200 text-rose-900 text-xs font-extrabold"
+            >
               Remove
             </button>
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-3xl font-black tracking-tight text-slate-900">{profile.name || "Your Name"}</div>
+          <div className="text-3xl font-black tracking-tight text-slate-900">
+            {profile.name || "Your Name"}
+          </div>
           <div className="text-sm font-extrabold" style={{ color: theme.muted }}>
             {profile.role || "Full-Stack Developer"}
           </div>
@@ -1103,15 +1316,55 @@ function SectionPreviewPro({ section, theme }) {
         </div>
       );
 
+    case "experience":
+      return (
+        <div className="grid gap-2">
+          {section.data.items?.slice(0, 4)?.map((x, i) => (
+            <div key={i} className="rounded-xl p-3" style={{ border: `1px solid ${theme.line}`, background: "white" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-extrabold text-sm">{x.role}</div>
+                <div className="text-xs font-extrabold" style={{ color: muted }}>
+                  {x.period}
+                </div>
+              </div>
+              <div className="text-xs font-extrabold mt-1" style={{ color: theme.ink }}>
+                {x.company}
+              </div>
+              <div className="text-xs mt-2 leading-relaxed" style={{ color: muted }}>
+                {x.details}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+
+    case "education":
+      return (
+        <div className="grid gap-2">
+          {section.data.items?.slice(0, 4)?.map((x, i) => (
+            <div key={i} className="rounded-xl p-3" style={{ border: `1px solid ${theme.line}`, background: "white" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-extrabold text-sm">{x.degree}</div>
+                <div className="text-xs font-extrabold" style={{ color: muted }}>
+                  {x.year}
+                </div>
+              </div>
+              <div className="text-xs font-extrabold mt-1" style={{ color: theme.ink }}>
+                {x.institute}
+              </div>
+              <div className="text-xs mt-2 leading-relaxed" style={{ color: muted }}>
+                {x.details}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+
     case "projects":
       return (
         <div className="grid gap-2">
           {section.data.items?.slice(0, 4)?.map((p, i) => (
-            <div
-              key={i}
-              className="rounded-xl p-3 transition hover:-translate-y-[1px]"
-              style={{ border: `1px solid ${theme.line}`, background: "white" }}
-            >
+            <div key={i} className="rounded-xl p-3 transition hover:-translate-y-[1px]" style={{ border: `1px solid ${theme.line}`, background: "white" }}>
               <div className="flex justify-between gap-3">
                 <div className="font-extrabold text-sm">{p.name}</div>
                 {p.link ? (
@@ -1230,7 +1483,7 @@ function SectionEditorPro({
 
   return (
     <div className="grid gap-3">
-      <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+      <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
         <div className="font-extrabold mb-3">Profile</div>
 
         <div className="flex gap-3 items-center mb-4">
@@ -1272,13 +1525,13 @@ function SectionEditorPro({
         </div>
       </div>
 
-      <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+      <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
         <div className="font-extrabold mb-3">Section</div>
         <Field label="Headline" value={section.data.headline || ""} onChange={(v) => updateData({ headline: v })} />
       </div>
 
       {section.templateId === "about" && (
-        <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+        <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
           <div className="font-extrabold mb-3">Summary Text</div>
           <textarea
             value={section.data.text || ""}
@@ -1289,11 +1542,17 @@ function SectionEditorPro({
       )}
 
       {section.templateId === "skills" && <SkillsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+
       {section.templateId === "projects" && <ProjectsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+
       {section.templateId === "testimonials" && <TestimonialsEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
 
+      {section.templateId === "experience" && <ExperienceEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+
+      {section.templateId === "education" && <EducationEditorPro items={section.data.items || []} onChange={(items) => updateData({ items })} />}
+
       {section.templateId === "github" && (
-        <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+        <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
           <div className="font-extrabold mb-3">GitHub</div>
           <Field label="Username" value={section.data.username || ""} onChange={(v) => updateData({ username: v })} />
 
@@ -1328,7 +1587,7 @@ function SkillsEditorPro({ items, onChange }) {
   };
 
   return (
-    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
       <div className="flex items-center justify-between gap-3">
         <div className="font-extrabold">Skills</div>
         <div className="text-xs text-slate-300">Add / remove skills</div>
@@ -1369,7 +1628,7 @@ function ProjectsEditorPro({ items, onChange }) {
   const remove = (index) => onChange(items.filter((_, i) => i !== index));
 
   return (
-    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
       <div className="flex items-center justify-between gap-3">
         <div className="font-extrabold">Projects</div>
         <button onClick={add} className="px-4 py-2 rounded-xl bg-sky-300 text-slate-900 text-xs font-extrabold hover:bg-sky-200 transition">
@@ -1421,7 +1680,7 @@ function TestimonialsEditorPro({ items, onChange }) {
   const remove = (index) => onChange(items.filter((_, i) => i !== index));
 
   return (
-    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5">
+    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
       <div className="flex items-center justify-between gap-3">
         <div className="font-extrabold">Testimonials</div>
         <button onClick={add} className="px-4 py-2 rounded-xl bg-sky-300 text-slate-900 text-xs font-extrabold hover:bg-sky-200 transition">
@@ -1452,6 +1711,150 @@ function TestimonialsEditorPro({ items, onChange }) {
               onChange={(e) => updateItem(i, { quote: e.target.value })}
               className="w-full mt-2 min-h-[90px] px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
               placeholder="Quote..."
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExperienceEditorPro({ items, onChange }) {
+  const add = () =>
+    onChange([
+      {
+        role: "Role",
+        company: "Company",
+        period: "2025",
+        details: "What you did / achievements...",
+      },
+      ...items,
+    ]);
+
+  const updateItem = (index, patch) =>
+    onChange(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+
+  const remove = (index) => onChange(items.filter((_, i) => i !== index));
+
+  return (
+    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-extrabold">Experience</div>
+        <button onClick={add} className="px-4 py-2 rounded-xl bg-sky-300 text-slate-900 text-xs font-extrabold hover:bg-sky-200 transition">
+          + Add
+        </button>
+      </div>
+
+      <div className="grid gap-3 mt-3">
+        {items.map((x, i) => (
+          <div key={i} className="border border-slate-700 rounded-2xl p-3 bg-white/5">
+            <div className="flex gap-2 items-center">
+              <input
+                value={x.role}
+                onChange={(e) => updateItem(i, { role: e.target.value })}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none font-extrabold"
+                placeholder="Role"
+              />
+              <button
+                onClick={() => remove(i)}
+                className="px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-400/20 text-rose-200 text-xs font-extrabold hover:bg-rose-500/25 transition"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              <input
+                value={x.company}
+                onChange={(e) => updateItem(i, { company: e.target.value })}
+                className="px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+                placeholder="Company"
+              />
+              <input
+                value={x.period}
+                onChange={(e) => updateItem(i, { period: e.target.value })}
+                className="px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+                placeholder="Period (e.g. 2024 — 2025)"
+              />
+            </div>
+
+            <textarea
+              value={x.details}
+              onChange={(e) => updateItem(i, { details: e.target.value })}
+              className="w-full mt-2 min-h-[90px] px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+              placeholder="Details / achievements..."
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EducationEditorPro({ items, onChange }) {
+  const add = () =>
+    onChange([
+      {
+        degree: "Degree",
+        institute: "Institute",
+        year: "2022 — 2026",
+        details: "Major / achievements / FYP details...",
+      },
+      ...items,
+    ]);
+
+  const updateItem = (index, patch) =>
+    onChange(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+
+  const remove = (index) => onChange(items.filter((_, i) => i !== index));
+
+  return (
+    <div className="border border-slate-700/70 rounded-2xl p-4 bg-white/5 text-white">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-extrabold">Education</div>
+        <button onClick={add} className="px-4 py-2 rounded-xl bg-sky-300 text-slate-900 text-xs font-extrabold hover:bg-sky-200 transition">
+          + Add
+        </button>
+      </div>
+
+      <div className="grid gap-3 mt-3">
+        {items.map((x, i) => (
+          <div key={i} className="border border-slate-700 rounded-2xl p-3 bg-white/5">
+            <div className="flex gap-2 items-center">
+              <input
+                value={x.degree}
+                onChange={(e) => updateItem(i, { degree: e.target.value })}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none font-extrabold"
+                placeholder="Degree"
+              />
+              <button
+                onClick={() => remove(i)}
+                className="px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-400/20 text-rose-200 text-xs font-extrabold hover:bg-rose-500/25 transition"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              <input
+                value={x.institute}
+                onChange={(e) => updateItem(i, { institute: e.target.value })}
+                className="px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+                placeholder="Institute"
+              />
+              <input
+                value={x.year}
+                onChange={(e) => updateItem(i, { year: e.target.value })}
+                className="px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+                placeholder="Years (e.g. 2022 — 2026)"
+              />
+            </div>
+
+            <textarea
+              value={x.details}
+              onChange={(e) => updateItem(i, { details: e.target.value })}
+              className="w-full mt-2 min-h-[90px] px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
+              placeholder="Details..."
             />
           </div>
         ))}
@@ -1500,11 +1903,7 @@ function SelectRow({ label, value, onChange, options }) {
   return (
     <div className="mb-3">
       <div className="text-xs font-extrabold text-slate-300 mb-2">{label}</div>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none"
-      >
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-white/5 text-white outline-none">
         {options.map(([val, lab]) => (
           <option key={val} value={val} className="text-slate-900">
             {lab}
