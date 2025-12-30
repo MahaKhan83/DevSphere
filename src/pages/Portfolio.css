@@ -1,339 +1,764 @@
-/* src/pages/Portfolio.css */
+/* ========= DevSphere Portfolio Builder (v14 Settings Gray + Dashboard Sidebar + Navy Glow) ========= */
 
-/* =========================
-   PAGE THEME (Notification-like)
-   Light Grey base + Navy accents
-========================= */
-:root{
-  --sf-bg: #eef3f7;
-  --sf-navy: #0f172a;
-  --sf-navy2: #0b1930;
-  --sf-cyan: #38bdf8;
-  --sf-border: rgba(226,232,240,1);
-  --sf-text: #0f172a;
-}
+.pfApp { min-height: 100vh; width: 100%; }
+.pfShell { display: flex; min-height: 100vh; width: 100%; }
 
-/* =========================
-   Sidebar layout (same, but clean)
-========================= */
-.sidebar{
-  background: var(--sf-navy);
-  color: #f8fafc;
-  display:flex;
-  flex-direction:column;
-  padding: 24px 16px;
-  overflow:hidden;
-  transition: width .25s ease, padding .25s ease, opacity .25s ease, transform .25s ease;
-  z-index: 10;
-  width: 288px;
-
-  border-right: 1px solid rgba(51,65,85,.55);
-  box-shadow: 10px 0 35px rgba(0,0,0,.14);
+/* ✅ SETTINGS STYLE BACKGROUND + NAVY GLOW ANIMATIONS */
+.pfSettingsTheme{
   position: relative;
+  overflow: hidden;
 }
-.sidebar::before{
+.pfSettingsTheme::before,
+.pfSettingsTheme::after{
   content:"";
   position:absolute;
-  inset:0;
-  pointer-events:none;
-  background: radial-gradient(circle at 14% 10%,
-    rgba(56,189,248,.10),
-    rgba(12,42,92,0) 60%
-  );
-  opacity:.9;
-}
-
-.sidebarOpen{ width: 288px; opacity:1; }
-.sidebarClosed{ width: 86px; opacity:1; }
-
-/* optional full hide */
-.sidebarHidden{
-  width: 0px !important;
-  padding: 0px !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translateX(-10px);
-}
-
-/* =========================
-   NOTIFICATION-LIKE BACKGROUND FX
-   (Grey base + subtle navy glow)
-========================= */
-
-/* IMPORTANT:
-   Use these divs like:
-   <div className="sfBg">
-     <div className="sfBlob sfBlob1" />
-     <div className="sfBlob sfBlob2" />
-     <div className="sfShimmer" />
-     <div className="sfGrid" />
-     <div className="sfGrain" />
-   </div>
-*/
-.sfBg{
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -10;
-  background: var(--sf-bg);
-}
-
-/* soft blobs (less dark, more premium) */
-.sfBlob{
-  position:absolute;
-  width: 640px;
-  height: 640px;
-  border-radius: 999px;
-  filter: blur(110px);
-  opacity: .32;
-  animation: sfFloat 14s ease-in-out infinite;
-  background: radial-gradient(circle at 30% 30%,
-    rgba(12, 42, 92, 0.36),
-    rgba(56,189,248, 0.16),
-    rgba(3, 12, 28, 0)
-  );
-}
-.sfBlob1{ left: -260px; top: -300px; }
-.sfBlob2{
-  right: -320px; bottom: -340px;
-  width: 760px; height: 760px;
+  width: 680px;
+  height: 680px;
+  border-radius: 50%;
+  filter: blur(60px);
   opacity: .22;
-  animation-duration: 18s;
-}
-
-/* subtle shimmer (not too aggressive) */
-.sfShimmer{
-  position:absolute;
-  inset:-10px;
   pointer-events:none;
-  background: linear-gradient(120deg,
-    rgba(12,42,92,0) 0%,
-    rgba(12,42,92,.16) 42%,
-    rgba(56,189,248,.10) 52%,
-    rgba(12,42,92,0) 74%
-  );
-  mix-blend-mode: multiply;
-  opacity: .55;
-  transform: translateX(-45%) skewX(-10deg);
-  animation: sfSweep 6.5s ease-in-out infinite;
+  z-index: 0;
 }
+.pfSettingsTheme::before{
+  left: -240px;
+  top: 140px;
+  background: radial-gradient(circle, rgba(2,6,23,.60), rgba(2,6,23,0));
+  animation: bgFloatA 11s ease-in-out infinite;
+}
+.pfSettingsTheme::after{
+  right: -260px;
+  top: 80px;
+  background: radial-gradient(circle, rgba(14,165,233,.55), rgba(14,165,233,0));
+  animation: bgFloatB 13s ease-in-out infinite;
+}
+@keyframes bgFloatA{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%{ transform: translate(42px,-30px) scale(1.06); }
+}
+@keyframes bgFloatB{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%{ transform: translate(-44px,28px) scale(1.05); }
+}
+.pfShell, .pfMain{ position: relative; z-index: 1; }
 
-/* subtle grid like notification page */
-.sfGrid{
-  position:absolute;
-  inset:0;
-  opacity:.10;
-  background-image:
-    linear-gradient(to right, rgba(12,42,92,.22) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(12,42,92,.22) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(circle at 20% 0%, black 0%, transparent 65%);
-}
-
-/* grain */
-.sfGrain{
-  position:absolute;
-  inset:0;
-  opacity:.10;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
-}
-
-/* =========================
-   ENTRY / SECTION ANIMS
-========================= */
-.sfPre{ opacity: 0; transform: translateY(12px); }
-
-.sfIn{
-  opacity: 1;
-  transform: translateY(0);
-  transition: all .6s cubic-bezier(.2,.8,.2,1);
-}
-.sfIn2{
-  opacity: 1;
-  transform: translateY(0);
-  transition: all .65s cubic-bezier(.2,.8,.2,1);
-  transition-delay: .08s;
-}
-.sfIn3{
-  opacity: 1;
-  transform: translateY(0);
-  transition: all .7s cubic-bezier(.2,.8,.2,1);
-  transition-delay: .12s;
-}
-
-/* =========================
-   CARD STYLE (Notification-like)
-   Use className="sfCard" on cards
-========================= */
-.sfCard{
-  background: rgba(255,255,255,.92);
-  border: 1px solid var(--sf-border);
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(15,23,42,.06);
-  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
-  position: relative;
+/* ---------- LEFT NAV (DASHBOARD STYLE) ---------- */
+.pfNav{
+  width: 270px;
+  padding: 18px 14px;
+  background: rgba(2, 6, 23, 0.93);
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(2,6,23,0.45);
 }
-.sfCard::before{
+.pfNavClosed{ width: 86px; }
+.pfNavOpen{ width: 270px; }
+
+@media (max-width: 1024px){
+  .pfNav{ display:none; }
+}
+
+/* Sidebar glow layers */
+.pfNav::before,
+.pfNav::after{
   content:"";
   position:absolute;
-  inset:-2px;
+  inset:-120px;
   pointer-events:none;
-  opacity:.0;
-  transition: opacity .25s ease;
-  background: radial-gradient(circle at 20% 0%,
-    rgba(56,189,248,.18),
-    rgba(12,42,92,0) 55%
-  );
+  z-index: 0;
 }
-.sfCard:hover{
-  transform: translateY(-6px);
-  background: rgba(255,255,255,.95);
-  box-shadow:
-    0 18px 55px rgba(12,42,92,.14),
-    0 0 0 1px rgba(56,189,248,.10);
+.pfNav::before{
+  background: radial-gradient(circle at 25% 20%, rgba(14,165,233,0.22), rgba(14,165,233,0) 55%);
+  animation: dsGlowMoveA 10s ease-in-out infinite;
 }
-.sfCard:hover::before{ opacity:.9; }
+.pfNav::after{
+  background: radial-gradient(circle at 70% 80%, rgba(99,102,241,0.18), rgba(99,102,241,0) 60%);
+  animation: dsGlowMoveB 12s ease-in-out infinite;
+}
+@keyframes dsGlowMoveA{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%{ transform: translate(35px,25px) scale(1.06); }
+}
+@keyframes dsGlowMoveB{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%{ transform: translate(-30px,-20px) scale(1.05); }
+}
 
-/* =========================
-   PULSE BORDER (optional)
-========================= */
-.sfPulseBorder{
-  position: relative;
-  overflow: hidden;
-}
-.sfPulseBorder::before{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  border-radius: 18px;
-  background: linear-gradient(120deg,
-    rgba(8, 30, 68, 0.70),
-    rgba(56,189,248, 0.20),
-    rgba(8, 30, 68, 0.70)
-  );
-  opacity: .16;
-  filter: blur(10px);
-  pointer-events:none;
-  animation: sfBorderPulse 4.2s ease-in-out infinite;
-}
-.sfPulseBorder > *{ position: relative; z-index: 1; }
+.pfBrand, .pfNavList{ position: relative; z-index: 1; }
 
-/* =========================
-   Tabs UI (Right panel)
-========================= */
-.sfTabs{
+.pfBrand{ display:flex; align-items:center; gap:10px; padding: 6px 8px 14px; margin-bottom: 12px; }
+.pfLogo{ width:42px; height:42px; object-fit:contain; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.35)); }
+.pfBrandTxt{ color: rgba(255,255,255,0.95); font-weight: 900; font-size: 18px; letter-spacing: .3px; }
+.pfBrandTxt span{ color:#67e8f9; }
+
+.pfNavList{ display:flex; flex-direction:column; gap: 12px; padding: 2px 4px; }
+
+.pfNavBtn{
+  width: 100%;
   display:flex;
-  gap:8px;
-  padding:10px;
-  border: 1px solid rgba(226,232,240,1);
-  border-radius: 16px;
-  background: rgba(255,255,255,.70);
-  backdrop-filter: blur(8px);
-  margin-bottom: 12px;
+  align-items:center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(148,163,184,0.14);
+  color: rgba(226,232,240,0.92);
+
+  cursor:pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.pfNavBtn:hover{
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(148,163,184,0.22);
+  box-shadow: 0 14px 30px rgba(2,6,23,0.35);
+}
+.pfNavBtn.active{
+  background: linear-gradient(180deg, rgba(14,165,233,0.16), rgba(255,255,255,0.06));
+  border-color: rgba(14,165,233,0.35);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.45), inset 0 0 0 1px rgba(14,165,233,0.08);
+  color: #fff;
 }
 
-.sfTab{
-  flex:1;
-  padding: 10px 12px;
+.pfIconWrap{
+  width: 40px; height: 40px;
   border-radius: 14px;
-  border: 1px solid rgba(226,232,240,1);
-  background: rgba(255,255,255,.80);
-  color: rgba(15,23,42,.88);
+  display:grid;
+  place-items:center;
+  background: rgba(15,23,42,0.55);
+  border: 1px solid rgba(148,163,184,0.16);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+.pfNavBtn.active .pfIconWrap{
+  border-color: rgba(14,165,233,0.35);
+  box-shadow: 0 0 0 4px rgba(14,165,233,0.10);
+}
+.pfSvg{ width:18px; height:18px; }
+.pfNavLabel{ font-size: 13px; font-weight: 900; letter-spacing: .2px; text-align:left; }
+
+.pfNavClosed .pfNavBtn{ justify-content:center; padding: 14px 10px; }
+.pfNavClosed .pfNavLabel{ display:none; }
+
+/* ---------- MAIN ---------- */
+.pfMain{ flex:1; min-width:0; display:flex; flex-direction:column; }
+
+/* Topbar -> Settings-like light */
+.pfTopbar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+  padding: 12px 16px;
+  display:flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pfTopLeft{ display:flex; align-items:center; gap:12px; }
+.pfSquareBtn{
+  width:44px; height:44px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,0.10);
+  background: rgba(2,6,23,0.90);
+  color:white;
+  cursor:pointer;
+  transition:.2s;
+}
+.pfSquareBtn:hover{ transform: translateY(-1px); opacity:.95; }
+.pfTitle{ color:#0f172a; font-weight: 1000; font-size: 18px; }
+.pfSubtitle{ color: rgba(71,85,105,0.85); font-size: 12px; margin-top:2px; }
+
+.pfTopRight{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.pfPill{
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.75);
+  color: #0f172a;
+  cursor:pointer;
+  font-weight:900;
+  font-size:12px;
+}
+.pfPillOn{ background: rgba(14,165,233,0.14); border-color: rgba(14,165,233,0.25); }
+
+.pfBtnPrimary{
+  padding:10px 14px;
+  border-radius:999px;
+  border:none;
+  background:#0ea5e9;
+  color:#06263a;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:12px;
+}
+.pfBtnPrimary:hover{ opacity:.93; transform: translateY(-1px); }
+
+.pfBtnPrimaryGreen{
+  padding:10px 14px;
+  border-radius:999px;
+  border:none;
+  background:#34d399;
+  color:#0b1220;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:12px;
+}
+.pfBtnGhost{
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,0.14);
+  background: rgba(255,255,255,0.75);
+  color:#0f172a;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:12px;
+}
+.pfBtnDanger{
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(251,113,133,0.26);
+  background: rgba(244,63,94,0.10);
+  color: #9f1239;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:12px;
+}
+
+/* ---------- BODY LAYOUT ---------- */
+.pfBody{
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap: 18px;
+  padding: 18px 16px 22px;
+  align-items: start;
+}
+@media (max-width: 980px){
+  .pfBody{ grid-template-columns: 1fr; }
+  .pfRight{ position: relative; top:auto; height:auto; }
+}
+.pfCenter{ min-width:0; }
+
+/* ---------- PAPER ---------- */
+.pfPaper{ margin: 0 auto; overflow: hidden; }
+
+/* ---------- HEADER ---------- */
+.stHeaderV2{
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 160px;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+  align-items:start;
+}
+.stHeaderV2.compact{
+  padding: 14px;
+  grid-template-columns: 1.2fr 1fr 150px;
+}
+.stLeft{ display:flex; flex-direction:column; gap: 10px; }
+.stRight{ display:flex; flex-direction:column; gap: 10px; }
+
+.stNameTextV2{ font-size: 34px; font-weight: 1000; color: #0f172a; line-height: 1.05; }
+.stRoleTextV2{ font-size: 14px; font-weight: 900; color: rgba(71,85,105,0.95); }
+
+.stNameInpV2{
+  width:100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(248,250,252,1);
+  outline:none;
+  font-weight: 1000;
+  font-size: 20px;
+  color:#0f172a;
+}
+.stRoleInpV2{
+  width:100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(248,250,252,1);
+  outline:none;
+  font-weight: 900;
+  font-size: 13px;
+  color:#334155;
+}
+
+.stInfoList{ display:flex; flex-direction:column; gap: 8px; }
+.stInfoRow{
+  font-weight: 900;
+  color: #0f172a;
+  background: rgba(15,23,42,0.03);
+  border: 1px solid rgba(15,23,42,0.06);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+.stInpV2{
+  width:100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(248,250,252,1);
+  outline:none;
   font-weight: 800;
   font-size: 12px;
-  transition: .2s ease;
-  position: relative;
+  color:#0f172a;
+}
+
+.stAvatar{
+  width: 150px;
+  justify-self: end;
+  border-radius: 999px;
+  background: transparent;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 10px;
+  padding: 0;
+}
+.stPhotoImgV2{
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  object-fit: cover;
+  display:block;
+  box-shadow: 0 18px 40px rgba(2,6,23,0.18);
+}
+.stPhotoEmptyV2{
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 1000;
+  font-size: 13px;
+  color: rgba(71,85,105,0.9);
+  background: rgba(15,23,42,0.06);
+}
+.stPhotoBtns{ display:flex; gap:8px; justify-content:center; width:100%; }
+.stMiniBtn{
+  padding: 8px 12px;
+  border-radius: 999px;
+  color:#0b1220;
+  font-weight: 1000;
+  font-size: 12px;
+  cursor:pointer;
+}
+.stMiniBtnAlt{
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.95);
+  color:#0f172a;
+  font-weight: 1000;
+  font-size: 12px;
+  cursor:pointer;
+}
+@media (max-width: 780px){
+  .stHeaderV2{ grid-template-columns: 1fr; }
+  .stAvatar{ justify-self:start; }
+}
+
+/* ---------- Sections ---------- */
+.pfSections{ display:flex; flex-direction:column; }
+
+.pfSectionCard{
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.98);
+}
+.pfSectionTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+}
+.pfSecLeft{ display:flex; align-items:center; gap: 10px; }
+.pfSecBadge{
+  width: 38px; height: 38px;
+  border-radius: 14px;
+  display:grid; place-items:center;
+  background: rgba(15,23,42,0.04);
+  border: 1px solid rgba(15,23,42,0.08);
+  color:#0f172a;
+}
+.pfSecBadge.small{ width:34px; height:34px; border-radius: 12px; }
+.pfSecTitle{ font-weight: 1000; color:#0f172a; font-size: 14px; }
+
+.pfSecActions{ display:flex; align-items:center; gap: 8px; }
+.pfMiniBtn{
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.95);
+  color:#0f172a;
+  cursor:pointer;
+  font-weight: 1000;
+  font-size: 12px;
+}
+.pfMiniBtnDanger{
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(244,63,94,0.22);
+  background: rgba(244,63,94,0.10);
+  color: #9f1239;
+  cursor:pointer;
+  font-weight: 1000;
+  font-size: 12px;
+}
+.pfDragHandle{
+  width: 36px; height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.95);
+  cursor: grab;
+  font-weight: 1000;
+}
+
+.pfSectionBody{ padding: 12px; }
+.pfMuted{ color: rgba(71,85,105,0.85); font-weight: 800; font-size: 12px; }
+.pfTextPreview{ color:#0f172a; font-weight: 650; line-height: 1.7; }
+
+.pfList{ display:flex; flex-direction:column; gap: 10px; }
+.pfItem{
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.98);
+}
+.pfItemTop{ display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; }
+.pfItemTitle{ font-weight: 1000; color:#0f172a; }
+.pfItemSub{ color: rgba(71,85,105,0.9); font-weight: 900; font-size: 12px; margin-top: 2px; }
+.pfItemText{ color: rgba(71,85,105,0.95); font-weight: 650; margin-top: 6px; line-height: 1.6; }
+
+.pfPill{
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(14,165,233,0.12);
+  border: 1px solid rgba(14,165,233,0.20);
+  color: #0f172a;
+  font-weight: 1000;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pfLink{ color: #0369a1; font-weight: 900; font-size: 12px; display:inline-block; margin-top:6px; }
+
+.pfBars{ display:flex; flex-direction:column; gap: 10px; }
+.pfBarRow{ display:flex; align-items:center; gap: 10px; }
+.pfBarLabel{ width: 110px; font-weight: 1000; color:#0f172a; font-size: 12px; }
+.pfTrack{
+  flex:1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.12);
+  overflow:hidden;
+}
+.pfFill{ height: 100%; border-radius: 999px; }
+
+/* ---------- Inline Editor ---------- */
+.pfInlineEditor{
+  border-top: 1px dashed rgba(15,23,42,0.18);
+  padding: 12px;
+  background: rgba(248,250,252,0.95);
+}
+.pfLbl{ display:block; font-weight: 1000; font-size: 12px; margin-bottom: 8px; color:#0f172a; }
+.pfInp{
+  width:100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.12);
+  outline: none;
+  background: rgba(255,255,255,0.95);
+  color:#0f172a;
+  font-weight: 800;
+}
+.pfArea{
+  width:100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.12);
+  outline: none;
+  background: rgba(255,255,255,0.95);
+  color:#0f172a;
+  font-weight: 800;
+  resize: vertical;
+}
+.pf2col{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:10px; }
+@media (max-width: 520px){ .pf2col{ grid-template-columns: 1fr; } }
+
+.pfInlineTop{ display:flex; gap: 10px; align-items:center; justify-content:space-between; margin-bottom: 10px; }
+.pfInlineTitle{ font-weight: 1000; color:#0f172a; }
+.pfInlineList{ display:flex; flex-direction:column; gap: 10px; }
+
+.pfInlineCard{
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255,255,255,0.98);
+}
+.pfInlineCardTop{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
+
+.pfLinkDanger{
+  border:none;
+  background: transparent;
+  color: #9f1239;
+  font-weight: 1000;
+  cursor:pointer;
+  font-size: 12px;
+}
+.pfRangeRow{ display:flex; align-items:center; gap:10px; }
+.pfRangeVal{ font-weight: 1000; color:#0f172a; font-size: 12px; }
+
+/* ---------- RIGHT PANEL ---------- */
+.pfRight{
+  position: sticky;
+  top: 86px;
+  height: calc(100vh - 98px);
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(2,6,23,0.80);
+  backdrop-filter: blur(10px);
+  padding: 0;
+  display:flex;
+  flex-direction:column;
+  box-shadow: 0 20px 60px rgba(2,6,23,0.18);
+}
+.pfRightToggle{
+  width: 100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 12px 14px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 1000;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(148,163,184,0.12);
+}
+.pfRightChev{ transition: transform .2s ease; }
+.pfRightChev.open{ transform: rotate(180deg); }
+
+.pfRightHeader{ padding: 14px 14px 10px; }
+.pfRightTitle{ color:white; font-weight: 1000; font-size: 16px; }
+.pfRightSub{ color: rgba(226,232,240,0.65); font-weight: 800; font-size: 12px; margin-top: 4px; }
+
+.pfPanel{ overflow: auto; padding: 0 12px 12px; }
+
+/* Closed: show only toggle button */
+.pfRightClosed{ height: auto !important; }
+.pfRightClosed .pfRightHeader,
+.pfRightClosed .pfPanelAccordion{ display:none !important; }
+
+/* ---------- Accordion ---------- */
+.pfPanelAccordion{ padding-top: 2px; }
+.pfAccItem{
+  border: 1px solid rgba(148,163,184,0.16);
+  background: rgba(2,6,23,0.35);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.pfAccHead{
+  width: 100%;
+  text-align: left;
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px;
+  border: none;
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+}
+.pfAccHead:hover{ background: rgba(255,255,255,0.06); }
+
+.pfAccTitle{ color: white; font-weight: 1000; font-size: 13px; }
+.pfAccSub{ color: rgba(226,232,240,0.65); font-weight: 800; font-size: 11px; margin-top: 4px; }
+
+.pfAccChevron{ color: rgba(226,232,240,0.7); font-weight: 1000; transition: transform .2s ease; }
+.pfAccChevron.open{ transform: rotate(180deg); }
+
+.pfAccBody{ max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.pfAccBody.open{ max-height: 1600px; }
+.pfAccInner{ padding: 12px; }
+
+/* Palette */
+.pfPalette{ margin-top: 10px; display:flex; flex-direction:column; gap: 10px; }
+.pfPaletteItem{
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(255,255,255,0.06);
+  padding: 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor: grab;
+}
+.pfPaletteItem.disabled{ opacity: 0.45; cursor: not-allowed; }
+.pfPaletteLeft{ display:flex; align-items:center; gap: 10px; }
+.pfPaletteTitle{ color: white; font-weight: 1000; font-size: 13px; }
+.pfDragHint{ color: rgba(226,232,240,0.7); font-weight: 1000; }
+
+.pfNotice{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(255,255,255,0.06);
+  color: rgba(226,232,240,0.85);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* ---------- Theme Rows ---------- */
+.pfRow{ margin-top: 12px; }
+.pfRowTop{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
+.pfRowLabel{ color: rgba(226,232,240,0.92); font-weight: 900; font-size: 12px; }
+.pfRowValue{ color: rgba(148,163,184,0.95); font-weight: 900; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; }
+.pfRowInputs{ display:flex; gap: 10px; align-items:center; }
+
+.pfColor{
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(148,163,184,0.25) !important;
+  padding: 0 !important;
+  background: transparent !important;
+  cursor: pointer;
   overflow: hidden;
 }
-.sfTab:hover{
-  background: rgba(255,255,255,1);
-  border-color: rgba(148,163,184,.8);
-}
-.sfTabActive{
-  color: #fff;
-  background: linear-gradient(180deg, rgba(12,42,92,.95), rgba(12,42,92,.82));
-  border-color: rgba(12,42,92,.55);
-}
+.pfColor::-webkit-color-swatch-wrapper { padding: 0 !important; }
+.pfColor::-webkit-color-swatch { border: none !important; border-radius: 10px !important; }
+.pfColor::-moz-color-swatch { border: none !important; border-radius: 10px !important; }
 
-/* =========================
-   Professional icon background
-========================= */
-.iconPro{
-  width: 36px;
-  height: 36px;
+.pfText{
+  flex: 1;
+  height: 42px;
+  padding: 0 12px;
   border-radius: 12px;
-  display: grid;
-  place-items: center;
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  outline:none;
+  font-weight: 1000;
+  font-size: 12px;
+}
+.pfText:focus{
+  border-color: rgba(14,165,233,0.55);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+}
+
+.pfRange{
+  width:100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.25);
+  outline:none;
+  -webkit-appearance: none;
+}
+.pfRange::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  border: 2px solid white;
+  cursor:pointer;
+}
+
+/* Presets */
+.pfPresetRow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom: 10px;
+}
+.pfPresetBtn{
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-weight: 1000;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pfPresetBtn:hover{ background: rgba(255,255,255,0.09); }
+
+/* editor guide */
+.pfGuide{ display:flex; flex-direction:column; gap:10px; }
+.pfGuideItem{
+  border: 1px solid rgba(148,163,184,0.16);
+  background: rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 10px;
+}
+.pfGuideTitle{ color:white; font-weight: 1000; font-size: 12px; margin-bottom:6px; }
+.pfGuideText{ color: rgba(226,232,240,0.75); font-weight: 800; font-size: 12px; line-height: 1.5; }
+.pfGuideActions{ display:flex; flex-wrap: wrap; gap:8px; margin-top: 6px; }
+.pfBtnGhostSmall{
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-weight: 1000;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pfBtnGhostSmall:hover{ background: rgba(255,255,255,0.09); }
+
+/* helpers */
+.pfHidden{ display:none; }
+.pfBtnPrimarySm{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: none;
+  background: #0ea5e9;
+  color: #06263a;
+  font-weight: 1000;
+  cursor:pointer;
+}
+.pfError{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(244,63,94,0.10);
+  border: 1px solid rgba(244,63,94,0.22);
+  color: #fecdd3;
   font-weight: 900;
-  background: rgba(56,189,248,.14);
-  color: #0b63a5;
+  font-size: 12px;
 }
 
-/* =========================
-   Preview cards polish
-========================= */
-.paper{
-  transition: box-shadow .25s ease, transform .25s ease, background .25s ease;
-}
-.paper:hover{
-  transform: translateY(-4px);
-  box-shadow: 0 18px 48px rgba(15,23,42,.14);
-}
-
-/* =========================
-   Right panel height control
-========================= */
-.sfRightPanel{
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-  padding-right: 4px;
+/* ✅ DONE MODE = 100% HIDE ALL EDIT/TOOLS */
+.isView .pfRight,
+.isView .pfSecActions,
+.isView .pfInlineEditor,
+.isView .pfDragHandle,
+.isView .pfMiniBtn,
+.isView .pfMiniBtnDanger,
+.isView .pfLinkDanger,
+.isView .pfBtnPrimarySm,
+.isView .pfGuide,
+.isView .pfNotice,
+.isView .pfPalette,
+.isView .pfAccItem,
+.isView .pfPanelAccordion,
+.isView .stPhotoBtns{
+  display:none !important;
 }
 
-/* =========================
-   Editor textarea polish
-========================= */
-textarea{ resize: vertical; }
-
-/* =========================
-   Keyframes
-========================= */
-@keyframes sfFloat{
-  0%{ transform: translate(0px,0px) scale(1); }
-  50%{ transform: translate(26px,-22px) scale(1.05); }
-  100%{ transform: translate(0px,0px) scale(1); }
-}
-@keyframes sfSweep{
-  0%{ transform: translateX(-55%) skewX(-10deg); opacity:.28; }
-  50%{ transform: translateX(35%) skewX(-10deg); opacity:.75; }
-  100%{ transform: translateX(-55%) skewX(-10deg); opacity:.28; }
-}
-@keyframes sfBorderPulse{
-  0%,100%{ opacity: .12; transform: scale(1); }
-  50%{ opacity: .26; transform: scale(1.01); }
-}
-
-/* =========================
-   Mobile fallback
-========================= */
-@media (max-width: 1024px){
-  .sidebar{
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-  }
-  .sfRightPanel{
-    max-height: none;
-    overflow: visible;
-  }
-}
-
-/* =========================
-   Reduced motion support
-========================= */
-@media (prefers-reduced-motion: reduce){
-  .sfBlob, .sfShimmer, .sfPulseBorder::before{
-    animation: none !important;
-  }
+/* print */
+@media print{
+  .no-print{ display:none !important; }
 }
