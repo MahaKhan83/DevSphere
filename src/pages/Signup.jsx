@@ -18,6 +18,26 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ PASSWORD VALIDATION ADD KARO (Yahi change karna hai)
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+    
+    // ✅ Email format validation (optional)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
+    // ✅ Name validation (optional)
+    if (formData.name.trim().length < 2) {
+      setError("Name must be at least 2 characters");
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -33,6 +53,14 @@ const Signup = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Password strength indicator (optional but good)
+  const getPasswordStrength = () => {
+    const length = formData.password.length;
+    if (length === 0) return "";
+    if (length < 8) return "text-red-500";
+    return "text-green-500";
   };
 
   return (
@@ -101,12 +129,23 @@ const Signup = () => {
               id="password"
               name="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="•••••••• (min 8 characters)"
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={formData.password}
               onChange={handleChange}
               required
             />
+            {/* ✅ Password length indicator (optional) */}
+            <div className="mt-1 flex justify-between">
+              <span className={`text-xs ${getPasswordStrength()}`}>
+                {formData.password.length < 8 
+                  ? `Too short (${formData.password.length}/8)` 
+                  : "✓ Good length"}
+              </span>
+              <span className="text-xs text-slate-500">
+                {formData.password.length} characters
+              </span>
+            </div>
           </div>
 
           <button
