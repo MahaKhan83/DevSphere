@@ -2,8 +2,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-const linkBase =
-  "block px-3 py-2 rounded-lg transition font-medium";
+const linkBase = "block px-3 py-2 rounded-lg transition font-medium";
 
 const linkStyle = ({ isActive }) =>
   `${linkBase} ${
@@ -14,7 +13,7 @@ const linkStyle = ({ isActive }) =>
 
 const Sidebar = () => {
   return (
-    <aside className="w-64 h-screen bg-slate-900 text-white p-6 border-r border-white/10">
+    <aside className="w-64 h-screen sticky top-0 bg-slate-900 text-white p-6 border-r border-white/10 overflow-y-auto">
       {/* Logo / Title */}
       <h1 className="text-2xl font-bold mb-10 tracking-tight">
         DevSphere
@@ -38,14 +37,14 @@ const Sidebar = () => {
           Notifications
         </NavLink>
 
-        {/* ✅ Collaboration Room (FIXED ROUTE) */}
         <NavLink to="/collaboration" className={linkStyle}>
           Collaboration Room
         </NavLink>
 
-        <NavLink to="/calendar" className={linkStyle}>
+        {/* NOTE: Calendar route tumhare App.jsx me nahi, is liye isko comment kiya */}
+        {/* <NavLink to="/calendar" className={linkStyle}>
           Calendar
-        </NavLink>
+        </NavLink> */}
 
         <NavLink to="/settings" className={linkStyle}>
           Settings

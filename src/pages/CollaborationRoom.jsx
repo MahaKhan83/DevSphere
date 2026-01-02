@@ -4,50 +4,52 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 
-/* ---------- Professional Icons ---------- */
+/* =========================
+   Professional SVG Icons
+========================= */
 const DashboardIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
   </svg>
 );
+
 const PortfolioIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
   </svg>
 );
+
 const CollabIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
   </svg>
 );
+
 const ShowcaseIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
   </svg>
 );
+
+const UserRolesIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
+  </svg>
+);
+
 const BellIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
   </svg>
 );
-const CalendarIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path
-      d="M7 2v3M17 2v3M3.5 7h17M3.5 4.5h17v17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-17ZM7.5 11h4M7.5 15h4"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-  </svg>
-);
+
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
 );
 
+/* Editor + Chat icons */
 const CopyIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="9" y="9" width="13" height="13" rx="2" />
@@ -80,22 +82,38 @@ const TrashIcon = () => (
   </svg>
 );
 
+const MiniFileIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+  </svg>
+);
+
+/* =========================
+   Dashboard-like UI Helpers
+========================= */
 const IconWrap = ({ children }) => (
-  <span className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-100 flex items-center justify-center">
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
     {children}
   </span>
 );
 
-const NavItem = ({ active, icon, label, onClick }) => (
+const BadgePill = ({ children }) => (
+  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">{children}</span>
+);
+
+const NavItem = ({ active, icon, label, onClick, badge }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 navItem ${
-      active ? "bg-white/10 border border-white/12 text-white font-semibold" : "text-slate-200/90 hover:bg-white/8"
+    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+      active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
     }`}
   >
-    <IconWrap>{icon}</IconWrap>
-    <span className="truncate">{label}</span>
-    <span className={`ml-auto h-2.5 w-2.5 rounded-full ${active ? "bg-sky-400" : "bg-transparent"}`} />
+    <span className="flex items-center gap-3">
+      <IconWrap>{icon}</IconWrap>
+      <span className="truncate">{label}</span>
+    </span>
+    {badge ? <BadgePill>{badge}</BadgePill> : null}
   </button>
 );
 
@@ -115,13 +133,6 @@ const Avatar = ({ name = "U", color = "bg-slate-700" }) => {
   );
 };
 
-const MiniFileIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-    <path d="M14 2v6h6" />
-  </svg>
-);
-
 const genRoomCode = () => {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -134,8 +145,16 @@ export default function CollaborationRoom() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Sidebar toggle (same behavior as Dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Demo notifications badge (match dashboard)
+  const [unreadCount] = useState(3);
+
+  // Online status (match dashboard footer)
+  const isOnline = true;
+
+  // small mount animation
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 10);
@@ -274,7 +293,7 @@ export default function CollaborationRoom() {
     typingRef.current = setTimeout(() => setTyping(false), 900);
   };
 
-  /* ✅ Delete message (demo: allow delete any message) */
+  /* ✅ Delete message (demo) */
   const deleteMessage = (id) => {
     setMessagesByRoom((prev) => {
       const cur = prev[activeRoomId] || [];
@@ -342,7 +361,9 @@ export default function CollaborationRoom() {
     if (!activeFile) return;
     setFilesByRoom((prev) => ({
       ...prev,
-      [activeRoomId]: (prev[activeRoomId] || []).map((x) => (x.id === activeFile.id ? { ...x, content: codeText, lang: language } : x)),
+      [activeRoomId]: (prev[activeRoomId] || []).map((x) =>
+        x.id === activeFile.id ? { ...x, content: codeText, lang: language } : x
+      ),
     }));
   };
 
@@ -387,7 +408,9 @@ export default function CollaborationRoom() {
 
     setFilesByRoom((prev) => ({
       ...prev,
-      [activeRoomId]: (prev[activeRoomId] || []).map((x) => (x.id === fileId ? { ...x, name, path: `src > ${name}` } : x)),
+      [activeRoomId]: (prev[activeRoomId] || []).map((x) =>
+        x.id === fileId ? { ...x, name, path: `src > ${name}` } : x
+      ),
     }));
   };
 
@@ -400,7 +423,6 @@ export default function CollaborationRoom() {
       return { ...prev, [activeRoomId]: next };
     });
 
-    // update active file safely (use latest state via callback soon after)
     setTimeout(() => {
       setFilesByRoom((prev) => {
         const next = (prev[activeRoomId] || []).filter((x) => x.id !== fileId);
@@ -412,10 +434,99 @@ export default function CollaborationRoom() {
 
   const uploadFile = () => alert("Upload (demo)");
 
+  /* =========================
+     ✅ Dashboard-like Sidebar (reused in both screens)
+  ========================= */
+  const Sidebar = () => (
+    <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
+      <button
+        onClick={() => navigate("/")}
+        className="flex items-center gap-3 px-2 mb-8 text-left"
+        title="Go to Landing"
+      >
+        <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
+        <span className="text-xl font-semibold">
+          Dev<span className="text-cyan-300">Sphere</span>
+        </span>
+      </button>
+
+      <nav className="flex-1 space-y-2">
+        <NavItem
+          active={location.pathname === "/dashboard"}
+          icon={<DashboardIcon />}
+          label="Dashboard"
+          onClick={() => navigate("/dashboard")}
+        />
+        <NavItem
+          active={location.pathname === "/portfolio"}
+          icon={<PortfolioIcon />}
+          label="Build portfolio"
+          onClick={() => navigate("/portfolio")}
+        />
+        <NavItem
+          active={location.pathname === "/collaboration"}
+          icon={<CollabIcon />}
+          label="Collab rooms"
+          onClick={() => navigate("/collaboration")}
+        />
+        <NavItem
+          active={location.pathname === "/showcase"}
+          icon={<ShowcaseIcon />}
+          label="Showcase feed"
+          onClick={() => navigate("/showcase")}
+        />
+        <NavItem
+          active={location.pathname === "/roles"}
+          icon={<UserRolesIcon />}
+          label="User roles"
+          onClick={() => navigate("/roles")}
+        />
+        <NavItem
+          active={location.pathname === "/notifications"}
+          icon={<BellIcon />}
+          label="Notifications"
+          badge={unreadCount > 0 ? unreadCount : null}
+          onClick={() => navigate("/notifications")}
+        />
+        {/* ✅ Calendar removed to match Dashboard */}
+        <NavItem
+          active={location.pathname === "/settings"}
+          icon={<SettingsIcon />}
+          label="Settings"
+          onClick={() => navigate("/settings")}
+        />
+      </nav>
+
+      <button
+        onClick={() => navigate("/settings")}
+        className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
+        title="Open Settings"
+      >
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
+            {initials || "U"}
+          </div>
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
+              isOnline ? "bg-emerald-400" : "bg-slate-400"
+            }`}
+            title={isOnline ? "Online" : "Offline"}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
+          <p className="text-xs text-slate-300 truncate max-w-[160px]">{isOnline ? "Online" : "Offline"} · Signed in</p>
+        </div>
+      </button>
+    </aside>
+  );
+
   /* ---------- JOIN SCREEN (before entering room) ---------- */
   if (!joined) {
     return (
       <div className="min-h-screen bg-[#06162a] text-slate-100 relative overflow-hidden">
+        {/* Background stays same; only sidebar is dashboard-like */}
         <div className="pointer-events-none fixed inset-0 -z-10">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -426,45 +537,16 @@ export default function CollaborationRoom() {
         </div>
 
         <div className={`relative flex ${mounted ? "pageIn" : "pageBefore"}`}>
-          {/* Sidebar */}
-          <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-            <div className="flex items-center gap-3 px-2 mb-8 fadeInSoft">
-              <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
-              <span className="text-xl font-semibold">
-                Dev<span className="text-cyan-300">Sphere</span>
-              </span>
-            </div>
-
-            <div className="navyGlowLine" />
-
-            <nav className="flex-1 space-y-2 mt-3">
-              <NavItem active={location.pathname === "/dashboard"} icon={<DashboardIcon />} label="Dashboard" onClick={() => navigate("/dashboard")} />
-              <NavItem active={location.pathname === "/portfolio"} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
-              <NavItem active={location.pathname === "/collaboration"} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
-              <NavItem active={location.pathname === "/showcase"} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
-              <NavItem active={location.pathname === "/notifications"} icon={<BellIcon />} label="Notifications" onClick={() => navigate("/notifications")} />
-              <NavItem active={location.pathname === "/calendar"} icon={<CalendarIcon />} label="Calendar" onClick={() => navigate("/calendar")} />
-              <NavItem active={location.pathname === "/settings"} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
-            </nav>
-
-            <div className="mt-6 flex items-center gap-3 px-2 fadeInSoft">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold ring-1 ring-white/10">
-                {initials || "U"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-                <p className="text-xs text-slate-300">Signed in</p>
-              </div>
-            </div>
-          </aside>
+          <Sidebar />
 
           {/* Join Panel */}
           <main className="flex-1 p-5 md:p-6">
             <div className="flex items-center justify-between mb-5 fadeUp-1">
               <div className="flex items-start gap-3">
+                {/* ✅ Toggle button style same as Dashboard */}
                 <button
                   onClick={() => setSidebarOpen((v) => !v)}
-                  className="mt-1 w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition flex items-center justify-center btnShine"
+                  className="mt-1 w-10 h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
                   title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
                 >
                   {sidebarOpen ? "⟨⟨" : "⟩⟩"}
@@ -548,45 +630,16 @@ export default function CollaborationRoom() {
       </div>
 
       <div className={`relative flex ${mounted ? "pageIn" : "pageBefore"}`}>
-        {/* Sidebar */}
-        <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          <div className="flex items-center gap-3 px-2 mb-8 fadeInSoft">
-            <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
-            <span className="text-xl font-semibold">
-              Dev<span className="text-cyan-300">Sphere</span>
-            </span>
-          </div>
-
-          <div className="navyGlowLine" />
-
-          <nav className="flex-1 space-y-2 mt-3">
-            <NavItem active={location.pathname === "/dashboard"} icon={<DashboardIcon />} label="Dashboard" onClick={() => navigate("/dashboard")} />
-            <NavItem active={location.pathname === "/portfolio"} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
-            <NavItem active={location.pathname === "/collaboration"} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
-            <NavItem active={location.pathname === "/showcase"} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
-            <NavItem active={location.pathname === "/notifications"} icon={<BellIcon />} label="Notifications" onClick={() => navigate("/notifications")} />
-            <NavItem active={location.pathname === "/calendar"} icon={<CalendarIcon />} label="Calendar" onClick={() => navigate("/calendar")} />
-            <NavItem active={location.pathname === "/settings"} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
-          </nav>
-
-          <div className="mt-6 flex items-center gap-3 px-2 fadeInSoft">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold ring-1 ring-white/10">
-              {initials || "U"}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300">Signed in</p>
-            </div>
-          </div>
-        </aside>
+        <Sidebar />
 
         <main className="flex-1 p-5 md:p-6">
           {/* Top bar */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5 fadeUp-1">
             <div className="flex items-start gap-3">
+              {/* ✅ Toggle button style same as Dashboard */}
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
-                className="mt-1 w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition flex items-center justify-center btnShine"
+                className="mt-1 w-10 h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
                 title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
               >
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
@@ -664,7 +717,9 @@ export default function CollaborationRoom() {
 
                           setFilesByRoom((prev) => ({
                             ...prev,
-                            [id]: [{ id: `f${Date.now()}`, name: "main.js", path: "src > main.js", lang: "javascript", content: `console.log("Hello");\n` }],
+                            [id]: [
+                              { id: `f${Date.now()}`, name: "main.js", path: "src > main.js", lang: "javascript", content: `console.log("Hello");\n` },
+                            ],
                           }));
                           setMessagesByRoom((prev) => ({ ...prev, [id]: [] }));
                           setActiveRoomId(id);
@@ -773,7 +828,7 @@ export default function CollaborationRoom() {
                   </div>
                 </aside>
 
-                {/* CENTER (Editor) - ✅ Quick chat removed */}
+                {/* CENTER (Editor) */}
                 <section className={`rounded-2xl bg-white/5 border border-white/10 overflow-hidden fadeUp-3 ${mobileTab !== "editor" ? "hidden md:block" : ""}`}>
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between px-4 py-3 border-b border-white/10">
                     <div className="text-slate-300 text-sm truncate">{activeFile?.path || "No file selected"}</div>
@@ -829,7 +884,7 @@ export default function CollaborationRoom() {
                   </div>
                 </section>
 
-                {/* RIGHT (Chat) with delete */}
+                {/* RIGHT (Chat) */}
                 <section className={`rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex flex-col fadeUp-3 ${mobileTab !== "chat" ? "hidden md:flex" : "flex"}`}>
                   <div className="px-4 py-3 border-b border-white/10">
                     <div className="text-xl font-semibold">Chat</div>
@@ -924,6 +979,7 @@ const baseStyles = `
   @keyframes softFade{ from{ opacity:0; transform: translateY(6px); } to{ opacity:1; transform: translateY(0); } }
   .fadeInSoft{ animation: softFade .45s ease-out both; }
 
+  /* Background (same as your collab) */
   .sfBlob{
     position:absolute; border-radius:999px; filter: blur(110px); opacity:.55;
     animation: sfFloat 14s ease-in-out infinite;
@@ -955,11 +1011,12 @@ const baseStyles = `
   @keyframes sfFloat{ 0%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(42px,-32px) scale(1.08); } 100%{ transform:translate(0,0) scale(1); } }
   @keyframes sfSweep{ 0%{ transform:translateX(-55%) skewX(-10deg); opacity:.35; } 50%{ transform:translateX(35%) skewX(-10deg); opacity:.9; } 100%{ transform:translateX(-55%) skewX(-10deg); opacity:.35; } }
 
+  /* ✅ DASHBOARD-LIKE SIDEBAR (exact vibe) */
   .sidebar{
-    background: rgba(15,23,42,.92);
-    backdrop-filter: blur(10px);
+    background: #0f172a;
     color: #f8fafc;
-    display:flex; flex-direction:column;
+    display:flex;
+    flex-direction:column;
     padding: 24px 16px;
     overflow:hidden;
     transition: width .25s ease, padding .25s ease, opacity .25s ease;
@@ -969,15 +1026,7 @@ const baseStyles = `
   .sidebarOpen{ width: 288px; opacity:1; }
   .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-  .navyGlowLine{
-    height:2px; width:100%; border-radius:999px;
-    background: linear-gradient(90deg, rgba(12,42,92,0) 0%, rgba(12,42,92,0.9) 30%, rgba(56,189,248,0.65) 50%, rgba(12,42,92,0.9) 70%, rgba(12,42,92,0) 100%);
-    animation: glowSweep 3.8s ease-in-out infinite;
-    opacity:.9;
-  }
-  @keyframes glowSweep{ 0%{ opacity:.25; transform: translateX(-18%); } 50%{ opacity:.85; transform: translateX(18%); } 100%{ opacity:.25; transform: translateX(-18%); } }
-
-  /* ✅ Only buttons shine */
+  /* ✅ Only buttons shine (same rule) */
   .btnShine{ position:relative; overflow:hidden; }
   .btnShine::after{
     content:""; position:absolute; inset:-2px;

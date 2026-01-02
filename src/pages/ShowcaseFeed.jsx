@@ -3,6 +3,7 @@ import React, { useMemo, useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/logo.png";
+import "./showcaseFeed.css";
 
 /* ---------------- Demo data ---------------- */
 const DEMO_PROJECTS = [
@@ -92,35 +93,57 @@ const DEMO_PROJECTS = [
   },
 ];
 
-/* ---------------- Sidebar Icons ---------------- */
+/* ---------------- Professional Icons ---------------- */
 const DashboardIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 13h8V3H3v10Z" />
+    <path d="M13 21h8V11h-8v10Z" />
+    <path d="M3 21h8v-6H3v6Z" />
+    <path d="M13 9h8V3h-8v6Z" />
   </svg>
 );
+
 const PortfolioIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" />
+    <path d="M4 7h16a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2Z" />
+    <path d="M9 12h6" />
   </svg>
 );
+
 const ShowcaseIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4Z" />
+    <path d="M7 15l3-3 3 3 4-4 3 3" />
   </svg>
 );
+
 const CollabIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="3" />
+    <path d="M20 8v6" />
+    <path d="M23 11h-6" />
   </svg>
 );
+
 const BellIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
   </svg>
 );
+
 const SettingsIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z" />
+    <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.2 2.2 0 0 1-1.55 3.76 2.2 2.2 0 0 1-1.55-.64l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.64V21a2.2 2.2 0 0 1-4.4 0v-.07a1.8 1.8 0 0 0-1.1-1.64 1.8 1.8 0 0 0-1.98.36l-.05.05a2.2 2.2 0 1 1-3.11-3.11l.05-.05A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-1.64-1.1H1.9a2.2 2.2 0 0 1 0-4.4h.07A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.2 2.2 0 1 1 6.3 2.86l.05.05A1.8 1.8 0 0 0 8.33 3.27 1.8 1.8 0 0 0 9.43 1.63V1.56a2.2 2.2 0 0 1 4.4 0v.07a1.8 1.8 0 0 0 1.1 1.64 1.8 1.8 0 0 0 1.98-.36l.05-.05A2.2 2.2 0 1 1 21.1 6l-.05.05A1.8 1.8 0 0 0 20.7 8c0 .74.45 1.4 1.14 1.68.32.13.67.2 1.02.2H23a2.2 2.2 0 0 1 0 4.4h-.07c-.35 0-.7.07-1.02.2A1.8 1.8 0 0 0 19.4 15Z" />
+  </svg>
+);
+
+const ChevronIcon = ({ open }) => (
+  <svg className="sfChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {open ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
   </svg>
 );
 
@@ -131,21 +154,25 @@ const SearchIcon = () => (
     <circle cx="11" cy="11" r="7" />
   </svg>
 );
+
 const HeartIcon = ({ filled }) => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
   </svg>
 );
+
 const CommentIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
   </svg>
 );
+
 const BookmarkIcon = ({ filled }) => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
     <path d="M6 3h12a1 1 0 0 1 1 1v19l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
   </svg>
 );
+
 const ShareIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
@@ -153,6 +180,7 @@ const ShareIcon = () => (
     <path d="M7 8l5-5 5 5" />
   </svg>
 );
+
 const InviteIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -161,6 +189,7 @@ const InviteIcon = () => (
     <path d="M22 11h-6" />
   </svg>
 );
+
 const RequestIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 20h9" />
@@ -169,6 +198,7 @@ const RequestIcon = () => (
     <path d="M4 15h16" />
   </svg>
 );
+
 const TrashIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 6h18" />
@@ -178,6 +208,7 @@ const TrashIcon = () => (
     <path d="M14 11v6" />
   </svg>
 );
+
 const PlusIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 5v14" />
@@ -186,21 +217,14 @@ const PlusIcon = () => (
 );
 
 /* ---------- Sidebar item UI ---------- */
-const IconWrap = ({ children }) => (
-  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
-    {children}
-  </span>
-);
-
-const NavItem = ({ active, icon, label, onClick }) => (
+const NavItem = ({ active, icon, label, onClick, collapsed }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
-      active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
-    }`}
+    className={`sfNavItem ${active ? "sfNavActive" : ""} ${collapsed ? "sfNavCollapsed" : ""}`}
+    title={collapsed ? label : undefined}
   >
-    <IconWrap>{icon}</IconWrap>
-    <span>{label}</span>
+    <span className="sfNavIcon">{icon}</span>
+    {!collapsed && <span className="sfNavLabel">{label}</span>}
   </button>
 );
 
@@ -226,6 +250,7 @@ export default function ShowcaseFeed() {
     .slice(0, 2);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -355,7 +380,6 @@ export default function ShowcaseFeed() {
     setNewComment("");
   };
 
-  // ✅ delete only in UI; button will appear only for own comment (below)
   const deleteComment = (projectId, commentId) => {
     setCommentsByProject((prev) => {
       const list = prev[projectId] || [];
@@ -481,10 +505,61 @@ export default function ShowcaseFeed() {
     alert("Project deleted ✅");
   };
 
+  const Sidebar = ({ collapsed }) => (
+    <aside className={`sfSidebar ${collapsed ? "sfSidebarCollapsed" : ""}`}>
+      <div className="sfSideTop">
+        <button
+          className="sfCollapseBtn"
+          onClick={() => setSidebarOpen((v) => !v)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <ChevronIcon open={!collapsed} />
+        </button>
+
+        <div className="sfBrand" onClick={() => navigate("/dashboard")} role="button" tabIndex={0}>
+          <img src={logo} alt="DevSphere" className="sfBrandLogo" />
+          {!collapsed && (
+            <span className="sfBrandText">
+              Dev<span className="sfBrandAccent">Sphere</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      <nav className="sfNav">
+        {NAV_ITEMS.map((item) => (
+          <NavItem
+            key={item.to}
+            active={location.pathname === item.to}
+            icon={item.icon}
+            label={item.label}
+            collapsed={collapsed}
+            onClick={() => {
+              navigate(item.to);
+              setMobileOpen(false);
+            }}
+          />
+        ))}
+      </nav>
+
+      <div className="sfSideFooter">
+        <div className="sfAvatar">{initials || "U"}</div>
+        {!collapsed && (
+          <div className="sfUserMeta">
+            <p className="sfUserName">{displayName}</p>
+            <p className="sfUserSub">Signed in</p>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+
+  const collapsed = !sidebarOpen;
+
   return (
     <>
-      <div className="min-h-screen bg-[#eef3f7] flex overflow-hidden relative">
-        {/* ✅ background pointer-events fixed */}
+      <div className="sfShell">
+        {/* Background */}
         <div className="sfBg fixed inset-0 pointer-events-none">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -493,65 +568,37 @@ export default function ShowcaseFeed() {
           <div className="sfGrain" />
         </div>
 
-        {/* SIDEBAR */}
-        <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          <div className="flex items-center gap-3 px-2 mb-8">
-            <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
-            <span className="text-xl font-semibold">
-              Dev<span className="text-cyan-300">Sphere</span>
-            </span>
-          </div>
+        {/* Desktop Sidebar */}
+        <div className="sfSideWrap">{Sidebar({ collapsed })}</div>
 
-          <nav className="flex-1 space-y-2">
-            {NAV_ITEMS.map((item) => (
-              <NavItem
-                key={item.to}
-                active={location.pathname === item.to}
-                icon={item.icon}
-                label={item.label}
-                onClick={() => navigate(item.to)}
-              />
-            ))}
-          </nav>
-
-          <div className="mt-6 flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
-              {initials || "U"}
-            </div>
-            <div>
-              <p className="text-sm font-medium truncate max-w-[140px]">{displayName}</p>
-              <p className="text-xs text-slate-300">Signed in</p>
+        {/* Mobile toggle + drawer */}
+        <button className="sfMobileMenuBtn" onClick={() => setMobileOpen(true)} title="Menu">
+          ☰
+        </button>
+        {mobileOpen && (
+          <div className="sfMobileOverlay" onClick={() => setMobileOpen(false)}>
+            <div className="sfMobileDrawer" onClick={(e) => e.stopPropagation()}>
+              {Sidebar({ collapsed: false })}
             </div>
           </div>
-        </aside>
+        )}
 
         {/* MAIN */}
-        <main className="flex-1 p-6 md:p-8 relative z-10">
+        <main className="sfMain">
           {/* TOPBAR */}
-          <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
-            <div className="flex items-start gap-3">
-              <button
-                onClick={() => setSidebarOpen((v) => !v)}
-                className="mt-1 w-10 h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
-                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-              >
-                {sidebarOpen ? "⟨⟨" : "⟩⟩"}
-              </button>
-
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Showcase Feed</h1>
-                <p className="text-sm text-slate-600">Discover projects, connect with developers, and get inspired.</p>
-              </div>
+          <div className={`sfTopbar ${mounted ? "sfIn" : "sfPre"}`}>
+            <div className="sfTitleBlock">
+              <h1 className="sfTitle">Showcase Feed</h1>
+              <p className="sfSubtitle">Discover projects, connect with developers, and get inspired.</p>
             </div>
 
-            {/* ✅ Search + buttons always visible */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="flex items-center gap-2 bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-                <span className="text-slate-400">
+            <div className="sfTopActions">
+              <div className="sfSearch">
+                <span className="sfSearchIcon">
                   <SearchIcon />
                 </span>
                 <input
-                  className="outline-none w-full sm:w-[320px] text-sm text-slate-700 bg-transparent"
+                  className="sfSearchInput"
                   placeholder="Search projects, tech, authors..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -572,10 +619,10 @@ export default function ShowcaseFeed() {
           </div>
 
           {/* FILTERS */}
-          <div className={`flex flex-wrap items-center gap-3 mb-6 ${mounted ? "sfIn2" : "sfPre"}`}>
-            <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
-              <span className="text-xs text-slate-500 font-semibold">Tech</span>
-              <select className="text-sm outline-none bg-transparent" value={techFilter} onChange={(e) => setTechFilter(e.target.value)}>
+          <div className={`sfFilters ${mounted ? "sfIn2" : "sfPre"}`}>
+            <div className="sfPill">
+              <span className="sfPillLabel">Tech</span>
+              <select className="sfPillSelect" value={techFilter} onChange={(e) => setTechFilter(e.target.value)}>
                 {techOptions.map((t) => (
                   <option key={t} value={t}>
                     {t}
@@ -584,9 +631,9 @@ export default function ShowcaseFeed() {
               </select>
             </div>
 
-            <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
-              <span className="text-xs text-slate-500 font-semibold">Sort</span>
-              <select className="text-sm outline-none bg-transparent" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <div className="sfPill">
+              <span className="sfPillLabel">Sort</span>
+              <select className="sfPillSelect" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 <option value="Trending">Trending</option>
                 <option value="Newest">Newest</option>
                 <option value="MostLiked">Most liked</option>
@@ -594,22 +641,20 @@ export default function ShowcaseFeed() {
             </div>
 
             <button
-              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition ${
-                showSavedOnly ? "bg-slate-900 text-white border-slate-900" : "bg-white/95 text-slate-700 border-slate-200 hover:bg-white"
-              }`}
+              className={`sfSavedFilter ${showSavedOnly ? "sfSavedFilterOn" : ""}`}
               onClick={() => setShowSavedOnly((v) => !v)}
               title="Show only saved projects"
             >
               {showSavedOnly ? "Showing: Saved" : "Filter: Saved"}
             </button>
 
-            <div className="ml-auto text-sm text-slate-600">
-              <span className="font-semibold text-slate-900">{filtered.length}</span> results
+            <div className="sfResults">
+              <span className="sfResultsNum">{filtered.length}</span> results
             </div>
           </div>
 
           {/* GRID */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <section className="sfGridCards">
             {filtered.map((p, idx) => {
               const liked = likedIds.has(p.id);
               const saved = savedIds.has(p.id);
@@ -619,26 +664,23 @@ export default function ShowcaseFeed() {
               return (
                 <article
                   key={p.id}
-                  className={`sfCard sfPulseBorder bg-white/95 rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden ${
-                    mounted ? "sfCardIn" : "sfCardPre"
-                  }`}
+                  className={`sfCard sfPulseBorder ${mounted ? "sfCardIn" : "sfCardPre"}`}
                   style={{ transitionDelay: `${Math.min(idx, 8) * 70}ms` }}
                 >
                   {/* Thumb */}
-                  <div className="relative h-44 bg-slate-100 overflow-hidden">
-                    <img src={p.thumb} alt={p.title} className="w-full h-full object-cover sfImg" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+                  <div className="sfThumb">
+                    <img src={p.thumb} alt={p.title} className="sfImg" />
+                    <div className="sfThumbFade" />
 
-                    <div className="absolute left-3 bottom-3 flex flex-wrap gap-2">
+                    <div className="sfChips">
                       {p.tech.slice(0, 2).map((t) => (
-                        <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/90 text-slate-800 font-semibold">
+                        <span key={t} className="sfChip">
                           {t}
                         </span>
                       ))}
                     </div>
 
-                    {/* Invite + Request + Share */}
-                    <div className="absolute top-3 right-3 flex gap-2">
+                    <div className="sfThumbActions">
                       <button className="sfActionBtn" onClick={() => openInvite(p)} title="Invite">
                         <InviteIcon />
                       </button>
@@ -652,12 +694,12 @@ export default function ShowcaseFeed() {
                   </div>
 
                   {/* Body */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="sfBody">
+                    <div className="sfHeadRow">
                       <div>
-                        <h3 className="text-base font-semibold text-slate-900">{p.title}</h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          <span className="font-medium text-slate-700">{p.author}</span> • {p.time}
+                        <h3 className="sfCardTitle">{p.title}</h3>
+                        <p className="sfMeta">
+                          <span className="sfMetaName">{p.author}</span> • {p.time}
                         </p>
                       </div>
 
@@ -668,41 +710,35 @@ export default function ShowcaseFeed() {
                       )}
                     </div>
 
-                    <p className="text-sm text-slate-600 mt-3 lineClamp2">{p.desc}</p>
+                    <p className="sfDesc lineClamp2">{p.desc}</p>
 
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="flex items-center gap-2 text-sm flex-wrap">
+                    <div className="sfBottomRow">
+                      <div className="sfBtns">
                         <button
-                          className={`px-3 py-2 rounded-xl border transition inline-flex items-center gap-2 ${
-                            liked ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                          }`}
+                          className={`sfStatBtn ${liked ? "sfStatLiked" : ""}`}
                           onClick={() => toggleLike(p.id)}
                           title="Like"
                         >
                           <HeartIcon filled={liked} />
-                          <span className="text-xs font-semibold">{p.likes + (liked ? 1 : 0)}</span>
+                          <span>{p.likes + (liked ? 1 : 0)}</span>
                         </button>
 
-                        <button
-                          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition inline-flex items-center gap-2"
-                          onClick={() => openComments(p)}
-                          title="Open comments"
-                        >
+                        <button className="sfStatBtn" onClick={() => openComments(p)} title="Open comments">
                           <CommentIcon />
-                          <span className="text-xs font-semibold">{commentCount}</span>
+                          <span>{commentCount}</span>
                         </button>
 
                         <button
-                          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition inline-flex items-center gap-2"
+                          className={`sfStatBtn ${saved ? "sfStatSaved" : ""}`}
                           onClick={() => toggleSave(p.id)}
                           title={saved ? "Unsave" : "Save"}
                         >
                           <BookmarkIcon filled={saved} />
-                          <span className="text-xs font-semibold">{p.saves + (saved ? 1 : 0)}</span>
+                          <span>{p.saves + (saved ? 1 : 0)}</span>
                         </button>
                       </div>
 
-                      <button className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition" onClick={() => setOpenProject(p)}>
+                      <button className="sfViewBtn" onClick={() => setOpenProject(p)}>
                         View
                       </button>
                     </div>
@@ -755,7 +791,7 @@ export default function ShowcaseFeed() {
             </div>
           )}
 
-          {/* ---------------- Upload Modal (✅ fixed) ---------------- */}
+          {/* ---------------- Upload Modal ---------------- */}
           {uploadOpen && (
             <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setUploadOpen(false)}>
               <div className="w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-xl sfModal" onClick={(e) => e.stopPropagation()}>
@@ -769,7 +805,6 @@ export default function ShowcaseFeed() {
                   </button>
                 </div>
 
-                {/* ✅ scroll area so buttons never disappear */}
                 <div className="sfModalBody">
                   <div className="sfField">
                     <label className="sfLabel">Title</label>
@@ -805,7 +840,6 @@ export default function ShowcaseFeed() {
                   </div>
                 </div>
 
-                {/* ✅ footer always visible */}
                 <div className="sfModalFooter">
                   <button className="sfBtnGhost" onClick={() => setUploadOpen(false)}>
                     Cancel
@@ -854,8 +888,6 @@ export default function ShowcaseFeed() {
                     ) : (
                       (commentsByProject[openCommentsFor.id] || []).map((c) => {
                         const liked = (c.likedBy || new Set()).has(displayName);
-
-                        // ✅ only own comment can be deleted
                         const isMyComment = (c.name || "").trim().toLowerCase() === displayName.trim().toLowerCase();
 
                         return (
@@ -1017,195 +1049,6 @@ export default function ShowcaseFeed() {
           )}
         </main>
       </div>
-
-      {/* CSS */}
-      <style>{`
-        .sidebar{
-          background:#0f172a;
-          color:#f8fafc;
-          display:flex;
-          flex-direction:column;
-          padding:24px 16px;
-          overflow:hidden;
-          transition:width .25s ease, padding .25s ease, opacity .25s ease;
-          z-index:10;
-          position:relative;
-        }
-        .sidebarOpen{ width:288px; opacity:1; }
-        .sidebarClosed{ width:0px; padding:0px; opacity:0; pointer-events:none; }
-
-        /* ✅ make ALL bg layers non-click-blocking */
-        .sfBg, .sfBlob, .sfShimmer, .sfGrid, .sfGrain{ pointer-events:none; }
-
-        .sfBlob{
-          position:absolute;
-          width:560px; height:560px;
-          border-radius:999px;
-          filter:blur(95px);
-          opacity:.32;
-          animation:sfFloat 14s ease-in-out infinite;
-          background:radial-gradient(circle at 30% 30%,
-            rgba(12,42,92,.55),
-            rgba(6,22,58,.30),
-            rgba(3,12,28,0)
-          );
-        }
-        .sfBlob1{ left:-180px; top:-180px; }
-        .sfBlob2{ right:-220px; bottom:-260px; width:650px; height:650px; opacity:.26; animation-duration:18s; }
-        @keyframes sfFloat{ 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(32px,-28px) scale(1.06)} 100%{transform:translate(0,0) scale(1)} }
-
-        .sfShimmer{
-          position:absolute; inset:-2px;
-          background:linear-gradient(120deg, rgba(3,12,28,0) 0%, rgba(12,42,92,.18) 45%, rgba(3,12,28,0) 70%);
-          mix-blend-mode:multiply;
-          opacity:.55;
-          transform:translateX(-35%) skewX(-8deg);
-          animation:sfSweep 6.5s ease-in-out infinite;
-        }
-        @keyframes sfSweep{ 0%{transform:translateX(-35%) skewX(-8deg);opacity:.22} 50%{transform:translateX(30%) skewX(-8deg);opacity:.65} 100%{transform:translateX(-35%) skewX(-8deg);opacity:.22} }
-
-        .sfGrid{
-          position:absolute; inset:0; opacity:.22;
-          background-image: linear-gradient(to right, rgba(15,23,42,.10) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(15,23,42,.10) 1px, transparent 1px);
-          background-size:64px 64px;
-        }
-        .sfGrain{
-          position:absolute; inset:0; opacity:.10;
-          background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-        }
-
-        .sfPre{ opacity:0; transform:translateY(12px); }
-        .sfIn{ opacity:1; transform:translateY(0); transition:all .6s cubic-bezier(.2,.8,.2,1); }
-        .sfIn2{ opacity:1; transform:translateY(0); transition:all .65s cubic-bezier(.2,.8,.2,1); transition-delay:.08s; }
-
-        .sfCard{ transition:transform .25s ease, box-shadow .25s ease; }
-        .sfCard:hover{ transform:translateY(-6px); box-shadow:0 18px 45px rgba(2,6,23,.14); }
-        .sfCardPre{ opacity:0; transform:translateY(16px) scale(.98); }
-        .sfCardIn{ opacity:1; transform:translateY(0) scale(1); transition:opacity .6s cubic-bezier(.2,.8,.2,1), transform .6s cubic-bezier(.2,.8,.2,1); }
-        .sfImg{ transition:transform .45s ease; }
-        .sfCard:hover .sfImg{ transform:scale(1.06); }
-
-        .sfPulseBorder{ position:relative; overflow:hidden; }
-        .sfPulseBorder::before{
-          content:"";
-          position:absolute; inset:-1px;
-          border-radius:18px;
-          background:linear-gradient(120deg, rgba(8,30,68,.85), rgba(56,189,248,.28), rgba(8,30,68,.85));
-          opacity:.18; filter:blur(10px);
-          pointer-events:none;
-          animation:sfBorderPulse 4.2s ease-in-out infinite;
-        }
-        .sfPulseBorder > *{ position:relative; z-index:1; }
-        @keyframes sfBorderPulse{ 0%,100%{opacity:.14;transform:scale(1)} 50%{opacity:.34;transform:scale(1.01)} }
-
-        .sfTopBtn{
-          display:inline-flex; align-items:center; gap:10px;
-          padding:10px 14px; border-radius:14px;
-          font-size:14px; font-weight:800;
-          border:1px solid rgba(148,163,184,.35);
-          box-shadow:0 10px 25px rgba(2,6,23,.08);
-          transition:transform .18s ease, filter .18s ease, background .18s ease;
-        }
-        .sfTopBtn:hover{ transform:translateY(-1px); filter:brightness(1.02); }
-        .sfTopBtnDark{ background:#0f172a; color:#fff; }
-        .sfTopBtnSky{ background:#0ea5e9; color:#fff; border-color:rgba(14,165,233,.35); }
-
-        .sfBadge{
-          margin-left:4px;
-          background:rgba(255,255,255,.18);
-          padding:2px 8px;
-          border-radius:999px;
-          font-size:12px; font-weight:900;
-        }
-
-        .sfActionBtn{
-          width:38px; height:38px; border-radius:999px;
-          display:grid; place-items:center;
-          background:rgba(255,255,255,.92);
-          border:1px solid rgba(148,163,184,.35);
-          box-shadow:0 12px 30px rgba(2,6,23,.14);
-          color:#0f172a;
-          transition:transform .18s ease, background .18s ease;
-        }
-        .sfActionBtn:hover{ transform:translateY(-1px) scale(1.02); background:#fff; }
-
-        .sfDangerBtn{
-          width:40px; height:40px; border-radius:14px;
-          display:grid; place-items:center;
-          background:rgba(255,255,255,.95);
-          border:1px solid rgba(226,232,240,.9);
-          color:rgb(185,28,28);
-          box-shadow:0 10px 22px rgba(2,6,23,.08);
-          transition:transform .18s ease;
-        }
-        .sfDangerBtn:hover{ transform:translateY(-1px); }
-
-        .sfModal{ animation:sfPop .22s ease-out both; }
-        @keyframes sfPop{ from{transform:scale(.98);opacity:.7} to{transform:scale(1);opacity:1} }
-
-        .lineClamp2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-
-        /* ✅ Upload modal layout fix (no table look) */
-        .sfModalBody{
-          padding: 18px;
-          max-height: calc(100vh - 210px);
-          overflow: auto;
-        }
-        .sfModalFooter{
-          padding: 14px 18px;
-          border-top: 1px solid rgba(226,232,240,.9);
-          display:flex;
-          justify-content:flex-end;
-          gap:10px;
-          background: #fff;
-        }
-        .sfField{ margin-bottom: 14px; }
-        .sfLabel{ display:block; font-size:12px; font-weight:800; color:#475569; }
-        .sfInput{
-          margin-top:8px;
-          width:100%;
-          padding: 12px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(226,232,240,1);
-          outline:none;
-        }
-        .sfTextarea{
-          margin-top:8px;
-          width:100%;
-          padding: 12px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(226,232,240,1);
-          outline:none;
-          min-height: 110px;
-          resize: vertical;
-        }
-        .sfSelect{
-          margin-top:8px;
-          width:100%;
-          padding: 12px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(226,232,240,1);
-          outline:none;
-          background:#fff;
-        }
-        .sfBtnGhost{
-          padding:10px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(203,213,225,1);
-          background: #fff;
-          font-weight: 800;
-          color:#0f172a;
-        }
-        .sfBtnPrimary{
-          padding:10px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(14,165,233,.35);
-          background: #0ea5e9;
-          font-weight: 900;
-          color:#fff;
-        }
-      `}</style>
     </>
   );
 }

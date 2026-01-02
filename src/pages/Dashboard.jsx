@@ -31,6 +31,11 @@ const ShowcaseIcon = () => (
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
   </svg>
 );
+const UserRolesIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
+  </svg>
+);
 
 const BellIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -316,6 +321,7 @@ const Dashboard = () => {
   const openRoom = () => navigate("/collaboration");
   const openShowcase = () => navigate("/showcase");
   const openSettings = () => navigate("/settings");
+  const openRoles = () => navigate("/roles");
 
   /* ---------------------------
      Search results
@@ -373,6 +379,12 @@ const Dashboard = () => {
               label="Showcase feed"
               onClick={() => navigate("/showcase")}
             />
+            <NavItem
+  active={location.pathname === "/roles"}
+  icon={<UserRolesIcon />}
+  label="User roles"
+  onClick={() => navigate("/roles")}
+/>
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
