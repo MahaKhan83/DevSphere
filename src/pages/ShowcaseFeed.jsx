@@ -93,57 +93,47 @@ const DEMO_PROJECTS = [
   },
 ];
 
-/* ---------------- Professional Icons ---------------- */
+/* =========================
+   Dashboard-style Icons (same as Dashboard.jsx)
+========================= */
 const DashboardIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 13h8V3H3v10Z" />
-    <path d="M13 21h8V11h-8v10Z" />
-    <path d="M3 21h8v-6H3v6Z" />
-    <path d="M13 9h8V3h-8v6Z" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
   </svg>
 );
 
 const PortfolioIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" />
-    <path d="M4 7h16a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2Z" />
-    <path d="M9 12h6" />
-  </svg>
-);
-
-const ShowcaseIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4Z" />
-    <path d="M7 15l3-3 3 3 4-4 3 3" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
   </svg>
 );
 
 const CollabIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="3" />
-    <path d="M20 8v6" />
-    <path d="M23 11h-6" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
+  </svg>
+);
+
+const ShowcaseIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
+  </svg>
+);
+const UserRolesIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
   </svg>
 );
 
 const BellIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
   </svg>
 );
 
 const SettingsIcon = () => (
-  <svg className="sfIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z" />
-    <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.2 2.2 0 0 1-1.55 3.76 2.2 2.2 0 0 1-1.55-.64l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.64V21a2.2 2.2 0 0 1-4.4 0v-.07a1.8 1.8 0 0 0-1.1-1.64 1.8 1.8 0 0 0-1.98.36l-.05.05a2.2 2.2 0 1 1-3.11-3.11l.05-.05A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-1.64-1.1H1.9a2.2 2.2 0 0 1 0-4.4h.07A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.2 2.2 0 1 1 6.3 2.86l.05.05A1.8 1.8 0 0 0 8.33 3.27 1.8 1.8 0 0 0 9.43 1.63V1.56a2.2 2.2 0 0 1 4.4 0v.07a1.8 1.8 0 0 0 1.1 1.64 1.8 1.8 0 0 0 1.98-.36l.05-.05A2.2 2.2 0 1 1 21.1 6l-.05.05A1.8 1.8 0 0 0 20.7 8c0 .74.45 1.4 1.14 1.68.32.13.67.2 1.02.2H23a2.2 2.2 0 0 1 0 4.4h-.07c-.35 0-.7.07-1.02.2A1.8 1.8 0 0 0 19.4 15Z" />
-  </svg>
-);
-
-const ChevronIcon = ({ open }) => (
-  <svg className="sfChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    {open ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
 );
 
@@ -216,26 +206,35 @@ const PlusIcon = () => (
   </svg>
 );
 
-/* ---------- Sidebar item UI ---------- */
-const NavItem = ({ active, icon, label, onClick, collapsed }) => (
-  <button
-    onClick={onClick}
-    className={`sfNavItem ${active ? "sfNavActive" : ""} ${collapsed ? "sfNavCollapsed" : ""}`}
-    title={collapsed ? label : undefined}
-  >
-    <span className="sfNavIcon">{icon}</span>
-    {!collapsed && <span className="sfNavLabel">{label}</span>}
-  </button>
+/* =========================
+   Dashboard-style Sidebar UI (same feel)
+========================= */
+const IconWrap = ({ children }) => (
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+    {children}
+  </span>
 );
 
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
-  { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
-  { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
-  { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
-  { label: "Notifications", icon: <BellIcon />, to: "/notifications" },
-  { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
-];
+const BadgePill = ({ children }) => (
+  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
+    {children}
+  </span>
+);
+
+const NavItem = ({ active, icon, label, onClick, badge }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+      active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
+    }`}
+  >
+    <span className="flex items-center gap-3">
+      <IconWrap>{icon}</IconWrap>
+      <span>{label}</span>
+    </span>
+    {badge ? <BadgePill>{badge}</BadgePill> : null}
+  </button>
+);
 
 export default function ShowcaseFeed() {
   const navigate = useNavigate();
@@ -249,8 +248,11 @@ export default function ShowcaseFeed() {
     .join("")
     .slice(0, 2);
 
+  // Dashboard-style sidebar open/close
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // (Optional) demo badge
+  const unreadCount = 3;
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -505,94 +507,110 @@ export default function ShowcaseFeed() {
     alert("Project deleted ✅");
   };
 
-  const Sidebar = ({ collapsed }) => (
-    <aside className={`sfSidebar ${collapsed ? "sfSidebarCollapsed" : ""}`}>
-      <div className="sfSideTop">
-        <button
-          className="sfCollapseBtn"
-          onClick={() => setSidebarOpen((v) => !v)}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronIcon open={!collapsed} />
-        </button>
+  // ✅ Dashboard-style Sidebar
+  const isOnline = true;
+  const Sidebar = () => (
+    <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
+      <button
+        onClick={() => navigate("/")}
+        className="flex items-center gap-3 px-2 mb-8 text-left"
+        title="Go to Landing"
+      >
+        <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
+        <span className="text-xl font-semibold">
+          Dev<span className="text-cyan-300">Sphere</span>
+        </span>
+      </button>
 
-        <div className="sfBrand" onClick={() => navigate("/dashboard")} role="button" tabIndex={0}>
-          <img src={logo} alt="DevSphere" className="sfBrandLogo" />
-          {!collapsed && (
-            <span className="sfBrandText">
-              Dev<span className="sfBrandAccent">Sphere</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      <nav className="sfNav">
-        {NAV_ITEMS.map((item) => (
-          <NavItem
-            key={item.to}
-            active={location.pathname === item.to}
-            icon={item.icon}
-            label={item.label}
-            collapsed={collapsed}
-            onClick={() => {
-              navigate(item.to);
-              setMobileOpen(false);
-            }}
-          />
-        ))}
+      <nav className="flex-1 space-y-2">
+        <NavItem
+          active={location.pathname === "/dashboard"}
+          icon={<DashboardIcon />}
+          label="Dashboard"
+          onClick={() => navigate("/dashboard")}
+        />
+        <NavItem
+          active={location.pathname === "/portfolio"}
+          icon={<PortfolioIcon />}
+          label="Build portfolio"
+          onClick={() => navigate("/portfolio")}
+        />
+        <NavItem
+          active={location.pathname === "/collaboration"}
+          icon={<CollabIcon />}
+          label="Collab rooms"
+          onClick={() => navigate("/collaboration")}
+        />
+        <NavItem
+          active={location.pathname === "/showcase"}
+          icon={<ShowcaseIcon />}
+          label="Showcase feed"
+          onClick={() => navigate("/showcase")}
+        />
+         <NavItem
+              active={location.pathname === "/roles"}
+              icon={<UserRolesIcon />}
+              label="User roles"
+              onClick={() => navigate("/roles")}
+            />
+        <NavItem
+          active={location.pathname === "/notifications"}
+          icon={<BellIcon />}
+          label="Notifications"
+          badge={unreadCount > 0 ? unreadCount : null}
+          onClick={() => navigate("/notifications")}
+        />
+        <NavItem
+          active={location.pathname === "/settings"}
+          icon={<SettingsIcon />}
+          label="Settings"
+          onClick={() => navigate("/settings")}
+        />
       </nav>
 
-      <div className="sfSideFooter">
-        <div className="sfAvatar">{initials || "U"}</div>
-        {!collapsed && (
-          <div className="sfUserMeta">
-            <p className="sfUserName">{displayName}</p>
-            <p className="sfUserSub">Signed in</p>
+      <button
+        onClick={() => navigate("/settings")}
+        className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
+        title="Open Settings"
+      >
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
+            {initials || "U"}
           </div>
-        )}
-      </div>
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
+              isOnline ? "bg-emerald-400" : "bg-slate-400"
+            }`}
+            title={isOnline ? "Online" : "Offline"}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
+          <p className="text-xs text-slate-300 truncate max-w-[160px]">
+            {isOnline ? "Online" : "Offline"} · Signed in
+          </p>
+        </div>
+      </button>
     </aside>
   );
 
-  const collapsed = !sidebarOpen;
-
   return (
     <>
-      <div className="sfShell">
-        {/* Background */}
-        <div className="sfBg fixed inset-0 pointer-events-none">
-          <div className="sfBlob sfBlob1" />
-          <div className="sfBlob sfBlob2" />
-          <div className="sfShimmer" />
-          <div className="sfGrid" />
-          <div className="sfGrain" />
-        </div>
-
-        {/* Desktop Sidebar */}
-        <div className="sfSideWrap">{Sidebar({ collapsed })}</div>
-
-        {/* Mobile toggle + drawer */}
-        <button className="sfMobileMenuBtn" onClick={() => setMobileOpen(true)} title="Menu">
-          ☰
-        </button>
-        {mobileOpen && (
-          <div className="sfMobileOverlay" onClick={() => setMobileOpen(false)}>
-            <div className="sfMobileDrawer" onClick={(e) => e.stopPropagation()}>
-              {Sidebar({ collapsed: false })}
-            </div>
-          </div>
-        )}
+      <div className="min-h-screen bg-slate-100 flex">
+        {/* SIDEBAR (Exact Dashboard style) */}
+        <Sidebar />
 
         {/* MAIN */}
-        <main className="sfMain">
-          {/* TOPBAR */}
-          <div className={`sfTopbar ${mounted ? "sfIn" : "sfPre"}`}>
+        <main className="flex-1 p-6 md:p-8">
+          {/* TOPBAR (Actions moved to Top-Right ✅) */}
+          <div className={`sfTopbarNew ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="sfTitleBlock">
               <h1 className="sfTitle">Showcase Feed</h1>
               <p className="sfSubtitle">Discover projects, connect with developers, and get inspired.</p>
             </div>
 
-            <div className="sfTopActions">
+            <div className="sfTopActionsRight">
               <div className="sfSearch">
                 <span className="sfSearchIcon">
                   <SearchIcon />
@@ -667,7 +685,6 @@ export default function ShowcaseFeed() {
                   className={`sfCard sfPulseBorder ${mounted ? "sfCardIn" : "sfCardPre"}`}
                   style={{ transitionDelay: `${Math.min(idx, 8) * 70}ms` }}
                 >
-                  {/* Thumb */}
                   <div className="sfThumb">
                     <img src={p.thumb} alt={p.title} className="sfImg" />
                     <div className="sfThumbFade" />
@@ -693,7 +710,6 @@ export default function ShowcaseFeed() {
                     </div>
                   </div>
 
-                  {/* Body */}
                   <div className="sfBody">
                     <div className="sfHeadRow">
                       <div>
@@ -748,6 +764,7 @@ export default function ShowcaseFeed() {
             })}
           </section>
 
+          {/* ✅ Your existing drawers/modals below — keep as-is */}
           {/* ---------------- Saved Drawer ---------------- */}
           {savedDrawerOpen && (
             <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={() => setSavedDrawerOpen(false)}>
@@ -1049,6 +1066,43 @@ export default function ShowcaseFeed() {
           )}
         </main>
       </div>
+
+      {/* ✅ Dashboard sidebar styles (same as Dashboard.jsx) */}
+      <style>{`
+        .sidebar{
+          background:#0f172a;
+          color:#f8fafc;
+          display:flex;
+          flex-direction:column;
+          padding:24px 16px;
+          overflow:hidden;
+          transition: width .25s ease, padding .25s ease, opacity .25s ease;
+        }
+        .sidebarOpen{ width:288px; opacity:1; }
+        .sidebarClosed{ width:0px; padding:24px 0px; opacity:0; }
+
+        /* ✅ Topbar right alignment */
+        .sfTopbarNew{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:16px;
+          margin-bottom: 18px;
+        }
+        .sfTopActionsRight{
+          display:flex;
+          align-items:center;
+          justify-content:flex-end;
+          gap:12px;
+          margin-left:auto;
+          width: 100%;
+          max-width: 720px;
+        }
+        @media (max-width: 900px){
+          .sfTopbarNew{ flex-direction:column; align-items:flex-start; }
+          .sfTopActionsRight{ width:100%; max-width:100%; }
+        }
+      `}</style>
     </>
   );
 }

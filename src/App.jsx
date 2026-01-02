@@ -16,6 +16,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Support from "./pages/Support";
 import ResetPassword from "./pages/ResetPassword"; // ✅ add this
+import CollaborationWorkspace from "./pages/CollaborationWorkspace";
 
 import { AuthProvider } from "./context/AuthContext";
 import "react-toastify/dist/ReactToastify.css";
@@ -70,6 +71,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/workspace/:roomCode" element={<CollaborationWorkspace />} />
 
           <Route
             path="/notifications"
