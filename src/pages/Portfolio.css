@@ -1,40 +1,68 @@
 /* src/pages/Portfolio.css */
 /* =========================================================
-   Portfolio.css - NEW LAYOUT: Tools in Topbar
+   Portfolio.css - SETTINGS THEME + NEW LAYOUT
+   + Floating Drag & Drop Palette
+   + ✅ TOPBAR FIX (buttons COMPLETELY CENTERED in page)
+   + ✅ Sidebar styles included
 ========================================================= */
 
-/* ---------- Base / App Shell ---------- */
+/* ---------- Base / App Shell (Settings like) ---------- */
 .pfShell {
   display: flex !important;
   min-height: 100vh;
   width: 100%;
-  background: #eef3f7;
+  background: #f1f5f9;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Main content area */
 .pfMain {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  position: relative;
+  z-index: 1;
 }
 
-/* ---------- TOP SECTION (TOOLS HERE) ---------- */
-.pfTopSection {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 20px 24px 0;
-  background: #eef3f7;
-  z-index: 20;
+/* =========================================================
+   ✅ SIDEBAR (added here so CSS is complete)
+========================================================= */
+.sidebar{
+  background: #0f172a;
+  color: #f8fafc;
+  display:flex;
+  flex-direction:column;
+  padding: 24px 16px;
+  overflow:hidden;
+  transition: width .25s ease, padding .25s ease, opacity .25s ease;
+  z-index: 10;
+}
+.sidebarOpen{ width: 288px; opacity:1; }
+.sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
+
+@media (max-width: 1024px){
+  .sidebar{ display:none; }
+}
+
+/* =========================================================
+   ✅ TOPBAR (FIXED) - Title Row Only, Buttons COMPLETELY CENTERED
+========================================================= */
+.pfTopSection{
   position: sticky;
   top: 0;
+  z-index: 20;
+  background: #f1f5f9;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid rgba(226,232,240,0.9);
+  min-height: 80px;
 }
 
-.pfTopLeft {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
+/* Row 1: toggle + title only */
+.pfTopHeaderRow{
+  display:flex;
+  align-items:flex-start;
+  gap: 14px;
 }
 
 .pfSidebarToggle {
@@ -45,21 +73,19 @@
   color: white;
   border: none;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 900;
   display: grid;
   place-items: center;
   transition: all 0.2s ease;
-  margin-top: 4px;
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
-
 .pfSidebarToggle:hover {
   background: #1e293b;
   transform: translateY(-1px);
 }
 
-.pfTitleSection {
-  flex: 1;
-}
+.pfTitleSection { flex: 1; min-width: 0; }
 
 .pfMainTitle {
   font-size: 28px;
@@ -76,158 +102,55 @@
   font-weight: 600;
 }
 
-.pfModeButtons {
-  display: flex;
+/* ✅ BUTTONS ROW - COMPLETELY CENTERED IN MIDDLE OF PAGE */
+.pfTopActionsRow{
+  position: fixed !important;
+  top: 50vh !important;
+  left: 50vw !important;
+  transform: translate(-50%, -50%) !important;
+  display:flex;
+  justify-content:center;
+  align-items:center;
   gap: 12px;
   flex-wrap: wrap;
-  align-items: center;
+  z-index: 9999 !important;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 20px 30px !important;
+  border-radius: 24px;
+  border: 2px solid rgba(14, 165, 233, 0.25);
+  box-shadow: 
+    0 25px 60px rgba(2, 6, 23, 0.20),
+    0 0 0 1px rgba(14, 165, 233, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* ---------- TOOLS CONTAINER (NOW IN TOPBAR) ---------- */
-.pfToolsContainer {
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
-  transition: all 0.3s ease;
-  margin-top: 10px;
+/* Make sure buttons look good in the center */
+.pfTopActionsRow .pfPill,
+.pfTopActionsRow .pfBtnPrimary,
+.pfTopActionsRow .pfBtnPrimaryGreen,
+.pfTopActionsRow .pfBtnDanger {
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.15) !important;
 }
 
-.toolsClosed {
-  height: 50px;
-  max-height: 50px;
+.pfTopActionsRow .pfPill:hover,
+.pfTopActionsRow .pfBtnPrimary:hover,
+.pfTopActionsRow .pfBtnPrimaryGreen:hover,
+.pfTopActionsRow .pfBtnDanger:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 35px rgba(2, 6, 23, 0.25) !important;
 }
 
-.toolsOpen {
-  height: 450px;
-  max-height: 450px;
-}
-
-.pfToolsToggle {
-  width: 100%;
-  padding: 14px 18px;
-  background: #f8fafc;
-  border: none;
-  border-bottom: 1.5px solid rgba(226, 232, 240, 0.95);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 850;
-  font-size: 14px;
-  color: #0f172a;
-  transition: all 0.2s ease;
-}
-
-.pfToolsToggle:hover {
-  background: #f1f5f9;
-}
-
-.pfToolsToggleText {
-  font-weight: 850;
-}
-
-.pfToolsChev {
-  transition: transform 0.3s ease;
-  font-size: 18px;
-  color: #64748b;
-}
-
-.pfToolsChev.open {
-  transform: rotate(180deg);
-  color: #0284c7;
-}
-
-.pfToolsContent {
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - 50px);
-}
-
-.pfToolsHeader {
-  padding: 16px 18px;
-  border-bottom: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #ffffff;
-}
-
-.pfToolsTitle {
-  font-weight: 850;
-  font-size: 15px;
-  color: #0f172a;
-}
-
-.pfToolsSub {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 700;
-}
-
-.pfToolsBody {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0;
-}
-
-/* Accordion inside tools */
-.pfAccItem {
-  border-top: 1.5px solid rgba(226, 232, 240, 0.95);
-}
-
-.pfAccHead {
-  width: 100%;
-  padding: 14px 18px;
-  background: #f8fafc;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.pfAccHead:hover {
-  background: #f1f5f9;
-}
-
-.pfAccTitle {
-  font-weight: 850;
-  font-size: 13px;
-  color: #0f172a;
-}
-
-.pfAccSub {
-  margin-top: 4px;
-  font-size: 11.5px;
-  color: #64748b;
-  font-weight: 700;
-}
-
-.pfAccChevron {
-  transition: transform 0.25s ease;
-  color: #64748b;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.pfAccChevron.open {
-  transform: rotate(180deg);
-  color: #0284c7;
-}
-
-.pfAccBody {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease;
-}
-
-.pfAccBody.open {
-  max-height: 500px;
-}
-
-.pfAccInner {
-  padding: 0 18px 16px;
+.pfTopActionsRow .pfPillOn {
+  box-shadow: 
+    0 12px 30px rgba(14, 165, 233, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-width: 2px !important;
 }
 
 /* ---------- CONTENT AREA (PORTFOLIO) ---------- */
@@ -237,6 +160,9 @@
   overflow-y: auto;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 1;
+  margin-top: 20px;
 }
 
 .pfPaper {
@@ -245,7 +171,7 @@
   min-height: 297mm;
   overflow: hidden;
   background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   border-radius: 18px;
   box-shadow: 0 18px 55px rgba(2, 6, 23, 0.08);
 }
@@ -254,7 +180,7 @@
 .pfPill {
   padding: 10px 16px;
   border-radius: 999px;
-  border: 1.5px solid rgba(203, 213, 225, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.9);
   background: #fff;
   cursor: pointer;
   font-weight: 800;
@@ -265,16 +191,16 @@
 }
 
 .pfPill:hover {
-  border-color: rgba(14, 165, 233, 0.45);
+  border-color: rgba(14, 165, 233, 0.35);
   transform: translateY(-1px);
   box-shadow: 0 8px 22px rgba(2, 6, 23, 0.06);
 }
 
 .pfPillOn {
-  border-color: rgba(14, 165, 233, 0.8) !important;
+  border-color: rgba(14, 165, 233, 0.65) !important;
   background: rgba(14, 165, 233, 0.08);
   color: #0284c7;
-  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.14) !important;
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.12) !important;
 }
 
 .pfBtnPrimary,
@@ -285,7 +211,7 @@
   font-weight: 900;
   font-size: 13px;
   cursor: pointer;
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
@@ -293,23 +219,23 @@
 .pfBtnPrimary {
   background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
   color: #fff;
-  box-shadow: 0 8px 22px rgba(14, 165, 233, 0.22);
+  box-shadow: 0 8px 22px rgba(14, 165, 233, 0.18);
 }
 
 .pfBtnPrimary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.28);
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.24);
 }
 
 .pfBtnPrimaryGreen {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #fff;
-  box-shadow: 0 8px 22px rgba(34, 197, 94, 0.18);
+  box-shadow: 0 8px 22px rgba(34, 197, 94, 0.16);
 }
 
 .pfBtnPrimaryGreen:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(34, 197, 94, 0.24);
+  box-shadow: 0 14px 34px rgba(34, 197, 94, 0.22);
 }
 
 .pfBtnDanger {
@@ -330,7 +256,7 @@
   grid-template-columns: 1.25fr 1fr 140px;
   gap: 16px;
   padding: 22px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
   background: #ffffff;
 }
 
@@ -344,7 +270,7 @@
 .stRoleInpV2,
 .stInpV2 {
   width: 100%;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 14px;
   padding: 12px 14px;
   outline: none;
@@ -356,8 +282,8 @@
 .stNameInpV2:focus,
 .stRoleInpV2:focus,
 .stInpV2:focus {
-  border-color: rgba(14, 165, 233, 0.7);
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+  border-color: rgba(15, 23, 42, 0.25);
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
   background: #ffffff;
 }
 
@@ -396,7 +322,7 @@
 .stInfoRow {
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   background: #f8fafc;
   font-weight: 800;
   font-size: 13px;
@@ -417,7 +343,7 @@
   height: 130px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(14, 165, 233, 0.20);
+  border: 3px solid rgba(15, 23, 42, 0.10);
   box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
 }
 
@@ -438,11 +364,11 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: rgba(14, 165, 233, 0.10);
+  background: rgba(15, 23, 42, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0284c7;
+  color: #0f172a;
 }
 
 .stPhotoLabel {
@@ -460,7 +386,7 @@
 .stMiniBtnAlt {
   padding: 10px 14px;
   border-radius: 14px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   background: #fff;
   font-weight: 900;
   font-size: 12px;
@@ -499,18 +425,19 @@
 }
 
 .pfSectionCard {
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   border-radius: 18px;
   background: #ffffff;
   overflow: hidden;
-  transition: all 0.22s ease;
-  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+  position: relative;
 }
 
 .pfSectionCard:hover {
-  transform: translateY(-2px);
-  border-color: rgba(14, 165, 233, 0.35);
-  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.10);
+  transform: translateY(-3px);
+  border-color: rgba(2, 132, 199, 0.15);
+  box-shadow: 0 18px 45px rgba(2, 6, 23, 0.10);
 }
 
 .pfSectionTop {
@@ -518,7 +445,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
   background: #f8fafc;
 }
 
@@ -534,14 +461,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(14, 165, 233, 0.20);
-  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.18);
+  background: rgba(2, 132, 199, 0.08);
   color: #0284c7;
-}
-
-.pfSecBadge.small {
-  width: 36px;
-  height: 36px;
 }
 
 .pfSecTitle {
@@ -559,7 +481,7 @@
 .pfMiniBtn {
   padding: 9px 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   background: #fff;
   font-weight: 900;
   font-size: 12px;
@@ -571,14 +493,14 @@
 
 .pfMiniBtn:hover {
   transform: translateY(-1px);
-  border-color: rgba(14, 165, 233, 0.45);
+  border-color: rgba(2, 132, 199, 0.25);
   color: #0284c7;
 }
 
 .pfMiniBtnDanger {
   padding: 9px 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(239, 68, 68, 0.28);
+  border: 1px solid rgba(239, 68, 68, 0.28);
   background: rgba(239, 68, 68, 0.10);
   color: #b91c1c;
   font-weight: 900;
@@ -593,11 +515,16 @@
   background: rgba(239, 68, 68, 0.14);
 }
 
+.pfMiniBtnPrimary{
+  border-color: rgba(2,132,199,0.25);
+  color:#0284c7;
+}
+
 .pfDragHandle {
   width: 40px;
   height: 38px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1px solid rgba(241, 245, 249, 0.9);
   background: #fff;
   cursor: grab;
   font-weight: 900;
@@ -607,18 +534,12 @@
 
 .pfDragHandle:hover {
   transform: translateY(-1px);
-  border-color: rgba(14, 165, 233, 0.45);
+  border-color: rgba(2, 132, 199, 0.25);
   color: #0284c7;
 }
 
 .pfSectionBody {
   padding: 16px;
-}
-
-.pfTextPreview {
-  font-size: 13.5px;
-  line-height: 1.7;
-  color: rgba(15, 23, 42, 0.86);
 }
 
 .pfMuted {
@@ -633,49 +554,10 @@
   gap: 12px;
 }
 
-.pfItem {
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 16px;
-  background: #f8fafc;
-  padding: 14px;
-}
-
-.pfItemTop {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.pfItemTitle {
-  font-weight: 950;
-  font-size: 14px;
-  color: #0f172a;
-}
-
-.pfItemSub {
-  margin-top: 4px;
-  font-size: 12.5px;
-  color: rgba(71, 85, 105, 0.95);
-  font-weight: 800;
-}
-
-.pfItem .pfPill {
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: #0f172a;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.pfItemText {
-  margin-top: 10px;
-  font-size: 13px;
-  color: rgba(15, 23, 42, 0.82);
-  line-height: 1.6;
-}
+.pfListRow{ display:grid; gap:4px; }
+.pfListTitle{ font-weight: 950; }
+.pfListMeta{ font-size: 12px; color:#64748b; font-weight: 800; }
+.pfListDesc{ line-height: 1.5; font-weight: 700; }
 
 .pfLink {
   display: inline-block;
@@ -685,664 +567,398 @@
   color: #0284c7;
   text-decoration: none;
 }
+.pfLink:hover { text-decoration: underline; }
 
-.pfLink:hover {
-  text-decoration: underline;
+/* Skills */
+.pfSkills{ display:grid; gap: 10px; }
+.pfSkillRow{ display:grid; grid-template-columns: 140px 1fr 44px; gap: 10px; align-items:center; }
+.pfSkillName{ font-weight: 900; }
+.pfSkillBar{ height: 10px; background:#e2e8f0; border-radius: 999px; overflow:hidden; }
+.pfSkillFill{ height:100%; border-radius:999px; }
+.pfSkillPct{ font-size: 12px; color:#64748b; text-align:right; font-weight: 900; }
+
+.pfMono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+.pfPreviewText{ line-height: 1.55; white-space: pre-wrap; font-weight: 700; }
 
-/* Skills bars */
-.pfBars {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.pfBarRow {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 14px;
-  align-items: center;
-}
-
-.pfBarLabel {
+/* Editor fields */
+.pfField{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(226,232,240,0.95);
+  background: #ffffff;
+  outline: none;
+  font-weight: 700;
   font-size: 13px;
-  font-weight: 900;
-  color: rgba(15, 23, 42, 0.85);
 }
-
-.pfTrack {
-  height: 12px;
-  border-radius: 999px;
-  background: #e2e8f0;
-  overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.95);
+.pfArea{
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(226,232,240,0.95);
+  background: #ffffff;
+  outline: none;
+  resize: vertical;
+  font-weight: 700;
+  font-size: 13px;
 }
+.pfLabel{ font-weight: 900; color:#0f172a; font-size: 13px; }
+.pfEditorGrid{ display:grid; gap: 10px; }
+.pfEditorRowTop{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
 
-.pfFill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+.pfItemCard{
+  border: 1px solid rgba(226,232,240,0.95);
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  display:grid;
+  gap: 10px;
 }
+.pfItemGrid{ display:grid; gap: 10px; }
+.pfItemActions{ display:flex; justify-content:flex-end; }
 
-/* ---------- Inline Editor ---------- */
 .pfInlineEditor {
-  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  border-top: 1px solid rgba(241, 245, 249, 0.9);
   background: #ffffff;
   padding: 16px;
 }
 
-.pfLbl {
-  display: block;
-  font-size: 13px;
-  font-weight: 950;
-  color: rgba(15, 23, 42, 0.85);
-  margin-bottom: 8px;
-}
-
-.pfInp,
-.pfArea {
-  width: 100%;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 14px;
-  padding: 12px 14px;
-  outline: none;
-  background: #f8fafc;
-  font-weight: 800;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.pfArea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.pfInp:focus,
-.pfArea:focus {
-  border-color: rgba(14, 165, 233, 0.7);
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
-  background: #ffffff;
-}
-
-.pf2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.pfInlineTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.pfInlineTitle {
-  font-size: 14px;
-  font-weight: 950;
-  color: #0f172a;
-}
-
-.pfInlineList {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.pfInlineCard {
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 16px;
-  padding: 14px;
-  background: #f8fafc;
-}
-
-.pfInlineCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.pfLinkDanger {
-  border: none;
-  background: transparent;
-  color: #b91c1c;
-  font-weight: 950;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 8px;
-}
-
-.pfLinkDanger:hover {
-  background: rgba(239, 68, 68, 0.10);
-}
-
-/* Range */
-.pfRangeRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pfRange {
-  width: 100%;
-  height: 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.pfRangeVal {
-  font-size: 13px;
-  font-weight: 950;
-  color: #0284c7;
-  min-width: 46px;
-  text-align: right;
-}
-
-.pfBtnPrimarySm {
+/* GitHub */
+.pfGithubEditRow{ display:flex; gap:10px; align-items:center; }
+.pfBtnPrimarySm{
   padding: 11px 14px;
   border-radius: 14px;
-  border: 1.5px solid rgba(14, 165, 233, 0.25);
-  background: rgba(14, 165, 233, 0.10);
+  border: 1px solid rgba(2, 132, 199, 0.18);
+  background: rgba(2, 132, 199, 0.08);
   color: #075985;
   font-weight: 950;
   cursor: pointer;
   white-space: nowrap;
 }
+.pfBtnPrimarySm:hover{ background: rgba(2, 132, 199, 0.12); }
+.pfBtnPrimarySm:disabled{ opacity: .6; cursor: not-allowed; }
 
-.pfBtnPrimarySm:hover {
-  background: rgba(14, 165, 233, 0.14);
+.pfError{ color:#b91c1c; font-weight:900; font-size: 12px; }
+.pfGithubTop{ display:flex; justify-content:space-between; gap: 10px; align-items:center; margin-bottom: 10px; }
+.pfRepoRow{ border: 1px solid rgba(226,232,240,0.95); border-radius: 14px; padding: 10px; background:#fff; }
+.pfRepoHead{ display:flex; justify-content:space-between; gap: 10px; align-items:center; }
+.pfRepoMeta{ color:#64748b; font-size: 12px; font-weight: 900; }
+
+/* Floating windows */
+.floatingPalette, .floatingCustomization{
+  position: fixed;
+  z-index: 1000;
+  border-radius: 18px;
+  border: 1px solid rgba(226,232,240,0.95);
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 18px 45px rgba(2,6,23,0.14);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
+.floatingPalette{ width: 300px; }
+.floatingCustomization{ width: 330px; }
 
-.pfBtnPrimarySm:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ---------- Palette ---------- */
-.pfPalette {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 12px;
-}
-
-.pfPaletteItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
-  cursor: grab;
-  transition: all 0.2s ease;
-}
-
-.pfPaletteItem:hover {
-  transform: translateY(-1px);
-  border-color: rgba(14, 165, 233, 0.35);
-  background: #ffffff;
-}
-
-.pfPaletteItem.disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.pfPaletteLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pfPaletteTitle {
-  font-weight: 950;
-  font-size: 13px;
-  color: #0f172a;
-}
-
-.pfDragHint {
-  font-weight: 950;
-  opacity: 0.6;
-  color: #64748b;
-  font-size: 18px;
-}
-
-/* Notice */
-.pfNotice {
-  margin-top: 12px;
+.floatingHeader{
   padding: 12px 14px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(14, 165, 233, 0.28);
-  background: rgba(14, 165, 233, 0.08);
-  font-weight: 900;
-  font-size: 12.5px;
-  color: #075985;
+  background: #0f172a;
+  color: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor: move;
+  user-select:none;
 }
-
-/* Presets */
-.pfPresetRow {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
+.floatingTitleRow{ display:flex; align-items:center; gap: 10px; }
+.floatingIconHead{
+  width: 34px; height: 34px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.16);
+  display:grid;
+  place-items:center;
 }
+.floatingTitleCol{ display:flex; flex-direction:column; gap: 2px; }
+.floatingTitleText{ font-weight: 950; font-size: 14px; }
+.floatingSub{ font-size: 11px; opacity: .86; font-weight: 800; }
 
-.pfPresetBtn {
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
+.floatingClose{
+  width: 30px; height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.10);
+  color:#fff;
   cursor: pointer;
-  font-weight: 950;
-  font-size: 12.5px;
-  color: #475569;
+  display: grid;
+  place-items: center;
   transition: all 0.2s ease;
-  flex: 1;
-  min-width: 110px;
 }
+.floatingClose:hover{ background: rgba(255,255,255,0.15); transform: rotate(90deg); }
 
-.pfPresetBtn:hover {
-  background: #ffffff;
-  border-color: rgba(14, 165, 233, 0.35);
-  color: #0284c7;
-}
+.floatingContent{ padding: 14px; max-height: 520px; overflow-y: auto; }
+.floatingGrid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
-/* Theme row */
-.pfRow {
-  padding: 14px;
-  border-radius: 16px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
-  margin-bottom: 14px;
-}
-
-.pfRowTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.floatingCard{
+  border: 1px solid rgba(226,232,240,0.95);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+  display:flex;
+  flex-direction:column;
   gap: 10px;
+  align-items:flex-start;
+  cursor: grab;
+}
+.floatingCard.disabled{ opacity: .5; cursor: not-allowed; }
+.floatingCard.disabled:hover{ transform:none; box-shadow:none; }
+
+.floatingIcon{
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(14,165,233,0.10);
+  color:#0284c7;
+}
+.floatingCardTitle{ font-weight: 950; color:#0f172a; font-size: 13px; }
+
+.customizationGrid{ display:grid; gap: 16px; }
+.customizationSection{
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(226,232,240,0.95);
+}
+.customizationTitle{
+  font-weight: 950;
+  color:#0f172a;
+  font-size: 13px;
   margin-bottom: 12px;
 }
-
-.pfRowLabel {
-  font-weight: 950;
+.controlBlock{ display:grid; gap: 10px; }
+.customSelect{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(226,232,240,0.95);
+  background: #ffffff;
+  font-weight: 900;
   font-size: 13px;
   color: #0f172a;
+  outline: none;
 }
 
-.pfRowValue {
+.hintInline{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  color:#64748b;
+  margin-top: 6px;
+}
+
+.tipLine{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color:#64748b;
+  padding-top: 10px;
+}
+
+.colorPickerRow{ display:flex; gap: 12px; align-items:center; }
+.colorPickerCircle{
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 2px solid rgba(226,232,240,0.95);
+  cursor: pointer;
+  background: transparent;
+}
+.colorInput{
+  flex: 1;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(226,232,240,0.95);
+  background: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+  color: #0f172a;
+  outline: none;
+}
+
+.layoutButtons{ display:flex; gap: 10px; }
+.layoutBtn{
+  flex:1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(226,232,240,0.95);
+  background: #ffffff;
   font-weight: 900;
   font-size: 12px;
-  color: #64748b;
-  background: rgba(148, 163, 184, 0.12);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.pfRowInputs {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.pfColor {
-  width: 50px;
-  height: 44px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 14px;
-  background: #fff;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.layoutBtn.active{
+  background: rgba(14,165,233,0.10);
+  border-color: rgba(14,165,233,0.45);
+  color:#0284c7;
 }
 
-.pfText {
-  flex: 1;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 14px;
+.sliderControl{ margin-bottom: 14px; }
+.sliderControl:last-child{ margin-bottom: 0; }
+.sliderControl label{
+  display:block;
+  font-size: 12px;
+  font-weight: 900;
+  color:#475569;
+  margin-bottom: 8px;
+}
+.sliderRow{ display:flex; gap: 12px; align-items:center; }
+.sliderRow input[type="range"]{
+  flex:1;
+  height: 6px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  outline:none;
+}
+.sliderRow span{
+  font-size: 12px;
+  font-weight: 950;
+  color:#0284c7;
+  min-width: 44px;
+  text-align:right;
+}
+
+.quickActions{ display:flex; flex-direction:column; gap: 10px; }
+.quickBtn{
   padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(226,232,240,0.95);
   background: #ffffff;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 13px;
-  color: #0f172a;
+  cursor:pointer;
+  transition: all 0.2s ease;
+  text-align:center;
+}
+.quickBtn:hover{ background:#f8fafc; transform: translateY(-1px); }
+.quickBtn.save{ background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.30); color:#16a34a; }
+.quickBtn.danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.30); color:#b91c1c; }
+
+/* ✅ Glow / pulse ONLY on cards */
+.sfPulseBorder{ position: relative; }
+.sfPulseBorder::before{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius: 18px;
+  background: linear-gradient(120deg,
+    rgba(8, 30, 68, 0.60),
+    rgba(12, 42, 92, 0.25),
+    rgba(8, 30, 68, 0.60)
+  );
+  opacity: .20;
+  filter: blur(10px);
+  pointer-events:none;
+  animation: sfBorderPulse 4.2s ease-in-out infinite;
+}
+.sfPulseBorder::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 18px;
+  pointer-events:none;
+  box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.22);
+}
+@keyframes sfBorderPulse{
+  0%,100%{ opacity: .16; transform: scale(1); }
+  50%{ opacity: .32; transform: scale(1.01); }
 }
 
-.pfText:focus {
-  outline: none;
-  border-color: rgba(14, 165, 233, 0.7);
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+.sfCardHover{ transition: transform .25s ease, box-shadow .25s ease; }
+.sfCardHover:hover{
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 45px rgba(2,6,23,0.10),
+    0 0 0 1px rgba(8, 30, 68, 0.10);
 }
 
-/* Guide */
-.pfGuide {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 16px 16px;
-}
-
-.pfGuideItem {
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
-  border-radius: 16px;
-  padding: 14px;
-}
-
-.pfGuideTitle {
-  font-weight: 950;
-  font-size: 13.5px;
-  color: #0f172a;
-  margin-bottom: 6px;
-}
-
-.pfGuideText {
-  font-weight: 800;
-  font-size: 12.5px;
-  color: #475569;
-  line-height: 1.6;
-}
-
-.pfGuideActions {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.pfBtnGhostSmall {
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  background: #ffffff;
-  cursor: pointer;
-  font-weight: 950;
-  font-size: 12.5px;
-  color: #475569;
-}
-
-/* Responsive */
+/* ---------- Responsive ---------- */
 @media (max-width: 1280px) {
   .pfTopSection,
   .pfContentArea {
     padding-left: 18px;
     padding-right: 18px;
   }
-  
-  .toolsOpen {
-    height: 400px;
-  }
 }
 
 @media (max-width: 1024px) {
-  .sidebar {
-    display: none;
+  .pfTopActionsRow {
+    padding: 16px 20px !important;
+    gap: 10px;
+    width: 90%;
+    max-width: 500px;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 45vh !important;
   }
   
-  .stHeaderV2 {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .stAvatar {
-    grid-column: 1 / -1;
-    justify-self: center;
-    margin-top: 10px;
+  .pfTopActionsRow .pfPill,
+  .pfTopActionsRow .pfBtnPrimary,
+  .pfTopActionsRow .pfBtnPrimaryGreen,
+  .pfTopActionsRow .pfBtnDanger {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
   }
 }
 
 @media (max-width: 768px) {
-  .pfTopSection {
-    padding: 16px 14px 0;
-  }
-  
-  .pfContentArea {
-    padding: 16px 14px;
-  }
-  
-  .pfModeButtons {
+  .pfTopSection { padding: 16px 14px 10px; }
+  .pfContentArea { padding: 16px 14px; }
+  .pfTopActionsRow {
+    flex-direction: column;
     gap: 8px;
+    padding: 20px !important;
+    width: 85%;
   }
   
-  .pfPill,
-  .pfBtnPrimary,
-  .pfBtnDanger,
-  .pfBtnPrimaryGreen {
-    padding: 9px 14px;
-    font-size: 12px;
-  }
-  
-  .stHeaderV2 {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .stAvatar {
-    grid-row: 1;
-    justify-self: center;
-  }
-  
-  .toolsOpen {
-    height: 380px;
+  .pfTopActionsRow .pfPill,
+  .pfTopActionsRow .pfBtnPrimary,
+  .pfTopActionsRow .pfBtnPrimaryGreen,
+  .pfTopActionsRow .pfBtnDanger {
+    width: 100%;
+    text-align: center;
+    padding: 12px !important;
   }
 }
 
-/* Print */
+/* ---------- Print ---------- */
 @media print {
   .no-print,
-  .pfTopSection {
+  .pfTopSection,
+  .floatingPalette,
+  .floatingCustomization {
     display: none !important;
   }
-  
-  .pfContentArea {
-    padding: 0 !important;
-  }
-  
+
+  .pfContentArea { padding: 0 !important; }
+
   .pfPaper {
     width: 210mm !important;
     min-height: 297mm !important;
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
-  
+
   .pfSectionCard {
     break-inside: avoid;
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
-  
-  .sidebar {
-    display: none !important;
-  }
-}
-/* src/pages/Portfolio.css */
-/* ... (previous CSS remains same) ... */
 
-/* ✅ FLOATING DRAG & DROP PALETTE */
-.floatingPalette {
-  position: fixed;
-  width: 280px;
-  height: 380px;
-  background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
-  border: 1.5px solid rgba(14, 165, 233, 0.2);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: floatIn 0.3s ease-out;
-  resize: both;
-  min-width: 250px;
-  min-height: 300px;
-  max-width: 400px;
-  max-height: 500px;
+  .sidebar { display: none !important; }
 }
-
-@keyframes floatIn {
-  from { opacity: 0; transform: scale(0.9) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.floatingPaletteHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-  color: white;
-  cursor: move;
-  user-select: none;
-}
-
-.floatingPaletteTitle {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.floatingPaletteTitle span:first-child {
-  font-weight: 850;
-  font-size: 15px;
-}
-
-.floatingPaletteSub {
-  font-size: 11px;
-  opacity: 0.9;
-  font-weight: 700;
-}
-
-.floatingPaletteControls {
-  display: flex;
-  gap: 8px;
-}
-
-.floatingPaletteClose {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: all 0.2s ease;
-}
-
-.floatingPaletteClose:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(90deg);
-}
-
-.floatingPaletteContent {
-  flex: 1;
-  padding: 12px;
-  overflow-y: auto;
-  background: #f8fafc;
-}
-
-.floatingPaletteGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.floatingPaletteCard {
-  background: white;
-  border-radius: 14px;
-  padding: 14px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  cursor: grab;
-  transition: all 0.2s ease;
-  text-align: center;
-  min-height: 90px;
-  justify-content: center;
-}
-
-.floatingPaletteCard:hover {
-  transform: translateY(-3px);
-  border-color: rgba(14, 165, 233, 0.5);
-  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.15);
-}
-
-.floatingPaletteCard.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.floatingPaletteIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(14, 165, 233, 0.1);
-  display: grid;
-  place-items: center;
-  color: #0284c7;
-  font-size: 18px;
-}
-
-.floatingPaletteCardTitle {
-  font-weight: 800;
-  font-size: 12.5px;
-  color: #0f172a;
-}
-
-.floatingPaletteFooter {
-  padding: 12px 16px;
-  background: #f1f5f9;
-  border-top: 1px solid rgba(226, 232, 240, 0.95);
-  font-size: 11.5px;
-  color: #475569;
-  font-weight: 700;
-  text-align: center;
-}
-
-.floatingPaletteHint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-/* Make palette draggable */
-.floatingPaletteHeader {
-  cursor: move;
-}
-
-.floatingPaletteHeader:active {
-  cursor: grabbing;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .floatingPalette {
-    width: 250px;
-    height: 350px;
-    right: 10px;
-    bottom: 10px;
-    left: auto !important;
-    top: auto !important;
-  }
-  
-  .floatingPaletteGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Update the subtitle in top section */
-.pfSubTitle {
-  font-size: 14px;
-  color: #475569;
-  margin: 0;
-  font-weight: 600;
-}
-

@@ -31,6 +31,7 @@ const ShowcaseIcon = () => (
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
   </svg>
 );
+
 const UserRolesIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
@@ -118,6 +119,13 @@ const Dashboard = () => {
 
   // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // ✅ Notifications-like mount animations
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   // Search
   const [query, setQuery] = useState("");
@@ -321,7 +329,6 @@ const Dashboard = () => {
   const openRoom = () => navigate("/collaboration");
   const openShowcase = () => navigate("/showcase");
   const openSettings = () => navigate("/settings");
-  const openRoles = () => navigate("/roles");
 
   /* ---------------------------
      Search results
@@ -340,7 +347,14 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-100 flex">
+      <div className="min-h-screen bg-slate-100 flex overflow-hidden">
+        {/* ✅ NAVY animated background (same vibe as Notifications) */}
+        <div className="pointer-events-none fixed inset-0">
+          <div className="sfBlob sfBlob1" />
+          <div className="sfBlob sfBlob2" />
+          <div className="sfShimmer" />
+        </div>
+
         {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
           <button
@@ -380,11 +394,11 @@ const Dashboard = () => {
               onClick={() => navigate("/showcase")}
             />
             <NavItem
-  active={location.pathname === "/roles"}
-  icon={<UserRolesIcon />}
-  label="User roles"
-  onClick={() => navigate("/roles")}
-/>
+              active={location.pathname === "/roles"}
+              icon={<UserRolesIcon />}
+              label="User roles"
+              onClick={() => navigate("/roles")}
+            />
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
@@ -392,7 +406,6 @@ const Dashboard = () => {
               badge={unreadCount > 0 ? unreadCount : null}
               onClick={() => navigate("/notifications")}
             />
-            {/* ✅ Calendar removed */}
             <NavItem
               active={location.pathname === "/settings"}
               icon={<SettingsIcon />}
@@ -428,9 +441,13 @@ const Dashboard = () => {
         </aside>
 
         {/* MAIN */}
-        <main className="flex-1 p-6 md:p-8 space-y-6 animate-pageIn">
+        <main className="flex-1 p-6 md:p-8 space-y-6 relative">
           {/* Top bar */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div
+            className={`flex flex-col gap-4 md:flex-row md:items-center md:justify-between ${
+              mounted ? "sfIn" : "sfPre"
+            }`}
+          >
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -440,7 +457,7 @@ const Dashboard = () => {
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
 
-              <div className="animate-titleIn">
+              <div>
                 <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Dashboard</h1>
                 <p className="text-sm text-slate-700">
                   Welcome back, <span className="font-semibold">{displayName}</span>.
@@ -449,7 +466,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
               {/* ✅ Quick Search (fixed dropdown) */}
               <div ref={searchRef} className="relative w-full md:w-[360px]">
                 <div className="relative">
@@ -469,11 +486,11 @@ const Dashboard = () => {
                       requestAnimationFrame(updateDropdownPos);
                     }}
                     placeholder="Quick search: projects, rooms, showcase"
-                    className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-900/20"
                   />
                 </div>
 
-                {/* ✅ DROPDOWN (position: fixed) — fixes overlay/stacking issues */}
+                {/* ✅ DROPDOWN (position: fixed) */}
                 {searchOpen && query.trim() ? (
                   <div
                     className="fixed z-[99999] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden"
@@ -529,13 +546,13 @@ const Dashboard = () => {
                   </span>
                 ) : null}
               </button>
-
-              {/* ✅ New project removed */}
             </div>
           </div>
 
           {/* Quick Actions */}
-          <section className="cardShell p-4 animate-cardIn delay-1">
+          <section
+            className={`cardShell sfPulseBorder p-4 ${mounted ? "sfIn2" : "sfPre"}`}
+          >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
@@ -562,12 +579,12 @@ const Dashboard = () => {
           {loading ? (
             <div className="text-slate-700 text-sm">Loading dashboard</div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${mounted ? "sfIn3" : "sfPre"}`}>
               {/* LEFT */}
               <div className="xl:col-span-2 space-y-6">
-                {/* GitHub Widget (clickable connect) */}
+                {/* GitHub Widget */}
                 <section
-                  className="cardShell p-5 animate-cardIn delay-2 cursor-pointer"
+                  className="cardShell sfPulseBorder p-5 cursor-pointer"
                   onClick={() => navigate("/settings", { state: { tab: "integrations" } })}
                   title="Connect GitHub in Settings"
                 >
@@ -609,7 +626,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* Announcements */}
-                <section className="cardShell p-5 animate-cardIn delay-3">
+                <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-slate-900">Announcements</h2>
                     <button
@@ -625,7 +642,7 @@ const Dashboard = () => {
                       <button
                         key={idx}
                         onClick={() => openAnnouncement(item)}
-                        className="w-full text-left flex items-start justify-between gap-3 rounded-xl px-3 py-2 hover:bg-slate-50 transition"
+                        className="w-full text-left flex items-start justify-between gap-3 rounded-xl px-3 py-2 hover:bg-slate-50 transition sfRow"
                         title="Open in Notifications"
                       >
                         <div>
@@ -641,7 +658,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* Recent Projects */}
-                <section className="cardShell p-5 animate-cardIn delay-4 min-h-[420px]">
+                <section className="cardShell sfPulseBorder p-5 min-h-[420px]">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-slate-900">Recent projects</h2>
                     <button
@@ -658,7 +675,7 @@ const Dashboard = () => {
                         <button
                           key={`${project.name}-${idx}`}
                           onClick={() => openProject(project)}
-                          className="w-full text-left rounded-xl p-4 hover:bg-slate-50 transition border border-slate-200"
+                          className="w-full text-left rounded-xl p-4 hover:bg-slate-50 transition border border-slate-200 sfRow bg-white"
                           title="Open in Portfolio Builder"
                         >
                           <div className="flex items-center justify-between mb-3">
@@ -707,7 +724,7 @@ const Dashboard = () => {
               {/* RIGHT */}
               <div className="space-y-6">
                 {/* Collab Rooms */}
-                <section className="cardShell p-5 animate-cardIn delay-3">
+                <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-slate-900">Live collab rooms</h2>
                     <button
@@ -723,7 +740,7 @@ const Dashboard = () => {
                       <button
                         key={idx}
                         onClick={openRoom}
-                        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition"
+                        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition sfRow"
                         title="Open Collaboration Rooms"
                       >
                         <div>
@@ -742,7 +759,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* Room Activity */}
-                <section className="cardShell p-5 animate-cardIn delay-4">
+                <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-slate-900">Room activity</h2>
                     <button
@@ -758,7 +775,7 @@ const Dashboard = () => {
                       <button
                         key={idx}
                         onClick={() => navigate("/collaboration")}
-                        className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 bg-slate-50 hover:bg-slate-100 transition"
+                        className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 bg-slate-50 hover:bg-slate-100 transition sfRow"
                         title="Open collaboration rooms"
                       >
                         <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600">
@@ -774,10 +791,13 @@ const Dashboard = () => {
                 </section>
 
                 {/* Showcase */}
-                <section className="cardShell p-5 animate-cardIn delay-5">
+                <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-slate-900">Showcase feed</h2>
-                    <button onClick={openShowcase} className="text-xs text-sky-700 hover:text-sky-600 font-semibold">
+                    <button
+                      onClick={openShowcase}
+                      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
+                    >
                       View feed
                     </button>
                   </div>
@@ -787,7 +807,7 @@ const Dashboard = () => {
                       <button
                         key={idx}
                         onClick={openShowcase}
-                        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition"
+                        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition sfRow"
                         title="Open Showcase Feed"
                       >
                         <div>
@@ -802,7 +822,7 @@ const Dashboard = () => {
 
                 {/* CTA Box */}
                 <section
-                  className="ctaBox animate-cardIn delay-5 cursor-pointer"
+                  className="ctaBox cursor-pointer sfRow"
                   onClick={() => navigate("/collaboration")}
                   title="Join collaboration workspace"
                 >
@@ -816,6 +836,7 @@ const Dashboard = () => {
             </div>
           )}
         </main>
+
       </div>
 
       {/* Styles */}
@@ -829,43 +850,117 @@ const Dashboard = () => {
           padding: 24px 16px;
           overflow:hidden;
           transition: width .25s ease, padding .25s ease, opacity .25s ease;
+          z-index: 10;
         }
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* Cards */
+        /* ✅ NAVY animated blobs (same as Notifications) */
+        .sfBlob{
+          position:absolute;
+          width: 560px;
+          height: 560px;
+          border-radius: 999px;
+          filter: blur(95px);
+          opacity: .34;
+          animation: sfFloat 14s ease-in-out infinite;
+          background: radial-gradient(circle at 30% 30%,
+            rgba(12, 42, 92, 0.65),
+            rgba(6, 22, 58, 0.35),
+            rgba(3, 12, 28, 0)
+          );
+        }
+        .sfBlob1{ left: -180px; top: -180px; }
+        .sfBlob2{
+          right: -220px; bottom: -260px;
+          width: 650px; height: 650px;
+          opacity: .28;
+          animation-duration: 18s;
+        }
+
+        .sfShimmer{
+          position:absolute;
+          inset:-2px;
+          pointer-events:none;
+          background:
+            linear-gradient(120deg,
+              rgba(3, 12, 28, 0) 0%,
+              rgba(12, 42, 92, 0.22) 45%,
+              rgba(3, 12, 28, 0) 70%
+            );
+          mix-blend-mode: multiply;
+          opacity: .55;
+          transform: translateX(-30%);
+          animation: sfSweep 6.5s ease-in-out infinite;
+        }
+
+        @keyframes sfFloat{
+          0%{ transform: translate(0px,0px) scale(1); }
+          50%{ transform: translate(32px,-28px) scale(1.06); }
+          100%{ transform: translate(0px,0px) scale(1); }
+        }
+        @keyframes sfSweep{
+          0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+          50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
+          100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+        }
+
+        /* ✅ Entry animations (same style as Notifications) */
+        .sfPre{ opacity: 0; transform: translateY(12px); }
+        .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
+        .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
+        .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
+
+        /* ✅ Cards now match Notifications vibe */
         .cardShell{
-          background: rgba(248,250,252,0.92);
+          background: rgba(255,255,255,0.92);
           border-radius: 18px;
-          border: 1px solid rgba(10, 24, 46, 0.65);
-          box-shadow:
-            0 10px 30px rgba(2,6,23,0.10),
-            0 0 0 1px rgba(56,189,248,0.10);
+          border: 1px solid rgba(226,232,240,0.85);
+          box-shadow: 0 10px 30px rgba(2,6,23,0.08);
           position: relative;
           overflow: hidden;
-          transition: transform .25s ease, box-shadow .25s ease;
         }
-        .cardShell::before{
+
+        /* ✅ Navy pulse border (same as Notifications) */
+        .sfPulseBorder{ position: relative; }
+        .sfPulseBorder::before{
           content:"";
           position:absolute;
           inset:-1px;
           border-radius: 18px;
           background: linear-gradient(120deg,
-            rgba(10,24,46,0.95),
-            rgba(56,189,248,0.40),
-            rgba(10,24,46,0.95)
+            rgba(8, 30, 68, 0.85),
+            rgba(12, 42, 92, 0.35),
+            rgba(8, 30, 68, 0.85)
           );
-          opacity: 0.32;
+          opacity: .22;
           filter: blur(10px);
           pointer-events:none;
+          animation: sfBorderPulse 4.2s ease-in-out infinite;
         }
-        .cardShell > * { position: relative; z-index: 1; }
+        .sfPulseBorder::after{
+          content:"";
+          position:absolute;
+          inset:0;
+          border-radius: 18px;
+          pointer-events:none;
+          box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.18);
+        }
+        @keyframes sfBorderPulse{
+          0%,100%{ opacity: .16; transform: scale(1); }
+          50%{ opacity: .34; transform: scale(1.01); }
+        }
 
-        .cardShell:hover{
-          transform: translateY(-3px);
+        /* Row hover (same feeling) */
+        .sfRow{
+          transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
+          will-change: transform;
+        }
+        .sfRow:hover{
+          transform: translateY(-4px);
           box-shadow:
-            0 18px 45px rgba(2,6,23,0.14),
-            0 0 22px rgba(56,189,248,0.22);
+            0 18px 45px rgba(2,6,23,0.10),
+            0 0 0 1px rgba(8, 30, 68, 0.08);
         }
 
         /* Quick Actions buttons */
@@ -896,7 +991,7 @@ const Dashboard = () => {
           border-radius: 18px;
           padding: 18px;
           background: linear-gradient(180deg, rgba(14,165,233,0.95), rgba(2,132,199,0.95));
-          border: 1px solid rgba(10,24,46,0.75);
+          border: 1px solid rgba(10,24,46,0.55);
           box-shadow: 0 16px 40px rgba(2,132,199,0.18);
         }
         .ctaTitle{ font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 8px; }
@@ -911,25 +1006,6 @@ const Dashboard = () => {
           transition: transform .2s ease, filter .2s ease;
         }
         .ctaBtn:hover{ transform: translateY(-2px); filter: brightness(0.98); }
-
-        /* Animations */
-        @keyframes pageIn { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: translateY(0);} }
-        .animate-pageIn { animation: pageIn .55s cubic-bezier(.2,.8,.2,1) both; }
-
-        @keyframes titleIn { from { opacity: 0; transform: translateX(-16px);} to { opacity: 1; transform: translateX(0);} }
-        .animate-titleIn { animation: titleIn .7s cubic-bezier(.2,.8,.2,1) both; }
-
-        @keyframes fadeIn { from { opacity: 0;} to { opacity: 1;} }
-        .animate-fadeIn { animation: fadeIn .8s ease-out both; }
-
-        @keyframes cardIn {
-          from { opacity: 0; transform: translateY(14px) scale(.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-cardIn { animation: cardIn .6s cubic-bezier(.2,.8,.2,1) both; }
-
-        .delay-1{ animation-delay:.08s } .delay-2{ animation-delay:.16s } .delay-3{ animation-delay:.24s }
-        .delay-4{ animation-delay:.32s } .delay-5{ animation-delay:.40s }
       `}</style>
     </>
   );

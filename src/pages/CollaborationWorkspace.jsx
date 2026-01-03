@@ -71,6 +71,7 @@ const TabTasksIcon = () => (
     <path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Z" />
   </svg>
 );
+
 const CopyIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="9" y="9" width="13" height="13" rx="2" />
@@ -124,7 +125,7 @@ const TabBtn = ({ active, icon, label, dot, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-extrabold transition ${
-      active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-800 hover:bg-slate-200"
+      active ? "bg-slate-900 text-white shadow" : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
     }`}
   >
     {icon}
@@ -147,6 +148,13 @@ export default function CollaborationWorkspace() {
 
   /* ---------------- Sidebar ---------------- */
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  /* ---------------- Notifications-style mount animations ---------------- */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const displayName = user?.name || user?.email || "Guest";
   const initials = displayName
@@ -194,13 +202,17 @@ export default function CollaborationWorkspace() {
   /* ---------------- Editor (Monaco) ---------------- */
   const storageKey = `devsphere_room_${roomCode}_code`;
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(() => localStorage.getItem(storageKey) || `// DevSphere Collaboration Workspace\n// Room: ${roomCode}\n\nconsole.log("Hello DevSphere!");\n`);
+  const [code, setCode] = useState(
+    () =>
+      localStorage.getItem(storageKey) ||
+      `// DevSphere Collaboration Workspace\n// Room: ${roomCode}\n\nconsole.log("Hello DevSphere!");\n`
+  );
 
   /* ---------------- Files ---------------- */
   const [files, setFiles] = useState([]);
   const fileRef = useRef(null);
 
-  /* ---------------- Tasks (NEW) ---------------- */
+  /* ---------------- Tasks ---------------- */
   const tasksKey = `devsphere_room_${roomCode}_tasks`;
   const [tasks, setTasks] = useState(() => {
     try {
@@ -213,7 +225,7 @@ export default function CollaborationWorkspace() {
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskAssignee, setTaskAssignee] = useState(displayName);
-  const [taskDue, setTaskDue] = useState(""); // string for demo
+  const [taskDue, setTaskDue] = useState("");
 
   useEffect(() => {
     localStorage.setItem(tasksKey, JSON.stringify(tasks));
@@ -221,7 +233,6 @@ export default function CollaborationWorkspace() {
 
   /* ---------------- Socket lifecycle ---------------- */
   useEffect(() => {
-    // Connect safely (frontend-only setup)
     try {
       socket.connect();
       socket.emit("join-room", { roomCode, user: displayName });
@@ -267,10 +278,8 @@ export default function CollaborationWorkspace() {
       time: new Date().toLocaleTimeString(),
     };
 
-    // 1) Local push so UI always works (even without backend)
     setMessages((p) => [...p, payload]);
 
-    // 2) Try emit (works when backend exists)
     try {
       socket.emit("chat-message", payload);
       socket.emit("stop-typing", roomCode);
@@ -283,7 +292,6 @@ export default function CollaborationWorkspace() {
 
   const deleteMessage = (id) => {
     setMessages((p) => p.filter((m) => m.id !== id));
-    // If you want synced delete later: emit "delete-message" with backend
   };
 
   /* ---------------- Editor actions ---------------- */
@@ -291,7 +299,12 @@ export default function CollaborationWorkspace() {
     localStorage.setItem(storageKey, code);
     setMessages((p) => [
       ...p,
-      { id: `sys_${Date.now()}`, by: "System", text: `${displayName} saved the code.`, time: new Date().toLocaleTimeString() },
+      {
+        id: `sys_${Date.now()}`,
+        by: "System",
+        text: `${displayName} saved the code.`,
+        time: new Date().toLocaleTimeString(),
+      },
     ]);
   };
 
@@ -300,7 +313,12 @@ export default function CollaborationWorkspace() {
       await navigator.clipboard.writeText(code);
       setMessages((p) => [
         ...p,
-        { id: `sys_${Date.now()}`, by: "System", text: `${displayName} copied the code.`, time: new Date().toLocaleTimeString() },
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `${displayName} copied the code.`,
+          time: new Date().toLocaleTimeString(),
+        },
       ]);
     } catch {
       // ignore
@@ -326,7 +344,12 @@ export default function CollaborationWorkspace() {
 
     setMessages((p) => [
       ...p,
-      { id: `sys_${Date.now()}`, by: "System", text: `${displayName} uploaded ${mapped.length} file(s).`, time: new Date().toLocaleTimeString() },
+      {
+        id: `sys_${Date.now()}`,
+        by: "System",
+        text: `${displayName} uploaded ${mapped.length} file(s).`,
+        time: new Date().toLocaleTimeString(),
+      },
     ]);
 
     if (fileRef.current) fileRef.current.value = "";
@@ -340,7 +363,7 @@ export default function CollaborationWorkspace() {
     });
   };
 
-  /* ---------------- Task actions (NEW) ---------------- */
+  /* ---------------- Task actions ---------------- */
   const addTask = () => {
     const title = taskTitle.trim();
     if (!title) return;
@@ -361,14 +384,17 @@ export default function CollaborationWorkspace() {
 
     setMessages((p) => [
       ...p,
-      { id: `sys_${Date.now()}`, by: "System", text: `Task created: "${title}" → ${t.assignedTo}`, time: new Date().toLocaleTimeString() },
+      {
+        id: `sys_${Date.now()}`,
+        by: "System",
+        text: `Task created: "${title}" → ${t.assignedTo}`,
+        time: new Date().toLocaleTimeString(),
+      },
     ]);
   };
 
   const toggleTask = (id) => {
-    setTasks((p) =>
-      p.map((t) => (t.id === id ? { ...t, status: t.status === "done" ? "open" : "done" } : t))
-    );
+    setTasks((p) => p.map((t) => (t.id === id ? { ...t, status: t.status === "done" ? "open" : "done" } : t)));
   };
 
   const deleteTask = (id) => setTasks((p) => p.filter((t) => t.id !== id));
@@ -379,52 +405,64 @@ export default function CollaborationWorkspace() {
     setEndedDuration(duration);
     setMeetingEnded(true);
 
-    // Optional: emit leave later with backend
     try {
       socket.emit("leave-room", { roomCode, user: displayName });
     } catch {
       // ignore
     }
 
-    // After showing end screen, navigate
     setTimeout(() => {
       navigate("/collaboration");
     }, 1600);
   };
 
-  // Meeting end screen
+  // Meeting end screen (also with navy background vibe)
   if (meetingEnded) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-6">
-        <div className="cardShell p-8 w-full max-w-lg text-center animate-pageIn">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl font-extrabold">
-            DS
+      <>
+        <div className="min-h-screen bg-slate-100 flex items-center justify-center px-6 overflow-hidden">
+          {/* NAVY animated background (same as Notifications) */}
+          <div className="pointer-events-none fixed inset-0">
+            <div className="sfBlob sfBlob1" />
+            <div className="sfBlob sfBlob2" />
+            <div className="sfShimmer" />
           </div>
-          <h1 className="mt-5 text-2xl font-extrabold text-slate-900">Meeting ended</h1>
-          <p className="mt-2 text-sm text-slate-700">
-            Room <span className="font-extrabold">{roomCode}</span> ended.
-          </p>
-          <p className="mt-1 text-sm text-slate-700">
-            Duration: <span className="font-extrabold">{endedDuration}</span>
-          </p>
-          <p className="mt-4 text-xs text-slate-600">Redirecting to Collaboration Lobby…</p>
 
-          <style>{sharedStyles}</style>
+          <div className={`w-full max-w-lg text-center relative ${mounted ? "sfIn" : "sfPre"}`}>
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-8 sfPulseBorder">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl font-extrabold shadow">
+                DS
+              </div>
+              <h1 className="mt-5 text-2xl font-extrabold text-slate-900">Meeting ended</h1>
+              <p className="mt-2 text-sm text-slate-700">
+                Room <span className="font-extrabold">{roomCode}</span> ended.
+              </p>
+              <p className="mt-1 text-sm text-slate-700">
+                Duration: <span className="font-extrabold">{endedDuration}</span>
+              </p>
+              <p className="mt-4 text-xs text-slate-500">Redirecting to Collaboration Lobby…</p>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <style>{navyStyles}</style>
+      </>
     );
   }
 
   return (
     <>
-      <div className="min-h-screen bg-slate-100 flex">
-        {/* SIDEBAR (Dashboard exact style) */}
+      <div className="min-h-screen bg-slate-100 flex overflow-hidden">
+        {/* NAVY animated background (same as Notifications) */}
+        <div className="pointer-events-none fixed inset-0">
+          <div className="sfBlob sfBlob1" />
+          <div className="sfBlob sfBlob2" />
+          <div className="sfShimmer" />
+        </div>
+
+        {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-3 px-2 mb-8 text-left"
-            title="Go to Landing"
-          >
+          <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
@@ -466,17 +504,15 @@ export default function CollaborationWorkspace() {
 
             <div className="min-w-0">
               <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300 truncate max-w-[160px]">
-                {isOnline ? "Online" : "Offline"} · Signed in
-              </p>
+              <p className="text-xs text-slate-300 truncate max-w-[160px]">{isOnline ? "Online" : "Offline"} · Signed in</p>
             </div>
           </button>
         </aside>
 
         {/* MAIN */}
-        <main className="flex-1 p-6 md:p-8 space-y-6 animate-pageIn">
-          {/* Header */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <main className="flex-1 p-6 md:p-8 relative">
+          {/* Header (Notifications-style entry) */}
+          <div className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -486,11 +522,11 @@ export default function CollaborationWorkspace() {
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
 
-              <div className="animate-titleIn">
+              <div>
                 <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Workspace</h1>
-                <p className="text-sm text-slate-700">
-                  Room: <span className="font-extrabold">{roomCode}</span> · Time:{" "}
-                  <span className="font-extrabold">{meetingTime}</span>
+                <p className="text-sm text-slate-500 mt-1">
+                  Room: <span className="font-semibold text-slate-700">{roomCode}</span> • Time:{" "}
+                  <span className="font-semibold text-slate-700">{meetingTime}</span>
                 </p>
               </div>
             </div>
@@ -498,25 +534,25 @@ export default function CollaborationWorkspace() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate("/collaboration")}
-                className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-800 font-extrabold text-sm hover:bg-slate-50 transition"
+                className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
               >
                 Back to Lobby
               </button>
               <button
                 onClick={leaveRoom}
-                className="px-4 py-2 rounded-full bg-rose-500 text-white font-extrabold text-sm hover:bg-rose-400 transition"
+                className="px-4 py-2 rounded-full bg-rose-500 text-white text-sm font-semibold hover:bg-rose-400 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
               >
                 Leave room
               </button>
             </div>
           </div>
 
-          {/* Tabs */}
-          <section className="cardShell p-4 animate-cardIn delay-1">
+          {/* Tabs (pulse border like Notifications filters) */}
+          <div className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-4 md:p-5 mb-6 sfPulseBorder ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-slate-900">Workspace tools</h2>
-                <p className="text-xs text-slate-700">Chat, editor, files & task assignment</p>
+                <p className="text-xs text-slate-500 mt-1">Chat, editor, files & task assignment</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -535,14 +571,14 @@ export default function CollaborationWorkspace() {
                 <TabBtn active={tab === "tasks"} icon={<TabTasksIcon />} label="Tasks" onClick={() => setTab("tasks")} />
               </div>
             </div>
-          </section>
+          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${mounted ? "sfIn3" : "sfPre"}`}>
             {/* Members */}
-            <section className="cardShell p-5 animate-cardIn delay-2">
+            <section className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-slate-900">Members</h3>
-                <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-800">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
                   {members.length} online
                 </span>
               </div>
@@ -551,11 +587,11 @@ export default function CollaborationWorkspace() {
                 {members.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-extrabold">
+                        <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold shadow-sm">
                           {(m.name || "U").slice(0, 1).toUpperCase()}
                         </div>
                         <span
@@ -566,12 +602,12 @@ export default function CollaborationWorkspace() {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-sm font-extrabold text-slate-900 truncate">{m.name}</p>
-                        <p className="text-xs text-slate-600">{m.role}</p>
+                        <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
+                        <p className="text-xs text-slate-500">{m.role}</p>
                       </div>
                     </div>
 
-                    <span className="text-[11px] font-extrabold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                    <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
                       {m.online ? "Online" : "Offline"}
                     </span>
                   </div>
@@ -579,14 +615,14 @@ export default function CollaborationWorkspace() {
               </div>
             </section>
 
-            {/* Main */}
-            <section className="xl:col-span-2 cardShell p-5 animate-cardIn delay-3 min-h-[520px]">
+            {/* Main panel */}
+            <section className="xl:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder min-h-[520px]">
               {/* CHAT */}
               {tab === "chat" ? (
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-slate-900">Room chat</h3>
-                    <span className="text-xs text-slate-600">{messages.length} message(s)</span>
+                    <span className="text-xs text-slate-400">{messages.length} message(s)</span>
                   </div>
 
                   <div className="chatBox">
@@ -602,7 +638,7 @@ export default function CollaborationWorkspace() {
                           {m.by === displayName && !String(m.id).startsWith("sys_") ? (
                             <button
                               onClick={() => deleteMessage(m.id)}
-                              className="mt-2 inline-flex items-center gap-2 text-xs font-extrabold text-rose-600 hover:text-rose-500"
+                              className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-500"
                               title="Delete message (local)"
                             >
                               <TrashIcon /> Delete
@@ -636,7 +672,7 @@ export default function CollaborationWorkspace() {
                       }}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                       placeholder="Type message and press Enter…"
-                      className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                      className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30 transition"
                     />
                     <button onClick={sendMessage} className="sendBtn">
                       Send
@@ -651,14 +687,14 @@ export default function CollaborationWorkspace() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">Monaco editor</h3>
-                      <p className="text-xs text-slate-700">Local save/copy — realtime sync later with backend</p>
+                      <p className="text-xs text-slate-500 mt-1">Local save/copy — realtime sync later with backend</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <select
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-extrabold text-slate-800 outline-none"
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
                       >
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
@@ -703,7 +739,7 @@ export default function CollaborationWorkspace() {
                     <h3 className="text-lg font-semibold text-slate-900">Files</h3>
                     <button
                       onClick={() => fileRef.current?.click()}
-                      className="text-xs px-3 py-1 rounded-full bg-sky-500 text-white hover:bg-sky-400 transition font-extrabold"
+                      className="px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition text-xs font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                     >
                       Upload
                     </button>
@@ -712,21 +748,18 @@ export default function CollaborationWorkspace() {
                   <input type="file" multiple hidden ref={fileRef} onChange={(e) => uploadFiles(e.target.files)} />
 
                   {files.length === 0 ? (
-                    <div className="p-6 rounded-2xl border border-slate-200 bg-white/70">
-                      <p className="text-sm font-extrabold text-slate-900">No files yet</p>
-                      <p className="text-xs text-slate-700 mt-1">Upload files to share inside the room.</p>
+                    <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50">
+                      <p className="text-sm font-semibold text-slate-900">No files yet</p>
+                      <p className="text-xs text-slate-500 mt-1">Upload files to share inside the room.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {files.map((f) => (
-                        <div
-                          key={f.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2"
-                        >
+                        <div key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow">
                           <div className="min-w-0">
-                            <p className="text-sm font-extrabold text-slate-900 truncate">{f.name}</p>
-                            <p className="text-xs text-slate-600">
-                              {f.size} KB · by <b>{f.by}</b> · {f.time}
+                            <p className="text-sm font-semibold text-slate-900 truncate">{f.name}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {f.size} KB · by <b className="text-slate-700">{f.by}</b> · {f.time}
                             </p>
                           </div>
 
@@ -734,13 +767,13 @@ export default function CollaborationWorkspace() {
                             <a
                               href={f.url}
                               download={f.name}
-                              className="text-xs px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-extrabold"
+                              className="text-xs px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                             >
                               Download
                             </a>
                             <button
                               onClick={() => removeFile(f.id)}
-                              className="text-xs px-3 py-1 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-extrabold"
+                              className="text-xs px-3 py-1.5 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                               title="Remove (local)"
                             >
                               Remove
@@ -753,29 +786,29 @@ export default function CollaborationWorkspace() {
                 </>
               ) : null}
 
-              {/* TASKS (NEW) */}
+              {/* TASKS */}
               {tab === "tasks" ? (
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">Task assignment</h3>
-                      <p className="text-xs text-slate-700">Assign tasks to room members (local demo)</p>
+                      <p className="text-xs text-slate-500 mt-1">Assign tasks to room members (local demo)</p>
                     </div>
-                    <span className="text-xs text-slate-600">{tasks.length} task(s)</span>
+                    <span className="text-xs text-slate-400">{tasks.length} task(s)</span>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <input
                         value={taskTitle}
                         onChange={(e) => setTaskTitle(e.target.value)}
                         placeholder="Task title (e.g., Fix sidebar issue)"
-                        className="md:col-span-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                        className="md:col-span-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30"
                       />
                       <select
                         value={taskAssignee}
                         onChange={(e) => setTaskAssignee(e.target.value)}
-                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-extrabold text-slate-800 outline-none"
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
                       >
                         {members.map((m) => (
                           <option key={m.id} value={m.name}>
@@ -787,7 +820,7 @@ export default function CollaborationWorkspace() {
                         value={taskDue}
                         onChange={(e) => setTaskDue(e.target.value)}
                         placeholder="Due (e.g., Today 6pm)"
-                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30"
                       />
                     </div>
 
@@ -798,35 +831,34 @@ export default function CollaborationWorkspace() {
 
                   <div className="mt-4 space-y-3">
                     {tasks.length === 0 ? (
-                      <div className="p-6 rounded-2xl border border-slate-200 bg-white/70">
-                        <p className="text-sm font-extrabold text-slate-900">No tasks yet</p>
-                        <p className="text-xs text-slate-700 mt-1">Create a task to assign work in the room.</p>
+                      <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50">
+                        <p className="text-sm font-semibold text-slate-900">No tasks yet</p>
+                        <p className="text-xs text-slate-500 mt-1">Create a task to assign work in the room.</p>
                       </div>
                     ) : (
                       tasks.map((t) => (
-                        <div
-                          key={t.id}
-                          className="rounded-2xl border border-slate-200 bg-white/70 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                        >
+                        <div key={t.id} className="rounded-2xl border border-slate-200 bg-white p-4 sfRow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-extrabold text-slate-900 truncate">
-                              {t.status === "done" ? "✅" : "🟦"} {t.title}
+                            <p className="text-sm font-semibold text-slate-900 truncate">
+                              <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${t.status === "done" ? "bg-emerald-400" : "bg-sky-400"}`} />
+                              {t.title}
                             </p>
-                            <p className="text-xs text-slate-600 mt-1">
-                              Assigned to <b>{t.assignedTo}</b> · Due: <b>{t.due}</b> · Created by <b>{t.createdBy}</b>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Assigned to <b className="text-slate-700">{t.assignedTo}</b> · Due:{" "}
+                              <b className="text-slate-700">{t.due}</b> · Created by <b className="text-slate-700">{t.createdBy}</b>
                             </p>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => toggleTask(t.id)}
-                              className="text-xs px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-extrabold"
+                              className="text-xs px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                             >
                               {t.status === "done" ? "Mark open" : "Mark done"}
                             </button>
                             <button
                               onClick={() => deleteTask(t.id)}
-                              className="text-xs px-3 py-1 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-extrabold"
+                              className="text-xs px-3 py-1.5 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                               title="Delete task (local)"
                             >
                               Delete
@@ -843,14 +875,14 @@ export default function CollaborationWorkspace() {
         </main>
       </div>
 
-      <style>{sharedStyles}</style>
+      <style>{navyStyles}</style>
     </>
   );
 }
 
-/* Shared styles (same vibe as Dashboard) */
-const sharedStyles = `
-  /* Sidebar show/hide */
+/* =================== NAVY THEME (same as Notifications) =================== */
+const navyStyles = `
+  /* Sidebar show/hide (same as Dashboard.jsx) */
   .sidebar{
     background: #0f172a;
     color: #f8fafc;
@@ -859,50 +891,114 @@ const sharedStyles = `
     padding: 24px 16px;
     overflow:hidden;
     transition: width .25s ease, padding .25s ease, opacity .25s ease;
+    z-index: 10;
   }
   .sidebarOpen{ width: 288px; opacity:1; }
   .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-  /* Cards */
-  .cardShell{
-    background: rgba(248,250,252,0.92);
-    border-radius: 18px;
-    border: 1px solid rgba(10, 24, 46, 0.65);
-    box-shadow:
-      0 10px 30px rgba(2,6,23,0.10),
-      0 0 0 1px rgba(56,189,248,0.10);
-    position: relative;
-    overflow: hidden;
-    transition: transform .25s ease, box-shadow .25s ease;
+  /* NAVY BLUE ONLY animated blobs */
+  .sfBlob{
+    position:absolute;
+    width: 560px;
+    height: 560px;
+    border-radius: 999px;
+    filter: blur(95px);
+    opacity: .34;
+    animation: sfFloat 14s ease-in-out infinite;
+    background: radial-gradient(circle at 30% 30%,
+      rgba(12, 42, 92, 0.65),
+      rgba(6, 22, 58, 0.35),
+      rgba(3, 12, 28, 0)
+    );
   }
-  .cardShell::before{
+  .sfBlob1{ left: -180px; top: -180px; }
+  .sfBlob2{
+    right: -220px; bottom: -260px;
+    width: 650px; height: 650px;
+    opacity: .28;
+    animation-duration: 18s;
+  }
+
+  .sfShimmer{
+    position:absolute;
+    inset:-2px;
+    pointer-events:none;
+    background:
+      linear-gradient(120deg,
+        rgba(3, 12, 28, 0) 0%,
+        rgba(12, 42, 92, 0.22) 45%,
+        rgba(3, 12, 28, 0) 70%
+      );
+    mix-blend-mode: multiply;
+    opacity: .55;
+    transform: translateX(-30%);
+    animation: sfSweep 6.5s ease-in-out infinite;
+  }
+
+  @keyframes sfFloat{
+    0%{ transform: translate(0px,0px) scale(1); }
+    50%{ transform: translate(32px,-28px) scale(1.06); }
+    100%{ transform: translate(0px,0px) scale(1); }
+  }
+  @keyframes sfSweep{
+    0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+    50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
+    100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+  }
+
+  /* Entry animations */
+  .sfPre{ opacity: 0; transform: translateY(12px); }
+  .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
+  .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
+  .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
+
+  /* Navy pulse border */
+  .sfPulseBorder{ position: relative; }
+  .sfPulseBorder::before{
     content:"";
     position:absolute;
     inset:-1px;
     border-radius: 18px;
     background: linear-gradient(120deg,
-      rgba(10,24,46,0.95),
-      rgba(56,189,248,0.40),
-      rgba(10,24,46,0.95)
+      rgba(8, 30, 68, 0.85),
+      rgba(12, 42, 92, 0.35),
+      rgba(8, 30, 68, 0.85)
     );
-    opacity: 0.32;
+    opacity: .28;
     filter: blur(10px);
     pointer-events:none;
+    animation: sfBorderPulse 4.2s ease-in-out infinite;
   }
-  .cardShell > * { position: relative; z-index: 1; }
+  .sfPulseBorder::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius: 18px;
+    pointer-events:none;
+    box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.30);
+  }
+  @keyframes sfBorderPulse{
+    0%,100%{ opacity: .18; transform: scale(1); }
+    50%{ opacity: .40; transform: scale(1.01); }
+  }
 
-  .cardShell:hover{
-    transform: translateY(-3px);
+  /* Row hover (like Notifications list) */
+  .sfRow{
+    transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
+    will-change: transform;
+  }
+  .sfRow:hover{
+    transform: translateY(-4px);
     box-shadow:
-      0 18px 45px rgba(2,6,23,0.14),
-      0 0 22px rgba(56,189,248,0.22);
+      0 18px 45px rgba(2,6,23,0.10),
+      0 0 0 1px rgba(8, 30, 68, 0.10);
   }
 
   /* Chat */
   .chatBox{
     height:380px;overflow:auto;border-radius:18px;
-    border:1px solid rgba(148,163,184,0.45);
-    background:rgba(255,255,255,0.7);
+    border:1px solid rgba(226,232,240,0.95);
+    background:rgba(248,250,252,0.75);
     padding:12px;
   }
   .chatRow{display:flex;margin-bottom:10px;}
@@ -912,46 +1008,43 @@ const sharedStyles = `
     max-width:78%;
     border-radius:16px;
     padding:10px 12px;
-    border:1px solid rgba(148,163,184,0.45);
-    background:rgba(248,250,252,0.95);
+    border:1px solid rgba(226,232,240,0.95);
+    background:rgba(255,255,255,0.92);
   }
   .chatMe .chatBubble{
-    background:rgba(14,165,233,0.12);
-    border-color:rgba(14,165,233,0.28);
+    background:rgba(15,23,42,0.06);
+    border-color:rgba(15,23,42,0.12);
   }
   .chatMeta{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;}
-  .chatBy{font-size:12px;font-weight:900;color:rgb(15,23,42);}
-  .chatTime{font-size:11px;font-weight:800;color:rgb(100,116,139);}
-  .chatText{font-size:13px;font-weight:700;color:rgb(15,23,42);white-space:pre-wrap;}
+  .chatBy{font-size:12px;font-weight:800;color:rgb(15,23,42);}
+  .chatTime{font-size:11px;font-weight:700;color:rgb(100,116,139);}
+  .chatText{font-size:13px;font-weight:600;color:rgb(15,23,42);white-space:pre-wrap;}
 
   /* Buttons */
   .sendBtn{
-    padding:12px 16px;border-radius:999px;background:rgba(15,23,42,0.92);
-    color:#fff;font-weight:900;font-size:13px;transition:transform .2s ease,filter .2s ease;
+    padding:12px 16px;border-radius:999px;background:rgb(15,23,42);
+    color:#fff;font-weight:800;font-size:13px;
+    transition:transform .2s ease, filter .2s ease;
+    box-shadow: 0 10px 24px rgba(2,6,23,0.12);
   }
-  .sendBtn:hover{transform:translateY(-2px);filter:brightness(1.05);}
+  .sendBtn:hover{transform:translateY(-2px);filter:brightness(1.02);}
+  .sendBtn:active{transform:translateY(0);}
 
   .toolBtn{
     display:inline-flex;align-items:center;gap:8px;
     padding:10px 14px;border-radius:999px;
-    background:rgba(15,23,42,0.92);color:#fff;
-    font-weight:900;font-size:13px;
-    transition:transform .2s ease,filter .2s ease;
+    background:rgb(15,23,42);color:#fff;
+    font-weight:800;font-size:13px;
+    transition:transform .2s ease, filter .2s ease;
+    box-shadow: 0 10px 24px rgba(2,6,23,0.10);
   }
-  .toolBtn:hover{transform:translateY(-2px);filter:brightness(1.05);}
+  .toolBtn:hover{transform:translateY(-2px);filter:brightness(1.02);}
+  .toolBtn:active{transform:translateY(0);}
 
   /* Editor shell */
   .editorWrap{
-    border-radius:18px;overflow:hidden;border:1px solid rgba(148,163,184,0.45);
-    background:rgba(15,23,42,0.95);
+    border-radius:18px;overflow:hidden;border:1px solid rgba(226,232,240,0.60);
+    background:rgba(15,23,42,0.98);
+    box-shadow: 0 12px 28px rgba(2,6,23,0.12);
   }
-
-  /* Animations */
-  @keyframes pageIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-  .animate-pageIn{animation:pageIn .55s cubic-bezier(.2,.8,.2,1) both;}
-  @keyframes titleIn{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
-  .animate-titleIn{animation:titleIn .7s cubic-bezier(.2,.8,.2,1) both;}
-  @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
-  .animate-cardIn{animation:cardIn .6s cubic-bezier(.2,.8,.2,1) both;}
-  .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}
 `;

@@ -57,6 +57,31 @@ const PlugIcon = () => (
 );
 
 /* =========================
+   Eye icons (PRO + SIZE FIX)
+========================= */
+const EyeIcon = () => (
+  <svg
+    className="w-4 h-4"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M12 5c5.5 0 9.8 4.5 10.9 6.1.2.3.2.7 0 1C21.8 13.6 17.5 18 12 18S2.2 13.6 1.1 12.1c-.2-.3-.2-.7 0-1C2.2 9.5 6.5 5 12 5Zm0 11a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg
+    className="w-4 h-4"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M3.3 2.3 21.7 20.7l-1.4 1.4-2.3-2.3c-1.7.8-3.6 1.2-5.9 1.2-5.5 0-9.8-4.4-10.9-6-.2-.3-.2-.7 0-1 .8-1.2 2.6-3.2 5.2-4.6L1.9 3.7 3.3 2.3Zm8.7 5.2a4 4 0 0 1 4.9 4.9l-4.9-4.9Z" />
+  </svg>
+);
+
+/* =========================
    Sidebar UI Helpers (EXACT Dashboard style)
 ========================= */
 const IconWrap = ({ children }) => (
@@ -89,14 +114,17 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 );
 
 /* =========================
-   Form Helpers
+   Form Helpers (theme-aware)
 ========================= */
-const SectionShell = ({ title, desc, children, onClick }) => (
+const SectionShell = ({ title, desc, children, onClick, ui }) => (
   <div
     onClick={onClick}
-    className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-5 md:p-6 sfPulseBorder sfCardHover ${
-      onClick ? "cursor-pointer" : ""
-    }`}
+    className={[
+      ui.card,
+      ui.cardPad,
+      "rounded-2xl border shadow-sm sfPulseBorder sfCardHover",
+      onClick ? "cursor-pointer" : "",
+    ].join(" ")}
     role={onClick ? "button" : undefined}
     tabIndex={onClick ? 0 : undefined}
     onKeyDown={(e) => {
@@ -105,46 +133,103 @@ const SectionShell = ({ title, desc, children, onClick }) => (
     }}
     title={onClick ? "Open / interact" : undefined}
   >
-    <div className="mb-4">
-      <h2 className="text-lg md:text-xl font-semibold text-slate-900">{title}</h2>
-      {desc ? <p className="text-sm text-slate-500 mt-1">{desc}</p> : null}
+    <div className={ui.density === "Compact" ? "mb-3" : "mb-4"}>
+      <h2 className={`text-lg md:text-xl font-semibold ${ui.textStrong}`}>
+        {title}
+      </h2>
+      {desc ? <p className={`text-sm ${ui.textMuted} mt-1`}>{desc}</p> : null}
     </div>
+
     {/* stop clicks inside inputs from switching tab */}
     <div onClick={(e) => e.stopPropagation()}>{children}</div>
   </div>
 );
 
-const Input = ({ label, value, onChange, placeholder, type = "text" }) => (
+const Input = ({ label, value, onChange, placeholder, type = "text", ui }) => (
   <div className="space-y-1">
-    <label className="text-sm font-medium text-slate-700">{label}</label>
+    <label className={`text-sm font-medium ${ui.textLabel}`}>{label}</label>
     <input
       type={type}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900
-                 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition"
+      className={[
+        "w-full rounded-xl border transition focus:outline-none focus:ring-2",
+        ui.input,
+        ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+      ].join(" ")}
     />
   </div>
 );
 
-const TextArea = ({ label, value, onChange, placeholder }) => (
+const PasswordInput = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  show,
+  setShow,
+  ui,
+}) => (
   <div className="space-y-1">
-    <label className="text-sm font-medium text-slate-700">{label}</label>
+    <label className={`text-sm font-medium ${ui.textLabel}`}>{label}</label>
+
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={[
+          "w-full rounded-xl border transition focus:outline-none focus:ring-2 pr-11",
+          ui.input,
+          ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+        ].join(" ")}
+      />
+
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className={[
+          // ✅ Size + alignment FIX: input-friendly
+          "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md",
+          "flex items-center justify-center",
+          "transition-colors",
+          ui.iconBtn,
+        ].join(" ")}
+        title={show ? "Hide password" : "Show password"}
+        aria-label={show ? "Hide password" : "Show password"}
+      >
+        {show ? <EyeIcon /> : <EyeOffIcon />}
+      </button>
+    </div>
+  </div>
+);
+
+const TextArea = ({ label, value, onChange, placeholder, ui }) => (
+  <div className="space-y-1">
+    <label className={`text-sm font-medium ${ui.textLabel}`}>{label}</label>
     <textarea
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      rows={4}
-      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900
-                 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition resize-none"
+      rows={ui.density === "Compact" ? 3 : 4}
+      className={[
+        "w-full rounded-xl border transition focus:outline-none focus:ring-2 resize-none",
+        ui.input,
+        ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+      ].join(" ")}
     />
   </div>
 );
 
-const Toggle = ({ label, desc, checked, onChange }) => (
+const Toggle = ({ label, desc, checked, onChange, ui }) => (
   <div
-    className="flex items-start justify-between gap-4 p-3 rounded-xl border border-slate-100 bg-slate-50 cursor-pointer"
+    className={[
+      "flex items-start justify-between gap-4 rounded-xl border cursor-pointer transition",
+      ui.toggleShell,
+      ui.density === "Compact" ? "p-2.5" : "p-3",
+    ].join(" ")}
     onClick={onChange}
     role="button"
     tabIndex={0}
@@ -152,8 +237,8 @@ const Toggle = ({ label, desc, checked, onChange }) => (
     title="Toggle setting"
   >
     <div>
-      <p className="text-sm font-medium text-slate-900">{label}</p>
-      {desc ? <p className="text-xs text-slate-500 mt-0.5">{desc}</p> : null}
+      <p className={`text-sm font-medium ${ui.textStrong}`}>{label}</p>
+      {desc ? <p className={`text-xs ${ui.textMuted} mt-0.5`}>{desc}</p> : null}
     </div>
 
     <button
@@ -163,7 +248,7 @@ const Toggle = ({ label, desc, checked, onChange }) => (
         onChange();
       }}
       className={`relative w-12 h-7 rounded-full transition ${
-        checked ? "bg-slate-900" : "bg-slate-300"
+        checked ? "bg-[var(--sf-accent)]" : ui.toggleOff
       }`}
       aria-pressed={checked}
       title={checked ? "Enabled" : "Disabled"}
@@ -177,14 +262,15 @@ const Toggle = ({ label, desc, checked, onChange }) => (
   </div>
 );
 
-const Chip = ({ children, active, onClick }) => (
+const Chip = ({ children, active, onClick, ui }) => (
   <button
     onClick={onClick}
-    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-      active
-        ? "bg-slate-900 text-white"
-        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-    }`}
+    className={[
+      "px-3 py-1.5 rounded-full text-xs font-semibold transition border",
+      active ? "text-white border-transparent" : ui.chip,
+    ].join(" ")}
+    style={active ? { backgroundColor: "var(--sf-accent)" } : undefined}
+    title={`Select ${children}`}
   >
     {children}
   </button>
@@ -250,6 +336,11 @@ export default function Settings() {
     confirmPassword: "",
   });
 
+  // Password visibility (eye icons)
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const [noti, setNoti] = useState({
     emailAnnouncements: true,
     emailProjectInvites: true,
@@ -258,12 +349,68 @@ export default function Settings() {
     digestWeekly: false,
   });
 
-  // Preview removed — controls kept
+  // Appearance (NOW actually changes UI)
   const [appearance, setAppearance] = useState({
     theme: "Light",
     density: "Comfortable",
     accent: "Navy",
   });
+
+  const accentHex = useMemo(() => {
+    const map = {
+      Navy: "#0f172a",
+      Sky: "#0ea5e9",
+      Violet: "#8b5cf6",
+    };
+    return map[appearance.accent] || "#0f172a";
+  }, [appearance.accent]);
+
+  const isDark = appearance.theme === "Dark";
+
+  const ui = useMemo(() => {
+    // theme tokens
+    const pageBg = isDark ? "bg-slate-950" : "bg-slate-100";
+    const textStrong = isDark ? "text-slate-100" : "text-slate-900";
+    const textMuted = isDark ? "text-slate-400" : "text-slate-500";
+    const textLabel = isDark ? "text-slate-200" : "text-slate-700";
+
+    const card = isDark
+      ? "bg-slate-900/85 border-slate-800"
+      : "bg-white border-slate-100";
+
+    const input = isDark
+      ? "border-slate-800 bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:ring-white/10 focus:border-slate-600"
+      : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-slate-900/20 focus:border-slate-400";
+
+    const iconBtn = isDark
+      ? "bg-slate-800/60 hover:bg-slate-800 text-slate-100"
+      : "bg-slate-100 hover:bg-slate-200 text-slate-700";
+
+    const toggleShell = isDark
+      ? "bg-slate-950/60 border-slate-800 hover:bg-slate-950/75"
+      : "bg-slate-50 border-slate-100 hover:bg-slate-100";
+
+    const toggleOff = isDark ? "bg-slate-700" : "bg-slate-300";
+
+    const chip = isDark
+      ? "bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900"
+      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
+
+    return {
+      density: appearance.density,
+      pageBg,
+      textStrong,
+      textMuted,
+      textLabel,
+      card,
+      cardPad: appearance.density === "Compact" ? "p-4" : "p-5 md:p-6",
+      input,
+      iconBtn,
+      toggleShell,
+      toggleOff,
+      chip,
+    };
+  }, [appearance.density, isDark]);
 
   /* =========================
      Integrations: GitHub
@@ -300,7 +447,10 @@ export default function Settings() {
 
   const handleSave = () => {
     if (activeTab === "security") {
-      if (security.newPassword && security.newPassword !== security.confirmPassword) {
+      if (
+        security.newPassword &&
+        security.newPassword !== security.confirmPassword
+      ) {
         toast.error("New password and confirm password do not match.");
         return;
       }
@@ -316,8 +466,14 @@ export default function Settings() {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* ✅ NAVY animated background (kept) */}
+      {/* Theme vars (accent used everywhere) */}
+      <div
+        className={`min-h-screen flex overflow-hidden ${ui.pageBg} ${
+          isDark ? "text-slate-100" : ""
+        }`}
+        style={{ "--sf-accent": accentHex }}
+      >
+        {/* ✅ NAVY animated background */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -326,13 +482,17 @@ export default function Settings() {
 
         {/* ✅ SIDEBAR (EXACT Dashboard style) */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          {/* Brand is a button in Dashboard */}
+          {/* Brand */}
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-3 px-2 mb-8 text-left"
             title="Go to Landing"
           >
-            <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
+            <img
+              src={logo}
+              alt="DevSphere"
+              className="w-10 h-10 object-contain drop-shadow-md"
+            />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
             </span>
@@ -384,7 +544,7 @@ export default function Settings() {
             />
           </nav>
 
-          {/* Bottom profile button EXACT Dashboard style */}
+          {/* Bottom profile button */}
           <button
             onClick={() => openTab("profile")}
             className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
@@ -403,7 +563,9 @@ export default function Settings() {
             </div>
 
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
+              <p className="text-sm font-medium truncate max-w-[160px]">
+                {displayName}
+              </p>
               <p className="text-xs text-slate-300 truncate max-w-[160px]">
                 {isOnline ? "Online" : "Offline"} · Signed in
               </p>
@@ -428,9 +590,15 @@ export default function Settings() {
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
 
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Settings</h1>
-                <p className="text-sm text-slate-500 mt-1">
+              <div
+                className="cursor-pointer"
+                onClick={() => toast.info("Tip: Use tabs to switch sections")}
+                title="Click for tip"
+              >
+                <h1 className={`text-2xl md:text-3xl font-semibold ${ui.textStrong}`}>
+                  Settings
+                </h1>
+                <p className={`text-sm ${ui.textMuted} mt-1`}>
                   Manage your profile, notifications, appearance, and integrations.
                 </p>
               </div>
@@ -438,27 +606,75 @@ export default function Settings() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => toast.info("Changes reset (demo).")}
-                className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
+                onClick={() => {
+                  setProfile({
+                    fullName: user?.name || "",
+                    username: "",
+                    bio: "",
+                    website: "",
+                    location: "",
+                    github: "",
+                    linkedin: "",
+                  });
+                  setSecurity({
+                    currentPassword: "",
+                    newPassword: "",
+                    confirmPassword: "",
+                  });
+                  setShowCurrent(false);
+                  setShowNew(false);
+                  setShowConfirm(false);
+                  setNoti({
+                    emailAnnouncements: true,
+                    emailProjectInvites: true,
+                    pushComments: true,
+                    pushMentions: true,
+                    digestWeekly: false,
+                  });
+                  setAppearance({
+                    theme: "Light",
+                    density: "Comfortable",
+                    accent: "Navy",
+                  });
+                  toast.info("Changes reset (demo).");
+                }}
+                className={[
+                  "px-4 py-2 rounded-full text-sm font-medium transition border",
+                  isDark
+                    ? "bg-slate-900/70 border-slate-800 text-slate-200 hover:bg-slate-900"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                ].join(" ")}
                 title="Reset (demo)"
               >
                 Reset
               </button>
+
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold
-                           hover:bg-slate-800 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
+                className="px-4 py-2 rounded-full text-white text-sm font-semibold transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
+                style={{ backgroundColor: "var(--sf-accent)" }}
+                title="Save all changes (demo)"
               >
                 Save changes
               </button>
             </div>
           </div>
 
-          {/* Tabs (clickable already) */}
+          {/* Tabs */}
           <div
-            className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-4 md:p-5 mb-6 sfPulseBorder ${
+            className={`border rounded-2xl shadow-sm mb-6 sfPulseBorder ${
               mounted ? "sfIn2" : "sfPre"
+            } ${isDark ? "bg-slate-900/75 border-slate-800" : "bg-white border-slate-100"} ${
+              ui.density === "Compact" ? "p-3" : "p-4 md:p-5"
             }`}
+            onClick={() => toast.info("Tip: Tabs are clickable")}
+            title="Click for tip"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) =>
+              (e.key === "Enter" || e.key === " ") &&
+              toast.info("Tip: Tabs are clickable")
+            }
           >
             <div className="flex flex-wrap gap-2">
               {TABS.map((t) => {
@@ -468,11 +684,14 @@ export default function Settings() {
                     key={t.id}
                     onClick={() => setActiveTab(t.id)}
                     className={[
-                      "px-4 py-2 rounded-full text-sm font-semibold transition",
+                      "px-4 py-2 rounded-full text-sm font-semibold transition border",
                       active
-                        ? "bg-slate-900 text-white shadow"
-                        : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200",
+                        ? "text-white border-transparent shadow"
+                        : isDark
+                        ? "bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100",
                     ].join(" ")}
+                    style={active ? { backgroundColor: "var(--sf-accent)" } : undefined}
                     title={`Open ${t.label}`}
                   >
                     {t.label}
@@ -488,54 +707,76 @@ export default function Settings() {
             <div className="lg:col-span-2 space-y-6">
               {activeTab === "profile" && (
                 <SectionShell
+                  ui={ui}
                   title="Profile"
                   desc="Update your public profile details."
                   onClick={() => toast.info("Tip: Edit fields and click Save changes ✅")}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
+                      ui={ui}
                       label="Full name"
                       value={profile.fullName}
-                      onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, fullName: e.target.value }))
+                      }
                       placeholder="e.g. Maha Asif"
                     />
                     <Input
+                      ui={ui}
                       label="Username"
                       value={profile.username}
-                      onChange={(e) => setProfile((p) => ({ ...p, username: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, username: e.target.value }))
+                      }
                       placeholder="e.g. maha.dev"
                     />
                     <Input
+                      ui={ui}
                       label="Website"
                       value={profile.website}
-                      onChange={(e) => setProfile((p) => ({ ...p, website: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, website: e.target.value }))
+                      }
                       placeholder="https://your-portfolio.com"
                     />
                     <Input
+                      ui={ui}
                       label="Location"
                       value={profile.location}
-                      onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, location: e.target.value }))
+                      }
                       placeholder="e.g. Pakistan"
                     />
                     <Input
+                      ui={ui}
                       label="GitHub"
                       value={profile.github}
-                      onChange={(e) => setProfile((p) => ({ ...p, github: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, github: e.target.value }))
+                      }
                       placeholder="github.com/username"
                     />
                     <Input
+                      ui={ui}
                       label="LinkedIn"
                       value={profile.linkedin}
-                      onChange={(e) => setProfile((p) => ({ ...p, linkedin: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, linkedin: e.target.value }))
+                      }
                       placeholder="linkedin.com/in/username"
                     />
                   </div>
 
                   <div className="mt-4">
                     <TextArea
+                      ui={ui}
                       label="Bio"
                       value={profile.bio}
-                      onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, bio: e.target.value }))
+                      }
                       placeholder="Write a short intro about you..."
                     />
                   </div>
@@ -544,39 +785,54 @@ export default function Settings() {
 
               {activeTab === "security" && (
                 <SectionShell
+                  ui={ui}
                   title="Security"
                   desc="Change your password settings."
-                  onClick={() => toast.info("Tip: Fill passwords then click Update password")}
+                  onClick={() => toast.info("Tip: Use the eye icon to show/hide password")}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
+                    <PasswordInput
+                      ui={ui}
                       label="Current password"
-                      type="password"
                       value={security.currentPassword}
-                      onChange={(e) => setSecurity((s) => ({ ...s, currentPassword: e.target.value }))}
+                      onChange={(e) =>
+                        setSecurity((s) => ({ ...s, currentPassword: e.target.value }))
+                      }
                       placeholder="••••••••"
+                      show={showCurrent}
+                      setShow={setShowCurrent}
                     />
                     <div className="hidden md:block" />
-                    <Input
+
+                    <PasswordInput
+                      ui={ui}
                       label="New password"
-                      type="password"
                       value={security.newPassword}
-                      onChange={(e) => setSecurity((s) => ({ ...s, newPassword: e.target.value }))}
+                      onChange={(e) =>
+                        setSecurity((s) => ({ ...s, newPassword: e.target.value }))
+                      }
                       placeholder="At least 6 characters"
+                      show={showNew}
+                      setShow={setShowNew}
                     />
-                    <Input
+                    <PasswordInput
+                      ui={ui}
                       label="Confirm new password"
-                      type="password"
                       value={security.confirmPassword}
-                      onChange={(e) => setSecurity((s) => ({ ...s, confirmPassword: e.target.value }))}
+                      onChange={(e) =>
+                        setSecurity((s) => ({ ...s, confirmPassword: e.target.value }))
+                      }
                       placeholder="Repeat new password"
+                      show={showConfirm}
+                      setShow={setShowConfirm}
                     />
                   </div>
 
                   <button
                     onClick={handleSave}
-                    className="mt-4 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold
-                               hover:bg-slate-800 transition"
+                    className="mt-4 px-4 py-2 rounded-full text-white text-sm font-semibold transition"
+                    style={{ backgroundColor: "var(--sf-accent)" }}
+                    title="Update password (demo)"
                   >
                     Update password
                   </button>
@@ -585,55 +841,76 @@ export default function Settings() {
 
               {activeTab === "notifications" && (
                 <SectionShell
+                  ui={ui}
                   title="Notifications"
                   desc="Choose what updates you want to receive."
-                  onClick={() => toast.info("Tip: Toggle options — then Save changes")}
+                  onClick={() => toast.info("Tip: Toggle any option — it is clickable")}
                 >
                   <div className="space-y-3">
                     <Toggle
+                      ui={ui}
                       label="Email: Announcements"
                       desc="Platform updates and DevSphere news."
                       checked={noti.emailAnnouncements}
-                      onChange={() => setNoti((n) => ({ ...n, emailAnnouncements: !n.emailAnnouncements }))}
+                      onChange={() =>
+                        setNoti((n) => ({ ...n, emailAnnouncements: !n.emailAnnouncements }))
+                      }
                     />
                     <Toggle
+                      ui={ui}
                       label="Email: Project invites"
                       desc="Emails for new collaboration invites."
                       checked={noti.emailProjectInvites}
-                      onChange={() => setNoti((n) => ({ ...n, emailProjectInvites: !n.emailProjectInvites }))}
+                      onChange={() =>
+                        setNoti((n) => ({ ...n, emailProjectInvites: !n.emailProjectInvites }))
+                      }
                     />
                     <Toggle
+                      ui={ui}
                       label="Push: Comments"
                       desc="Alerts when someone comments on your Showcase posts."
                       checked={noti.pushComments}
-                      onChange={() => setNoti((n) => ({ ...n, pushComments: !n.pushComments }))}
+                      onChange={() =>
+                        setNoti((n) => ({ ...n, pushComments: !n.pushComments }))
+                      }
                     />
                     <Toggle
+                      ui={ui}
                       label="Push: Mentions"
                       desc="Alerts when someone mentions you in rooms or the feed."
                       checked={noti.pushMentions}
-                      onChange={() => setNoti((n) => ({ ...n, pushMentions: !n.pushMentions }))}
+                      onChange={() =>
+                        setNoti((n) => ({ ...n, pushMentions: !n.pushMentions }))
+                      }
                     />
                     <Toggle
+                      ui={ui}
                       label="Weekly digest"
                       desc="A weekly summary of your activity."
                       checked={noti.digestWeekly}
-                      onChange={() => setNoti((n) => ({ ...n, digestWeekly: !n.digestWeekly }))}
+                      onChange={() =>
+                        setNoti((n) => ({ ...n, digestWeekly: !n.digestWeekly }))
+                      }
                     />
                   </div>
 
-                  {/* demo clickable badge controls */}
                   <div className="mt-4 flex gap-2 flex-wrap">
                     <button
                       onClick={() => setUnreadCount((c) => c + 1)}
-                      className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                      className={[
+                        "px-4 py-2 rounded-full text-xs font-bold transition border",
+                        isDark
+                          ? "bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
                       title="Demo: increase badge"
                     >
                       + Badge
                     </button>
                     <button
                       onClick={() => setUnreadCount(0)}
-                      className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+                      className="px-4 py-2 rounded-full text-white text-xs font-bold transition"
+                      style={{ backgroundColor: "var(--sf-accent)" }}
                       title="Demo: clear badge"
                     >
                       Clear badge
@@ -644,44 +921,58 @@ export default function Settings() {
 
               {activeTab === "appearance" && (
                 <SectionShell
+                  ui={ui}
                   title="Appearance"
-                  desc="Theme and layout preferences."
-                  onClick={() => toast.info("Tip: Theme = light/dark, Density = spacing, Accent = highlights")}
+                  desc="Theme, spacing, and accent (these now apply instantly)."
+                  onClick={() =>
+                    toast.info("Tip: Theme, Density & Accent are all clickable and apply instantly")
+                  }
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-700">Theme</label>
+                      <label className={`text-sm font-medium ${ui.textLabel}`}>Theme</label>
                       <select
                         value={appearance.theme}
                         onChange={(e) => setAppearance((a) => ({ ...a, theme: e.target.value }))}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm
-                                   focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition"
+                        className={[
+                          "w-full rounded-xl border transition focus:outline-none focus:ring-2",
+                          ui.input,
+                          ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+                        ].join(" ")}
+                        title="Switch Light/Dark"
                       >
                         <option>Light</option>
                         <option>Dark</option>
                       </select>
+                      <p className={`text-xs ${ui.textMuted}`}>Changes page background + card styles.</p>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-700">Density</label>
+                      <label className={`text-sm font-medium ${ui.textLabel}`}>Density</label>
                       <select
                         value={appearance.density}
                         onChange={(e) => setAppearance((a) => ({ ...a, density: e.target.value }))}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm
-                                   focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition"
+                        className={[
+                          "w-full rounded-xl border transition focus:outline-none focus:ring-2",
+                          ui.input,
+                          ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+                        ].join(" ")}
+                        title="Switch Comfortable/Compact"
                       >
                         <option>Comfortable</option>
                         <option>Compact</option>
                       </select>
+                      <p className={`text-xs ${ui.textMuted}`}>Compact reduces padding and spacing.</p>
                     </div>
                   </div>
 
                   <div className="mt-4">
-                    <label className="text-sm font-medium text-slate-700">Accent</label>
+                    <label className={`text-sm font-medium ${ui.textLabel}`}>Accent</label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {["Navy", "Sky", "Violet"].map((c) => (
                         <Chip
                           key={c}
+                          ui={ui}
                           active={appearance.accent === c}
                           onClick={() => setAppearance((a) => ({ ...a, accent: c }))}
                         >
@@ -689,18 +980,29 @@ export default function Settings() {
                         </Chip>
                       ))}
                     </div>
+                    <p className={`text-xs ${ui.textMuted} mt-2`}>
+                      Accent changes active tab color, primary buttons, and toggles.
+                    </p>
                   </div>
 
                   <div className="mt-4 flex gap-2 flex-wrap">
                     <button
                       onClick={() => toast.success("Appearance saved (demo).")}
-                      className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition"
+                      className="px-4 py-2 rounded-full text-white text-sm font-semibold transition"
+                      style={{ backgroundColor: "var(--sf-accent)" }}
+                      title="Save appearance (demo)"
                     >
                       Save appearance
                     </button>
                     <button
                       onClick={() => setAppearance({ theme: "Light", density: "Comfortable", accent: "Navy" })}
-                      className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
+                      className={[
+                        "px-4 py-2 rounded-full text-sm font-semibold transition border",
+                        isDark
+                          ? "bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
+                      title="Restore defaults"
                     >
                       Restore defaults
                     </button>
@@ -710,30 +1012,51 @@ export default function Settings() {
 
               {activeTab === "integrations" && (
                 <SectionShell
+                  ui={ui}
                   title="Integrations"
                   desc="Connect external tools like GitHub."
                   onClick={() => toast.info("Tip: Save GitHub username — dashboard widget uses it")}
                 >
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 md:p-5 sfCardHover">
+                  <div
+                    className={[
+                      "rounded-2xl border p-4 md:p-5 sfCardHover",
+                      isDark ? "border-slate-800 bg-slate-950/50" : "border-slate-100 bg-slate-50",
+                    ].join(" ")}
+                    onClick={() => toast.info("This integration card is clickable too")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      (e.key === "Enter" || e.key === " ") &&
+                      toast.info("This integration card is clickable too")
+                    }
+                    title="Clickable card"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+                        <div
+                          className="w-10 h-10 rounded-2xl text-white flex items-center justify-center"
+                          style={{ backgroundColor: "var(--sf-accent)" }}
+                          title="Integration icon"
+                        >
                           <PlugIcon />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">GitHub</p>
-                          <p className="text-xs text-slate-600 mt-1">
+                          <p className={`text-sm font-semibold ${ui.textStrong}`}>GitHub</p>
+                          <p className={`text-xs ${ui.textMuted} mt-1`}>
                             Connect your GitHub username. The Dashboard GitHub card uses this value.
                           </p>
                         </div>
                       </div>
 
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        className={`px-3 py-1 rounded-full text-xs font-bold border ${
                           githubConnected
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-white text-slate-700 border border-slate-200"
+                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                            : isDark
+                            ? "bg-slate-950 text-slate-200 border-slate-800"
+                            : "bg-white text-slate-700 border-slate-200"
                         }`}
+                        title="Connection status"
                       >
                         {githubConnected ? "Connected" : "Not connected"}
                       </span>
@@ -742,26 +1065,31 @@ export default function Settings() {
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="md:col-span-2">
                         <Input
+                          ui={ui}
                           label="GitHub username"
                           value={githubUsername}
                           onChange={(e) => setGithubUsername(e.target.value)}
                           placeholder="e.g. octocat"
                         />
-                        <p className="text-xs text-slate-500 mt-2">
-                          Tip: Enter only the username (not the full URL).
-                        </p>
+                        <p className={`text-xs ${ui.textMuted} mt-2`}>Tip: Enter only the username (not the full URL).</p>
                       </div>
 
                       <div className="flex md:flex-col gap-2">
                         <button
                           onClick={connectGitHub}
-                          className="w-full px-4 py-2.5 rounded-xl bg-sky-500 text-white text-sm font-extrabold hover:bg-sky-400 transition"
+                          className="w-full px-4 py-2.5 rounded-xl text-white text-sm font-extrabold transition"
+                          style={{ backgroundColor: "var(--sf-accent)" }}
+                          title="Connect GitHub"
                         >
                           Connect
                         </button>
                         <button
                           onClick={disconnectGitHub}
-                          className="w-full px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-extrabold hover:bg-slate-800 transition"
+                          className={[
+                            "w-full px-4 py-2.5 rounded-xl text-white text-sm font-extrabold transition",
+                            "bg-slate-900 hover:bg-slate-800",
+                          ].join(" ")}
+                          title="Disconnect GitHub"
                         >
                           Disconnect
                         </button>
@@ -769,9 +1097,13 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="mt-4 text-xs text-slate-500">
+                  <div className={`mt-4 text-xs ${ui.textMuted}`}>
                     Saved locally as:{" "}
-                    <code className="px-2 py-1 rounded bg-white border border-slate-200">
+                    <code
+                      className={`px-2 py-1 rounded border ${
+                        isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
+                      }`}
+                    >
                       devsphere_github_username
                     </code>
                   </div>
@@ -779,31 +1111,42 @@ export default function Settings() {
               )}
             </div>
 
-            {/* RIGHT (all clickable) */}
+            {/* RIGHT */}
             <div className="space-y-6">
               <div
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sfPulseBorder sfCardHover cursor-pointer"
+                className={[
+                  "rounded-2xl border shadow-sm sfPulseBorder sfCardHover cursor-pointer",
+                  ui.card,
+                  ui.density === "Compact" ? "p-4" : "p-5",
+                ].join(" ")}
                 onClick={() => openTab("profile")}
                 title="Open Profile tab"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openTab("profile")}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-semibold">
+                  <div
+                    className="w-11 h-11 rounded-2xl text-white flex items-center justify-center font-semibold"
+                    style={{ backgroundColor: "var(--sf-accent)" }}
+                    title="User badge"
+                  >
                     {initials || "U"}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{displayName}</p>
-                    <p className="text-xs text-slate-500">DevSphere account</p>
+                    <p className={`text-sm font-semibold ${ui.textStrong}`}>{displayName}</p>
+                    <p className={`text-xs ${ui.textMuted}`}>DevSphere account</p>
                   </div>
                 </div>
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Status</span>
-                    <span className="text-emerald-600 font-medium">Active</span>
+                    <span className={ui.textMuted}>Status</span>
+                    <span className="text-emerald-500 font-medium">Active</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Quick</span>
-                    <span className="text-slate-900 font-semibold">Edit profile →</span>
+                    <span className={ui.textMuted}>Quick</span>
+                    <span className={`${ui.textStrong} font-semibold`}>Edit profile →</span>
                   </div>
                 </div>
               </div>
@@ -812,6 +1155,9 @@ export default function Settings() {
                 className="bg-slate-900 rounded-2xl shadow-md p-5 text-white sfPulseBorder sfCardHover cursor-pointer"
                 onClick={() => openTab("integrations")}
                 title="Open Integrations tab"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openTab("integrations")}
               >
                 <h3 className="text-sm font-semibold">Tip</h3>
                 <p className="text-xs text-slate-200 mt-1">
@@ -823,31 +1169,60 @@ export default function Settings() {
                     openTab("integrations");
                   }}
                   className="mt-3 px-4 py-2 rounded-full bg-white/90 text-slate-900 text-xs font-semibold hover:bg-white transition"
+                  title="Open integrations"
                 >
                   Open integrations
                 </button>
               </div>
 
-              {/* Quick clickable shortcuts */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sfPulseBorder sfCardHover">
-                <h3 className="text-sm font-semibold text-slate-900">Quick shortcuts</h3>
-                <p className="text-xs text-slate-500 mt-1">One tap switching</p>
+              <div
+                className={[
+                  "rounded-2xl border shadow-sm sfPulseBorder sfCardHover cursor-pointer",
+                  ui.card,
+                  ui.density === "Compact" ? "p-4" : "p-5",
+                ].join(" ")}
+                onClick={() => toast.info("Shortcuts are clickable")}
+                title="Click for tip"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  (e.key === "Enter" || e.key === " ") && toast.info("Shortcuts are clickable")
+                }
+              >
+                <h3 className={`text-sm font-semibold ${ui.textStrong}`}>Quick shortcuts</h3>
+                <p className={`text-xs ${ui.textMuted} mt-1`}>One tap switching</p>
+
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => openTab("profile")} className="px-3 py-2 rounded-full text-xs font-bold bg-slate-900 text-white">
-                    Profile
-                  </button>
-                  <button onClick={() => openTab("security")} className="px-3 py-2 rounded-full text-xs font-bold bg-slate-100 text-slate-900">
-                    Security
-                  </button>
-                  <button onClick={() => openTab("notifications")} className="px-3 py-2 rounded-full text-xs font-bold bg-slate-100 text-slate-900">
-                    Notifications
-                  </button>
-                  <button onClick={() => openTab("appearance")} className="px-3 py-2 rounded-full text-xs font-bold bg-slate-100 text-slate-900">
-                    Appearance
-                  </button>
-                  <button onClick={() => openTab("integrations")} className="px-3 py-2 rounded-full text-xs font-bold bg-slate-100 text-slate-900">
-                    Integrations
-                  </button>
+                  {[
+                    { id: "profile", label: "Profile" },
+                    { id: "security", label: "Security" },
+                    { id: "notifications", label: "Notifications" },
+                    { id: "appearance", label: "Appearance" },
+                    { id: "integrations", label: "Integrations" },
+                  ].map((x) => {
+                    const active = activeTab === x.id;
+                    return (
+                      <button
+                        key={x.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openTab(x.id);
+                        }}
+                        className={[
+                          "px-3 py-2 rounded-full text-xs font-bold transition border",
+                          active
+                            ? "text-white border-transparent"
+                            : isDark
+                            ? "bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900"
+                            : "bg-slate-100 border-slate-200 text-slate-900 hover:bg-slate-200",
+                        ].join(" ")}
+                        style={active ? { backgroundColor: "var(--sf-accent)" } : undefined}
+                        title={`Open ${x.label}`}
+                      >
+                        {x.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -857,7 +1232,6 @@ export default function Settings() {
 
       {/* ✅ Animations + theme */}
       <style>{`
-        /* Sidebar show/hide — SAME as Dashboard */
         .sidebar{
           background: #0f172a;
           color: #f8fafc;
@@ -871,7 +1245,6 @@ export default function Settings() {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* Background blobs */
         .sfBlob{
           position:absolute;
           width: 560px;

@@ -1,5 +1,5 @@
 // src/pages/CollaborationRoom.jsx
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
@@ -30,6 +30,7 @@ const ShowcaseIcon = () => (
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
   </svg>
 );
+
 const UserRolesIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
@@ -44,7 +45,7 @@ const BellIcon = () => (
 
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
 );
 
@@ -113,7 +114,15 @@ export default function CollaborationRoom() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // ✅ Notifications-like mount animations
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const displayName = user?.name || user?.email || "Guest";
   const initials = displayName
@@ -143,12 +152,9 @@ export default function CollaborationRoom() {
   const [maxMembers, setMaxMembers] = useState(6);
 
   // join requests (demo)
-  const [pendingRequests, setPendingRequests] = useState([
-    { id: "p1", roomCode: "DSF123", user: "Sarah", status: "pending" },
-  ]);
+  const [pendingRequests, setPendingRequests] = useState([{ id: "p1", roomCode: "DSF123", user: "Sarah", status: "pending" }]);
 
-  // ✅ "approved" state for the current user (demo)
-  // key: roomCode, value: true if approved
+  // approved rooms (demo)
   const [approvedRooms, setApprovedRooms] = useState(() => ({}));
 
   const myOwnedRooms = useMemo(
@@ -163,23 +169,18 @@ export default function CollaborationRoom() {
 
     const found = rooms.find((r) => r.code === code);
     if (!found) return alert("Room not found. Please enter a valid code.");
-
     if (found.members >= found.maxMembers) return alert("This room is full.");
 
-    // if user is owner -> allow workspace directly
+    // owner -> allow directly
     if ((found.owner || "").toLowerCase() === (displayName || "").toLowerCase()) {
       setApprovedRooms((prev) => ({ ...prev, [found.code]: true }));
       return navigate(`/workspace/${found.code}`);
     }
 
-    // already requested?
     const already = pendingRequests.some(
       (x) => x.roomCode === found.code && (x.user || "").toLowerCase() === name.toLowerCase() && x.status === "pending"
     );
-    if (already) {
-      alert("Request already sent. Wait for approval (demo).");
-      return;
-    }
+    if (already) return alert("Request already sent. Wait for approval (demo).");
 
     const req = { id: `p${Date.now()}`, roomCode: found.code, user: name, status: "pending" };
     setPendingRequests((prev) => [req, ...prev]);
@@ -201,16 +202,11 @@ export default function CollaborationRoom() {
     }
 
     setRooms((prev) => prev.map((r) => (r.code === req.roomCode ? { ...r, members: r.members + 1 } : r)));
-
-    // mark request approved
     setPendingRequests((p) => p.map((x) => (x.id === reqId ? { ...x, status: "approved" } : x)));
 
-    // ✅ if the approved request is for YOU (demo), allow workspace button
     if ((req.user || "").toLowerCase() === (displayName || "").toLowerCase()) {
       setApprovedRooms((prev) => ({ ...prev, [req.roomCode]: true }));
     }
-
-    // remove from list (optional UI) — but we keep it with status approved for clarity
   };
 
   const rejectRequest = (reqId) => {
@@ -236,7 +232,7 @@ export default function CollaborationRoom() {
     };
 
     setRooms((prev) => [newRoom, ...prev]);
-    setApprovedRooms((prev) => ({ ...prev, [code]: true })); // owner can enter workspace
+    setApprovedRooms((prev) => ({ ...prev, [code]: true }));
     setCreateName("");
     setMaxMembers(6);
     alert(`Room created! Code: ${code}`);
@@ -255,15 +251,10 @@ export default function CollaborationRoom() {
     const room = rooms.find((r) => r.code === code);
     if (!room) return;
 
-    // owner can always enter
     const isOwner = (ownerName || "").toLowerCase() === (displayName || "").toLowerCase();
     const ok = isOwner || approvedRooms[code];
 
-    if (!ok) {
-      alert("You must be approved by owner before entering workspace (demo).");
-      return;
-    }
-
+    if (!ok) return alert("You must be approved by owner before entering workspace (demo).");
     navigate(`/workspace/${code}`);
   };
 
@@ -272,7 +263,14 @@ export default function CollaborationRoom() {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-100 flex">
+      <div className="min-h-screen bg-slate-100 flex overflow-hidden">
+        {/* ✅ NAVY animated background (same as Notifications) */}
+        <div className="pointer-events-none fixed inset-0">
+          <div className="sfBlob sfBlob1" />
+          <div className="sfBlob sfBlob2" />
+          <div className="sfShimmer" />
+        </div>
+
         {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
           <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
@@ -324,9 +322,9 @@ export default function CollaborationRoom() {
         </aside>
 
         {/* MAIN */}
-        <main className="flex-1 p-6 md:p-8 space-y-6 animate-pageIn">
-          {/* Top bar */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <main className="flex-1 p-6 md:p-8 relative">
+          {/* Top Bar (Notifications-like entry animation) */}
+          <div className={`flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -336,13 +334,13 @@ export default function CollaborationRoom() {
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
 
-              <div className="animate-titleIn">
+              <div>
                 <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Collaboration Lobby</h1>
-                <p className="text-sm text-slate-700">Create rooms, browse rooms, request to join, and enter workspace.</p>
+                <p className="text-sm text-slate-500 mt-1">Create rooms, browse rooms, request to join, and enter workspace.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate("/notifications")}
                 className="relative w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-300 transition"
@@ -358,104 +356,127 @@ export default function CollaborationRoom() {
             </div>
           </div>
 
-          {/* Grid */}
+          {/* ✅ Main grid uses Notifications cards style */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* LEFT: Rooms list */}
-            <section className="cardShell p-5 animate-cardIn delay-2 xl:col-span-2">
-              <div className="flex items-center justify-between mb-3">
+            <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden sfPulseBorder ${mounted ? "sfIn2" : "sfPre"} xl:col-span-2`}>
+              <div className="p-5 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Available rooms</h2>
-                <span className="text-xs text-slate-700">{rooms.length} total</span>
+                <span className="text-xs text-slate-500">{rooms.length} total</span>
               </div>
 
-              <div className="space-y-3">
-                {rooms.map((r) => {
-                  const full = r.members >= r.maxMembers;
-                  const isOwner = (r.owner || "").toLowerCase() === (displayName || "").toLowerCase();
-                  const canEnter = isOwner || !!approvedRooms[r.code];
+              <div className="px-5 pb-5">
+                <div className="space-y-3">
+                  {rooms.map((r, idx) => {
+                    const full = r.members >= r.maxMembers;
+                    const isOwner = (r.owner || "").toLowerCase() === (displayName || "").toLowerCase();
+                    const canEnter = isOwner || !!approvedRooms[r.code];
 
-                  return (
-                    <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 transition">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{r.name}</p>
-                          <p className="text-xs text-slate-600 mt-1">
-                            Code: <span className="font-semibold text-sky-700">{r.code}</span> · Owner:{" "}
-                            <span className="font-semibold">{r.owner}</span>
-                          </p>
-                          {canEnter ? (
-                            <p className="text-[11px] mt-1 font-extrabold text-emerald-600">Access granted: you can enter workspace</p>
-                          ) : (
-                            <p className="text-[11px] mt-1 font-extrabold text-slate-500">Enter workspace after approval (demo)</p>
-                          )}
+                    return (
+                      <div
+                        key={r.id}
+                        className={[
+                          "rounded-2xl border border-slate-200 bg-white p-4 transition sfRow",
+                          "hover:bg-slate-50",
+                          mounted ? "sfRowIn" : "sfRowPre",
+                        ].join(" ")}
+                        style={{ transitionDelay: `${Math.min(idx, 10) * 60}ms` }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{r.name}</p>
+                            <p className="text-xs text-slate-600 mt-1">
+                              Code: <span className="font-semibold text-sky-700">{r.code}</span> · Owner:{" "}
+                              <span className="font-semibold">{r.owner}</span>
+                            </p>
+
+                            {canEnter ? (
+                              <p className="text-[11px] mt-1 font-extrabold text-emerald-600">Access granted: you can enter workspace</p>
+                            ) : (
+                              <p className="text-[11px] mt-1 font-extrabold text-slate-500">Enter workspace after approval (demo)</p>
+                            )}
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-slate-900">
+                              {r.members}/{r.maxMembers}
+                            </p>
+                            <p className={`text-xs font-semibold ${full ? "text-rose-600" : "text-emerald-600"}`}>
+                              {full ? "Full" : "Open"}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-slate-900">
-                            {r.members}/{r.maxMembers}
-                          </p>
-                          <p className={`text-xs font-semibold ${full ? "text-rose-600" : "text-emerald-600"}`}>
-                            {full ? "Full" : "Open"}
-                          </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => copyCode(r.code)}
+                            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition inline-flex items-center gap-2"
+                          >
+                            <CopyIcon />
+                            Copy code
+                          </button>
+
+                          <button
+                            onClick={() => requestToJoin(r.code)}
+                            disabled={full}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
+                              full ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800"
+                            }`}
+                          >
+                            Request to join
+                          </button>
+
+                          <button
+                            onClick={() => goToWorkspace(r.code, r.owner)}
+                            disabled={!canEnter}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
+                              !canEnter ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800"
+                            }`}
+                            title={!canEnter ? "Approval required (demo)" : "Open workspace"}
+                          >
+                            Enter workspace
+                          </button>
                         </div>
                       </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button onClick={() => copyCode(r.code)} className="qaBtn flex items-center gap-2">
-                          <CopyIcon /> Copy code
-                        </button>
-
-                        <button
-                          onClick={() => requestToJoin(r.code)}
-                          disabled={full}
-                          className={`qaBtn ${full ? "opacity-40 cursor-not-allowed" : ""}`}
-                        >
-                          Request to join
-                        </button>
-
-                        {/* ✅ NEW: Workspace navigation */}
-                        <button
-                          onClick={() => goToWorkspace(r.code, r.owner)}
-                          disabled={!canEnter}
-                          className={`qaBtn ${!canEnter ? "opacity-40 cursor-not-allowed" : ""}`}
-                          title={!canEnter ? "Approval required (demo)" : "Open workspace"}
-                        >
-                          Enter workspace
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </section>
 
             {/* RIGHT */}
             <div className="space-y-6">
               {/* Join */}
-              <section className="cardShell p-5 animate-cardIn delay-3">
+              <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join a room</h2>
-                <p className="text-xs text-slate-700 mt-1">Send a request. Owner will approve (demo).</p>
+                <p className="text-xs text-slate-500 mt-1">Send a request. Owner will approve (demo).</p>
 
                 <div className="mt-4 space-y-3">
                   <input
                     value={joinName}
                     onChange={(e) => setJoinName(e.target.value)}
                     placeholder="Your display name"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30 transition"
                   />
                   <input
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
                     placeholder="Enter room code (e.g., DSF123)"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30 transition"
                   />
-                  <button onClick={() => requestToJoin()} className="w-full qaBtn">
+
+                  <button
+                    onClick={() => requestToJoin()}
+                    className="w-full px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
+                  >
                     Send join request
                   </button>
 
-                  {/* Quick enter if approved */}
                   <button
-                    onClick={() => goToWorkspace(joinCode.trim().toUpperCase(), rooms.find((x) => x.code === joinCode.trim().toUpperCase())?.owner)}
-                    className="w-full qaBtn"
+                    onClick={() =>
+                      goToWorkspace(joinCode.trim().toUpperCase(), rooms.find((x) => x.code === joinCode.trim().toUpperCase())?.owner)
+                    }
+                    className="w-full px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
                     title="Enter workspace if approved"
                   >
                     Enter workspace (by code)
@@ -464,16 +485,16 @@ export default function CollaborationRoom() {
               </section>
 
               {/* Create */}
-              <section className="cardShell p-5 animate-cardIn delay-4">
+              <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Create a room</h2>
-                <p className="text-xs text-slate-700 mt-1">Set a name and maximum members.</p>
+                <p className="text-xs text-slate-500 mt-1">Set a name and maximum members.</p>
 
                 <div className="mt-4 space-y-3">
                   <input
                     value={createName}
                     onChange={(e) => setCreateName(e.target.value)}
                     placeholder="Room name"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30 transition"
                   />
 
                   <div className="grid grid-cols-2 gap-3">
@@ -495,35 +516,44 @@ export default function CollaborationRoom() {
                     </div>
                   </div>
 
-                  <button onClick={createRoom} className="w-full qaBtn">
+                  <button
+                    onClick={createRoom}
+                    className="w-full px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
+                  >
                     Create room
                   </button>
 
-                  <p className="text-[11px] text-slate-600">A unique room code is generated for every new room.</p>
+                  <p className="text-[11px] text-slate-500">A unique room code is generated for every new room.</p>
                 </div>
               </section>
 
               {/* Owner approvals */}
-              <section className="cardShell p-5 animate-cardIn delay-5">
+              <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join requests (Owner)</h2>
-                <p className="text-xs text-slate-700 mt-1">Only your rooms show requests here (demo).</p>
+                <p className="text-xs text-slate-500 mt-1">Only your rooms show requests here (demo).</p>
 
                 <div className="mt-4 space-y-3">
                   {ownerPending.length === 0 ? (
-                    <div className="text-sm text-slate-600">No pending requests for your rooms.</div>
+                    <div className="text-sm text-slate-500">No pending requests for your rooms.</div>
                   ) : (
                     ownerPending.map((req) => (
-                      <div key={req.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div key={req.id} className="rounded-2xl border border-slate-200 bg-white p-4 sfRow">
                         <p className="text-sm font-semibold text-slate-900">{req.user}</p>
                         <p className="text-xs text-slate-600 mt-1">
                           Requested room code: <span className="font-semibold text-sky-700">{req.roomCode}</span>
                         </p>
 
                         <div className="mt-3 flex gap-2">
-                          <button onClick={() => approveRequest(req.id)} className="qaBtn flex items-center gap-2">
+                          <button
+                            onClick={() => approveRequest(req.id)}
+                            className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition inline-flex items-center gap-2 shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
+                          >
                             <CheckIcon /> Approve
                           </button>
-                          <button onClick={() => rejectRequest(req.id)} className="qaBtn flex items-center gap-2">
+                          <button
+                            onClick={() => rejectRequest(req.id)}
+                            className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition inline-flex items-center gap-2"
+                          >
                             <XIcon /> Reject
                           </button>
                         </div>
@@ -537,8 +567,9 @@ export default function CollaborationRoom() {
         </main>
       </div>
 
-      {/* Style block */}
+      {/* Styles (same theme system as Notifications.jsx) */}
       <style>{`
+        /* Sidebar show/hide (same as Dashboard/Notifications) */
         .sidebar{
           background: #0f172a;
           color: #f8fafc;
@@ -547,68 +578,110 @@ export default function CollaborationRoom() {
           padding: 24px 16px;
           overflow:hidden;
           transition: width .25s ease, padding .25s ease, opacity .25s ease;
+          z-index: 10;
         }
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        .cardShell{
-          background: rgba(248,250,252,0.92);
-          border-radius: 18px;
-          border: 1px solid rgba(10, 24, 46, 0.65);
-          box-shadow:
-            0 10px 30px rgba(2,6,23,0.10),
-            0 0 0 1px rgba(56,189,248,0.10);
-          position: relative;
-          overflow: hidden;
-          transition: transform .25s ease, box-shadow .25s ease;
+        /* NAVY BLUE ONLY animated blobs */
+        .sfBlob{
+          position:absolute;
+          width: 560px;
+          height: 560px;
+          border-radius: 999px;
+          filter: blur(95px);
+          opacity: .34;
+          animation: sfFloat 14s ease-in-out infinite;
+          background: radial-gradient(circle at 30% 30%,
+            rgba(12, 42, 92, 0.65),
+            rgba(6, 22, 58, 0.35),
+            rgba(3, 12, 28, 0)
+          );
         }
-        .cardShell::before{
+        .sfBlob1{ left: -180px; top: -180px; }
+        .sfBlob2{
+          right: -220px; bottom: -260px;
+          width: 650px; height: 650px;
+          opacity: .28;
+          animation-duration: 18s;
+        }
+
+        .sfShimmer{
+          position:absolute;
+          inset:-2px;
+          pointer-events:none;
+          background:
+            linear-gradient(120deg,
+              rgba(3, 12, 28, 0) 0%,
+              rgba(12, 42, 92, 0.22) 45%,
+              rgba(3, 12, 28, 0) 70%
+            );
+          mix-blend-mode: multiply;
+          opacity: .55;
+          transform: translateX(-30%);
+          animation: sfSweep 6.5s ease-in-out infinite;
+        }
+
+        @keyframes sfFloat{
+          0%{ transform: translate(0px,0px) scale(1); }
+          50%{ transform: translate(32px,-28px) scale(1.06); }
+          100%{ transform: translate(0px,0px) scale(1); }
+        }
+        @keyframes sfSweep{
+          0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+          50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
+          100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
+        }
+
+        /* Entry animations */
+        .sfPre{ opacity: 0; transform: translateY(12px); }
+        .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
+        .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
+        .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
+
+        /* Navy pulse border */
+        .sfPulseBorder{ position: relative; }
+        .sfPulseBorder::before{
           content:"";
           position:absolute;
           inset:-1px;
           border-radius: 18px;
           background: linear-gradient(120deg,
-            rgba(10,24,46,0.95),
-            rgba(56,189,248,0.40),
-            rgba(10,24,46,0.95)
+            rgba(8, 30, 68, 0.85),
+            rgba(12, 42, 92, 0.35),
+            rgba(8, 30, 68, 0.85)
           );
-          opacity: 0.32;
+          opacity: .28;
           filter: blur(10px);
           pointer-events:none;
+          animation: sfBorderPulse 4.2s ease-in-out infinite;
         }
-        .cardShell > * { position: relative; z-index: 1; }
+        .sfPulseBorder::after{
+          content:"";
+          position:absolute;
+          inset:0;
+          border-radius: 18px;
+          pointer-events:none;
+          box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.30);
+        }
+        @keyframes sfBorderPulse{
+          0%,100%{ opacity: .18; transform: scale(1); }
+          50%{ opacity: .40; transform: scale(1.01); }
+        }
 
-        .cardShell:hover{
-          transform: translateY(-3px);
+        /* Row hover + stagger animation */
+        .sfRow{
+          transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
+          will-change: transform;
+        }
+        .sfRow:hover{
+          transform: translateY(-4px);
           box-shadow:
-            0 18px 45px rgba(2,6,23,0.14),
-            0 0 22px rgba(56,189,248,0.22);
+            0 18px 45px rgba(2,6,23,0.10),
+            0 0 0 1px rgba(8, 30, 68, 0.10);
         }
-
-        .qaBtn{
-          padding: 9px 12px;
-          border-radius: 999px;
-          background: rgba(15,23,42,0.92);
-          color: #fff;
-          font-weight: 800;
-          font-size: 12px;
-          transition: transform .2s ease, filter .2s ease;
-        }
-        .qaBtn:hover{ transform: translateY(-2px); filter: brightness(1.05); }
-
-        @keyframes pageIn { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: translateY(0);} }
-        .animate-pageIn { animation: pageIn .55s cubic-bezier(.2,.8,.2,1) both; }
-        @keyframes titleIn { from { opacity: 0; transform: translateX(-16px);} to { opacity: 1; transform: translateX(0);} }
-        .animate-titleIn { animation: titleIn .7s cubic-bezier(.2,.8,.2,1) both; }
-        @keyframes fadeIn { from { opacity: 0;} to { opacity: 1;} }
-        .animate-fadeIn { animation: fadeIn .8s ease-out both; }
-        @keyframes cardIn {
-          from { opacity: 0; transform: translateY(14px) scale(.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-cardIn { animation: cardIn .6s cubic-bezier(.2,.8,.2,1) both; }
-        .delay-2{ animation-delay:.16s } .delay-3{ animation-delay:.24s }
-        .delay-4{ animation-delay:.32s } .delay-5{ animation-delay:.40s }
+        .sfRowPre{ opacity: 0; transform: translateY(18px); }
+        .sfRowIn{ opacity: 1; transform: translateY(0); }
       `}</style>
     </>
   );

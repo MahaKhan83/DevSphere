@@ -69,14 +69,42 @@ const BellLineIcon = ({ className = "w-5 h-5" }) => (
 );
 
 const CheckIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <path d="M20 6 9 17l-5-5" />
   </svg>
 );
 
 const FilterIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
     <path d="M4 6h16M7 12h10M10 18h4" />
+  </svg>
+);
+
+/* ✅ Refresh icon */
+const RefreshIcon = ({ className = "w-4 h-4" }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+    <path d="M21 3v6h-6" />
   </svg>
 );
 
@@ -116,13 +144,29 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 const typeMeta = (type) => {
   switch (type) {
     case "follow":
-      return { label: "New follower", badge: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-400" };
+      return {
+        label: "New follower",
+        badge: "bg-emerald-100 text-emerald-700",
+        dot: "bg-emerald-400",
+      };
     case "invite":
-      return { label: "Project invite", badge: "bg-sky-100 text-sky-700", dot: "bg-sky-400" };
+      return {
+        label: "Project invite",
+        badge: "bg-sky-100 text-sky-700",
+        dot: "bg-sky-400",
+      };
     case "comment":
-      return { label: "New comment", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-400" };
+      return {
+        label: "New comment",
+        badge: "bg-violet-100 text-violet-700",
+        dot: "bg-violet-400",
+      };
     default:
-      return { label: "Update", badge: "bg-slate-100 text-slate-700", dot: "bg-slate-400" };
+      return {
+        label: "Update",
+        badge: "bg-slate-100 text-slate-700",
+        dot: "bg-slate-400",
+      };
   }
 };
 
@@ -148,59 +192,24 @@ export default function Notifications() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Refresh loading state
+  const [refreshing, setRefreshing] = useState(false);
+
   // Online status (demo like dashboard)
   const isOnline = true;
 
-  // Load notifications
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await getNotifications();
+  // ✅ Shared loader (used on mount + refresh button)
+  const loadNotifications = async (opts = { showSpinner: true }) => {
+    if (opts.showSpinner) setLoading(true);
+    setRefreshing(true);
 
-        if (res?.notifications) {
-          setItems(res.notifications);
-        } else {
-          // ✅ Better demo routes (NOT all dashboard)
-          setItems([
-            {
-              _id: "n1",
-              type: "follow",
-              title: "New follower",
-              message: "Ava Robinson started following you.",
-              time: "2 hours ago",
-              read: false,
-              action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
-              entityType: "user",
-              entityId: "u1",
-              username: "ava",
-            },
-            {
-              _id: "n2",
-              type: "invite",
-              title: "Project invite",
-              message: "James invited you to join “DevSphere UI Kit”.",
-              time: "Yesterday",
-              read: false,
-              action: { label: "Open project", path: "/portfolio", state: { focus: "DevSphere UI Kit" } },
-              entityType: "project",
-              projectName: "DevSphere UI Kit",
-            },
-            {
-              _id: "n3",
-              type: "comment",
-              title: "New comment",
-              message: "Sarah commented on your showcase post: “Nice work!”.",
-              time: "3 days ago",
-              read: true,
-              action: { label: "Open post", path: "/showcase", state: { focus: "Nice work!" } },
-              entityType: "post",
-              postId: "p1",
-            },
-          ]);
-        }
-      } catch (e) {
-        console.error(e);
+    try {
+      const res = await getNotifications();
+
+      if (res?.notifications) {
+        setItems(res.notifications);
+      } else {
+        // ✅ Better demo routes (NOT all dashboard)
         setItems([
           {
             _id: "n1",
@@ -212,32 +221,81 @@ export default function Notifications() {
             action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
             entityType: "user",
             entityId: "u1",
+            username: "ava",
+          },
+          {
+            _id: "n2",
+            type: "invite",
+            title: "Project invite",
+            message: "James invited you to join “DevSphere UI Kit”.",
+            time: "Yesterday",
+            read: false,
+            action: { label: "Open project", path: "/portfolio", state: { focus: "DevSphere UI Kit" } },
+            entityType: "project",
+            projectName: "DevSphere UI Kit",
+          },
+          {
+            _id: "n3",
+            type: "comment",
+            title: "New comment",
+            message: "Sarah commented on your showcase post: “Nice work!”.",
+            time: "3 days ago",
+            read: true,
+            action: { label: "Open post", path: "/showcase", state: { focus: "Nice work!" } },
+            entityType: "post",
+            postId: "p1",
           },
         ]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (e) {
+      console.error(e);
+      setItems([
+        {
+          _id: "n1",
+          type: "follow",
+          title: "New follower",
+          message: "Ava Robinson started following you.",
+          time: "2 hours ago",
+          read: false,
+          action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
+          entityType: "user",
+          entityId: "u1",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-    load();
+  // Load notifications on mount
+  useEffect(() => {
+    loadNotifications({ showSpinner: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
     let list = [...items];
 
     if (tab === "unread") list = list.filter((n) => !n.read);
-    if (["follow", "invite", "comment"].includes(tab)) list = list.filter((n) => n.type === tab);
+    if (["follow", "invite", "comment"].includes(tab))
+      list = list.filter((n) => n.type === tab);
 
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
-        (n) => (n.title || "").toLowerCase().includes(q) || (n.message || "").toLowerCase().includes(q)
+        (n) =>
+          (n.title || "").toLowerCase().includes(q) ||
+          (n.message || "").toLowerCase().includes(q)
       );
     }
     return list;
   }, [items, tab, query]);
 
-  const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items]);
+  const unreadCount = useMemo(
+    () => items.filter((n) => !n.read).length,
+    [items]
+  );
 
   const displayName = user?.name || user?.email || "Guest";
   const initials = displayName
@@ -318,6 +376,12 @@ export default function Notifications() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  // ✅ Refresh click
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    await loadNotifications({ showSpinner: false }); // keep page stable, only button animates
   };
 
   return (
@@ -442,6 +506,22 @@ export default function Notifications() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* ✅ Refresh button */}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={[
+                  "px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium transition inline-flex items-center gap-2",
+                  refreshing ? "opacity-70 cursor-not-allowed" : "hover:bg-slate-50",
+                ].join(" ")}
+                title="Refresh notifications"
+              >
+                <span className={refreshing ? "sfSpin" : ""}>
+                  <RefreshIcon />
+                </span>
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </button>
+
               <button
                 onClick={handleClearAll}
                 className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
@@ -711,6 +791,16 @@ export default function Notifications() {
         }
         .sfRowPre{ opacity: 0; transform: translateY(18px); }
         .sfRowIn{ opacity: 1; transform: translateY(0); }
+
+        /* ✅ Refresh spinning */
+        .sfSpin{
+          display:inline-flex;
+          animation: sfSpin 0.85s linear infinite;
+        }
+        @keyframes sfSpin{
+          from{ transform: rotate(0deg); }
+          to{ transform: rotate(360deg); }
+        }
       `}</style>
     </>
   );
