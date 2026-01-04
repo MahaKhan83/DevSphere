@@ -50,7 +50,7 @@ const BellSolidIcon = () => (
 
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94a7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
 );
 
@@ -170,7 +170,42 @@ const typeMeta = (type) => {
   }
 };
 
-const formatTime = (t) => t || "Just now";
+/* ✅ FIXED: Proper time formatter function */
+const formatTime = (timestamp) => {
+  if (!timestamp) return "Just now";
+  
+  // If it's already a formatted string like "2 hours ago"
+  if (typeof timestamp === 'string' && 
+      (timestamp.includes('ago') || 
+       timestamp.includes('hour') || 
+       timestamp.includes('day') || 
+       timestamp.includes('minute') ||
+       timestamp.includes('second'))) {
+    return timestamp;
+  }
+  
+  try {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffSeconds < 30) return "Just now";
+    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+    
+    return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+  } catch (error) {
+    return "Just now";
+  }
+};
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -210,13 +245,16 @@ export default function Notifications() {
         setItems(res.notifications);
       } else {
         // ✅ Better demo routes (NOT all dashboard)
+        const demoTime = new Date();
+        demoTime.setHours(demoTime.getHours() - 2); // 2 hours ago
+        
         setItems([
           {
             _id: "n1",
             type: "follow",
             title: "New follower",
             message: "Ava Robinson started following you.",
-            time: "2 hours ago",
+            createdAt: demoTime.toISOString(),
             read: false,
             action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
             entityType: "user",
@@ -227,8 +265,8 @@ export default function Notifications() {
             _id: "n2",
             type: "invite",
             title: "Project invite",
-            message: "James invited you to join “DevSphere UI Kit”.",
-            time: "Yesterday",
+            message: "James invited you to join \"DevSphere UI Kit\".",
+            createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
             read: false,
             action: { label: "Open project", path: "/portfolio", state: { focus: "DevSphere UI Kit" } },
             entityType: "project",
@@ -238,8 +276,8 @@ export default function Notifications() {
             _id: "n3",
             type: "comment",
             title: "New comment",
-            message: "Sarah commented on your showcase post: “Nice work!”.",
-            time: "3 days ago",
+            message: "Sarah commented on your showcase post: \"Nice work!\".",
+            createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
             read: true,
             action: { label: "Open post", path: "/showcase", state: { focus: "Nice work!" } },
             entityType: "post",
@@ -249,13 +287,16 @@ export default function Notifications() {
       }
     } catch (e) {
       console.error(e);
+      const errorTime = new Date();
+      errorTime.setHours(errorTime.getHours() - 2);
+      
       setItems([
         {
           _id: "n1",
           type: "follow",
           title: "New follower",
           message: "Ava Robinson started following you.",
-          time: "2 hours ago",
+          createdAt: errorTime.toISOString(),
           read: false,
           action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
           entityType: "user",
@@ -592,7 +633,7 @@ export default function Notifications() {
                   <BellLineIcon />
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-slate-900">No notifications</h3>
-                <p className="text-sm text-slate-500 mt-1">You’re all caught up.</p>
+                <p className="text-sm text-slate-500 mt-1">You're all caught up.</p>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
@@ -628,7 +669,10 @@ export default function Notifications() {
                             {n.title || meta.label}
                           </p>
                           <span className="text-xs text-slate-400">•</span>
-                          <span className="text-xs text-slate-400">{formatTime(n.time)}</span>
+                          {/* ✅ FIXED: Using createdAt field for time display */}
+                          <span className="text-xs text-slate-400">
+                            {formatTime(n.time || n.createdAt)}
+                          </span>
                         </div>
 
                         <p className="text-sm text-slate-600 mt-1">{n.message}</p>

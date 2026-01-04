@@ -25,7 +25,10 @@ router.post("/register", async (req, res) => {
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.json({ message: "User already exists" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "User already exists" 
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -39,9 +42,29 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-    res.json({ message: "User registered successfully" });
+    // ✅ COMBINED: Role included + Better response
+    const token = jwt.sign(
+      { id: user._id, role: user.role, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(201).json({ 
+      success: true, 
+      message: "User registered successfully",
+      token: token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
 });
 
@@ -52,22 +75,30 @@ router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid credentials" 
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid credentials" 
+      });
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "7d" }
     );
 
     res.json({
-      token,
+      success: true,
+      message: "Login successful!",
+      token: token,
       user: {
         id: user._id,
         name: user.name,
@@ -76,7 +107,10 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
 });
 
@@ -89,30 +123,20 @@ router.get("/user-dashboard", protect, (req, res) => {
 });
 
 // ----------------- MODERATOR DASHBOARD -----------------
-router.get(
-  "/moderator-dashboard",
-  protect,
-  checkRole("moderator"),
-  (req, res) => {
-    res.json({
-      message: "Welcome Moderator 🛡️",
-      user: req.user,
-    });
-  }
-);
+router.get("/moderator-dashboard", protect, checkRole("moderator"), (req, res) => {
+  res.json({
+    message: "Welcome Moderator 🛡️",
+    user: req.user,
+  });
+});
 
 // ----------------- ADMIN DASHBOARD -----------------
-router.get(
-  "/admin-dashboard",
-  protect,
-  checkRole("admin"),
-  (req, res) => {
-    res.json({
-      message: "Welcome Admin 👑",
-      user: req.user,
-    });
-  }
-);
+router.get("/admin-dashboard", protect, checkRole("admin"), (req, res) => {
+  res.json({
+    message: "Welcome Admin 👑",
+    user: req.user,
+  });
+});
 
 // ----------------- FORGOT PASSWORD -----------------
 router.post("/forgot-password", async (req, res) => {
@@ -144,4 +168,5 @@ router.post("/reset-password/:token", async (req, res) => {
   res.json({ message: "Password reset success" });
 });
 
+// ✅✅✅ MUST HAVE THIS LINE:
 module.exports = router;
