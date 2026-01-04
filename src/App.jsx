@@ -15,10 +15,13 @@ import Features from "./pages/Features";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Support from "./pages/Support";
+
 import ResetPassword from "./pages/ResetPassword"; // ✅ add this
 import CollaborationWorkspace from "./pages/CollaborationWorkspace";
 
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
+
 import "react-toastify/dist/ReactToastify.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -30,38 +33,40 @@ const ProtectedRoute = ({ children }) => {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <ToastContainer position="top-center" />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
+      <NotificationProvider>
+        <Router>
+          <ToastContainer position="top-center" />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/portfolio"
-            element={
-              <ProtectedRoute>
-                <Portfolio />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/portfolio"
+              element={
+                <ProtectedRoute>
+                  <Portfolio />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/showcase"
-            element={
-              <ProtectedRoute>
-                <ShowcaseFeed />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/showcase"
+              element={
+                <ProtectedRoute>
+                  <ShowcaseFeed />
+                </ProtectedRoute>
+              }
+            />
+
 
           <Route
             path="/collaboration"
@@ -73,34 +78,33 @@ export default function App() {
           />
           <Route path="/workspace/:roomCode" element={<CollaborationWorkspace />} />
 
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/features" element={<Features />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/support" element={<Support />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/support" element={<Support />} />
 
-          {/* ✅ Reset Password page route */}
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-
-        </Routes>
-      </Router>
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

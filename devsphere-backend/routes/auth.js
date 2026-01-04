@@ -4,8 +4,12 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+<<<<<<< Updated upstream
 const jwt = require("jsonwebtoken");
 
+=======
+const jwt = require("jsonwebtoken"); // ✅ ADDED
+>>>>>>> Stashed changes
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 const checkRole = require("../middleware/rolemiddleware");
@@ -39,7 +43,27 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
+<<<<<<< Updated upstream
     res.json({ message: "User registered successfully" });
+=======
+    // ✅ GENERATE JWT TOKEN
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ 
+      success: true, 
+      message: "User registered successfully",
+      token: token, // ✅ ADD TOKEN
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+>>>>>>> Stashed changes
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
@@ -60,6 +84,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+<<<<<<< Updated upstream
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -68,6 +93,20 @@ router.post("/login", async (req, res) => {
 
     res.json({
       token,
+=======
+    // ✅ GENERATE JWT TOKEN
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // ✅ SUCCESS RESPONSE
+    res.json({
+      success: true,
+      message: "Login successful!",
+      token: token, // ✅ JWT TOKEN
+>>>>>>> Stashed changes
       user: {
         id: user._id,
         name: user.name,
