@@ -1,60 +1,47 @@
 const express = require("express");
 const router = express.Router();
+
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
+const protect = require("../middleware/authMiddleware");
+const checkRole = require("../middleware/rolemiddleware");
 
 // ----------------- REGISTER -----------------
 router.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    // Name validation
     if (!name || name.trim().length < 2) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Name must be at least 2 characters" 
-      });
+      return res.status(400).json({ message: "Name too short" });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please enter a valid email address" 
-      });
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields required" });
     }
 
-    // Password validation
-    if (!password || password.length < 8) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password must be at least 8 characters long" 
-      });
-    }
-
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
+      return res.json({ message: "User already exists" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
+      role: "user", // ✅ default role
     });
 
     await user.save();
 
-    res.json({ success: true, message: "User registered successfully" });
+    res.json({ message: "User registered successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -63,150 +50,98 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and password are required" 
-      });
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please enter a valid email address" 
-      });
-    }
-
-    // Find user
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid email or password" 
-      });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid email or password" 
-      });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // ✅ SUCCESS RESPONSE
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     res.json({
-      success: true,
-      message: "Login successful!",
-      token: user._id.toString(), // Simple token (user ID)
+      token,
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error"
-    });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
+// ----------------- USER DASHBOARD -----------------
+router.get("/user-dashboard", protect, (req, res) => {
+  res.json({
+    message: "Welcome User 👤",
+    user: req.user,
+  });
+});
+
+// ----------------- MODERATOR DASHBOARD -----------------
+router.get(
+  "/moderator-dashboard",
+  protect,
+  checkRole("moderator"),
+  (req, res) => {
+    res.json({
+      message: "Welcome Moderator 🛡️",
+      user: req.user,
+    });
+  }
+);
+
+// ----------------- ADMIN DASHBOARD -----------------
+router.get(
+  "/admin-dashboard",
+  protect,
+  checkRole("admin"),
+  (req, res) => {
+    res.json({
+      message: "Welcome Admin 👑",
+      user: req.user,
+    });
+  }
+);
+
 // ----------------- FORGOT PASSWORD -----------------
 router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return res.json({ message: "User not found" });
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  user.resetToken = resetToken;
+  user.resetTokenExpire = Date.now() + 3600000;
+  await user.save();
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
-
-    user.resetToken = resetToken;
-    user.resetTokenExpire = Date.now() + 3600000; // 1 hour
-    await user.save();
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: "DevSphere Password Reset",
-      html: `
-        <p>Hello ${user.name}</p>
-        <p>Click below link to reset your password:</p>
-        <a href="${resetURL}">${resetURL}</a>
-        <p>Link valid for 1 hour</p>
-      `,
-    });
-
-    res.json({
-      success: true,
-      message: "Reset password link sent to your email",
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
+  res.json({ message: "Reset link sent" });
 });
 
 // ----------------- RESET PASSWORD -----------------
 router.post("/reset-password/:token", async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
+  const user = await User.findOne({
+    resetToken: req.params.token,
+    resetTokenExpire: { $gt: Date.now() },
+  });
 
-  try {
-    // Password validation
-    if (!password || password.length < 8) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password must be at least 8 characters long" 
-      });
-    }
+  if (!user) return res.json({ message: "Invalid token" });
 
-    const user = await User.findOne({
-      resetToken: token,
-      resetTokenExpire: { $gt: Date.now() },
-    });
+  user.password = await bcrypt.hash(req.body.password, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpire = undefined;
+  await user.save();
 
-    if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid or expired token" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    user.resetToken = undefined;
-    user.resetTokenExpire = undefined;
-
-    await user.save();
-
-    res.json({
-      success: true,
-      message: "Password reset successful",
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
+  res.json({ message: "Password reset success" });
 });
 
 module.exports = router;

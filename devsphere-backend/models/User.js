@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// User schema define karo
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -9,7 +8,13 @@ const userSchema = new mongoose.Schema(
 
     password: { type: String, required: true },
 
-    // 🔴 RESET PASSWORD FIELDS (VERY IMPORTANT)
+    role: {
+      type: String,
+      enum: ["user", "moderator", "admin"],
+
+      default: "user", // ✅ USER ROLE
+    },
+
     resetToken: { type: String },
 
     resetTokenExpire: { type: Date },
@@ -17,5 +22,4 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Model export karo
 module.exports = mongoose.model("User", userSchema);
