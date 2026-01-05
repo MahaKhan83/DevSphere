@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { getDashboardData } from "../services/api";
+import api from "../services/api"; // ✅ Import axios instance
 
 /* =========================
    Professional SVG Icons
@@ -139,8 +140,8 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Notification Counter (demo; later API)
-  const [unreadCount, setUnreadCount] = useState(3);
+  // ✅ Notification Counter - Start with 0, fetch real count from API
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Online Status (demo)
   const isOnline = true;
@@ -241,6 +242,21 @@ const Dashboard = () => {
   }, [query]);
 
   /* ---------------------------
+     Fetch Real Notification Count
+  --------------------------- */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (67)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  /* ---------------------------
      Load dashboard
   --------------------------- */
   useEffect(() => {
@@ -292,8 +308,12 @@ const Dashboard = () => {
           setProjects(defaultProjects);
         }
 
+        // ✅ If dashboard API returns count, use it; otherwise fetch from notifications API
         if (typeof res?.unreadNotifications === "number") {
           setUnreadCount(res.unreadNotifications);
+        } else {
+          // ✅ Fetch actual count from notifications API
+          await fetchRealNotificationCount();
         }
       } catch (e) {
         console.error(e);
@@ -302,6 +322,8 @@ const Dashboard = () => {
           { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
           { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
         ]);
+        // ✅ Even if dashboard fails, try to get notification count
+        await fetchRealNotificationCount();
       } finally {
         setLoading(false);
       }

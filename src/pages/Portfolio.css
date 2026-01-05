@@ -2,8 +2,7 @@
 /* =========================================================
    Portfolio.css - SETTINGS THEME + NEW LAYOUT
    + Floating Drag & Drop Palette
-   + ✅ TOPBAR FIX (buttons COMPLETELY CENTERED in page)
-   + ✅ Sidebar styles included
+   + ✅ TOPBAR FIXED - Buttons PROPERLY CENTERED in header
 ========================================================= */
 
 /* ---------- Base / App Shell (Settings like) ---------- */
@@ -26,46 +25,63 @@
 }
 
 /* =========================================================
-   ✅ SIDEBAR (added here so CSS is complete)
+   ✅ SIDEBAR
 ========================================================= */
-.sidebar{
+.sidebar {
   background: #0f172a;
   color: #f8fafc;
-  display:flex;
-  flex-direction:column;
+  display: flex;
+  flex-direction: column;
   padding: 24px 16px;
-  overflow:hidden;
+  overflow: hidden;
   transition: width .25s ease, padding .25s ease, opacity .25s ease;
   z-index: 10;
 }
-.sidebarOpen{ width: 288px; opacity:1; }
-.sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-@media (max-width: 1024px){
-  .sidebar{ display:none; }
+.sidebarOpen {
+  width: 288px;
+  opacity: 1;
+}
+
+.sidebarClosed {
+  width: 0px;
+  padding: 24px 0px;
+  opacity: 0;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    display: none;
+  }
 }
 
 /* =========================================================
-   ✅ TOPBAR (FIXED) - Title Row Only, Buttons COMPLETELY CENTERED
+   ✅ TOPBAR - FIXED PROPER CENTERED LAYOUT
 ========================================================= */
-.pfTopSection{
+.pfTopSection {
   position: sticky;
   top: 0;
   z-index: 20;
   background: #f1f5f9;
-  padding: 20px 24px 12px;
-  border-bottom: 1px solid rgba(226,232,240,0.9);
-  min-height: 80px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
 
-/* Row 1: toggle + title only */
-.pfTopHeaderRow{
-  display:flex;
-  align-items:flex-start;
-  gap: 14px;
+/* Header container */
+.pfTopHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  position: relative;
 }
 
+/* Toggle button */
 .pfSidebarToggle {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 40px;
   height: 40px;
   border-radius: 12px;
@@ -77,21 +93,26 @@
   display: grid;
   place-items: center;
   transition: all 0.2s ease;
-  flex: 0 0 auto;
-  margin-top: 2px;
+  z-index: 21;
 }
+
 .pfSidebarToggle:hover {
   background: #1e293b;
   transform: translateY(-1px);
 }
 
-.pfTitleSection { flex: 1; min-width: 0; }
+/* Title section */
+.pfTitleSection {
+  text-align: center;
+  width: 100%;
+  margin-top: 8px;
+}
 
 .pfMainTitle {
   font-size: 28px;
   font-weight: 750;
   color: #0f172a;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   line-height: 1.2;
 }
 
@@ -102,54 +123,77 @@
   font-weight: 600;
 }
 
-/* ✅ BUTTONS ROW - COMPLETELY CENTERED IN MIDDLE OF PAGE */
-.pfTopActionsRow{
-  position: fixed !important;
-  top: 50vh !important;
-  left: 50vw !important;
-  transform: translate(-50%, -50%) !important;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+/* ✅ CENTERED BUTTONS ROW - MAIN FIX */
+.pfControlButtons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  z-index: 9999 !important;
-  background: rgba(255, 255, 255, 0.98);
-  padding: 20px 30px !important;
-  border-radius: 24px;
-  border: 2px solid rgba(14, 165, 233, 0.25);
-  box-shadow: 
-    0 25px 60px rgba(2, 6, 23, 0.20),
-    0 0 0 1px rgba(14, 165, 233, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  width: 100%;
+  padding: 12px 0;
+  margin-top: 4px;
 }
 
-/* Make sure buttons look good in the center */
-.pfTopActionsRow .pfPill,
-.pfTopActionsRow .pfBtnPrimary,
-.pfTopActionsRow .pfBtnPrimaryGreen,
-.pfTopActionsRow .pfBtnDanger {
-  padding: 12px 20px !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
-  border-radius: 16px !important;
-  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.15) !important;
+/* Button styles in control row */
+.pfControlButtons .pfPill,
+.pfControlButtons .pfBtnPrimary,
+.pfControlButtons .pfBtnPrimaryGreen,
+.pfControlButtons .pfBtnDanger {
+  padding: 10px 18px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.1) !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.pfTopActionsRow .pfPill:hover,
-.pfTopActionsRow .pfBtnPrimary:hover,
-.pfTopActionsRow .pfBtnPrimaryGreen:hover,
-.pfTopActionsRow .pfBtnDanger:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 15px 35px rgba(2, 6, 23, 0.25) !important;
+.pfControlButtons .pfPill:hover,
+.pfControlButtons .pfBtnPrimary:hover,
+.pfControlButtons .pfBtnPrimaryGreen:hover,
+.pfControlButtons .pfBtnDanger:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.15) !important;
 }
 
-.pfTopActionsRow .pfPillOn {
-  box-shadow: 
-    0 12px 30px rgba(14, 165, 233, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+/* Active state for Edit/Preview */
+.pfControlButtons .pfPillOn {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.65) !important;
+  color: #0284c7 !important;
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Button specific colors */
+.pfControlButtons .pfPill {
+  background: #fff;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  color: #475569;
+}
+
+.pfControlButtons .pfBtnPrimary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #fff;
+}
+
+.pfControlButtons .pfBtnPrimaryGreen {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+}
+
+.pfControlButtons .pfBtnDanger {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #b91c1c;
+}
+
+/* Active state for Sections/Customize */
+.pfControlButtons .pfBtnPrimaryOn {
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
   border-width: 2px !important;
 }
 
@@ -176,7 +220,7 @@
   box-shadow: 0 18px 55px rgba(2, 6, 23, 0.08);
 }
 
-/* ---------- Pills / Buttons ---------- */
+/* ---------- General Button Styles (for other parts) ---------- */
 .pfPill {
   padding: 10px 16px;
   border-radius: 999px;
@@ -515,9 +559,9 @@
   background: rgba(239, 68, 68, 0.14);
 }
 
-.pfMiniBtnPrimary{
-  border-color: rgba(2,132,199,0.25);
-  color:#0284c7;
+.pfMiniBtnPrimary {
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0284c7;
 }
 
 .pfDragHandle {
@@ -554,10 +598,25 @@
   gap: 12px;
 }
 
-.pfListRow{ display:grid; gap:4px; }
-.pfListTitle{ font-weight: 950; }
-.pfListMeta{ font-size: 12px; color:#64748b; font-weight: 800; }
-.pfListDesc{ line-height: 1.5; font-weight: 700; }
+.pfListRow {
+  display: grid;
+  gap: 4px;
+}
+
+.pfListTitle {
+  font-weight: 950;
+}
+
+.pfListMeta {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.pfListDesc {
+  line-height: 1.5;
+  font-weight: 700;
+}
 
 .pfLink {
   display: inline-block;
@@ -567,58 +626,118 @@
   color: #0284c7;
   text-decoration: none;
 }
-.pfLink:hover { text-decoration: underline; }
+
+.pfLink:hover {
+  text-decoration: underline;
+}
 
 /* Skills */
-.pfSkills{ display:grid; gap: 10px; }
-.pfSkillRow{ display:grid; grid-template-columns: 140px 1fr 44px; gap: 10px; align-items:center; }
-.pfSkillName{ font-weight: 900; }
-.pfSkillBar{ height: 10px; background:#e2e8f0; border-radius: 999px; overflow:hidden; }
-.pfSkillFill{ height:100%; border-radius:999px; }
-.pfSkillPct{ font-size: 12px; color:#64748b; text-align:right; font-weight: 900; }
+.pfSkills {
+  display: grid;
+  gap: 10px;
+}
 
-.pfMono{
+.pfSkillRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+}
+
+.pfSkillName {
+  font-weight: 900;
+}
+
+.pfSkillBar {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pfSkillFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.pfSkillPct {
+  font-size: 12px;
+  color: #64748b;
+  text-align: right;
+  font-weight: 900;
+}
+
+.pfMono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
-.pfPreviewText{ line-height: 1.55; white-space: pre-wrap; font-weight: 700; }
+
+.pfPreviewText {
+  line-height: 1.55;
+  white-space: pre-wrap;
+  font-weight: 700;
+}
 
 /* Editor fields */
-.pfField{
+.pfField {
   width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(226,232,240,0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   outline: none;
   font-weight: 700;
   font-size: 13px;
 }
-.pfArea{
+
+.pfArea {
   width: 100%;
   min-height: 88px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(226,232,240,0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   outline: none;
   resize: vertical;
   font-weight: 700;
   font-size: 13px;
 }
-.pfLabel{ font-weight: 900; color:#0f172a; font-size: 13px; }
-.pfEditorGrid{ display:grid; gap: 10px; }
-.pfEditorRowTop{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
 
-.pfItemCard{
-  border: 1px solid rgba(226,232,240,0.95);
+.pfLabel {
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.pfEditorGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.pfEditorRowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pfItemCard {
+  border: 1px solid rgba(226, 232, 240, 0.95);
   background: #fff;
   border-radius: 16px;
   padding: 12px;
-  display:grid;
+  display: grid;
   gap: 10px;
 }
-.pfItemGrid{ display:grid; gap: 10px; }
-.pfItemActions{ display:flex; justify-content:flex-end; }
+
+.pfItemGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.pfItemActions {
+  display: flex;
+  justify-content: flex-end;
+}
 
 .pfInlineEditor {
   border-top: 1px solid rgba(241, 245, 249, 0.9);
@@ -627,8 +746,13 @@
 }
 
 /* GitHub */
-.pfGithubEditRow{ display:flex; gap:10px; align-items:center; }
-.pfBtnPrimarySm{
+.pfGithubEditRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pfBtnPrimarySm {
   padding: 11px 14px;
   border-radius: 14px;
   border: 1px solid rgba(2, 132, 199, 0.18);
@@ -638,110 +762,213 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.pfBtnPrimarySm:hover{ background: rgba(2, 132, 199, 0.12); }
-.pfBtnPrimarySm:disabled{ opacity: .6; cursor: not-allowed; }
 
-.pfError{ color:#b91c1c; font-weight:900; font-size: 12px; }
-.pfGithubTop{ display:flex; justify-content:space-between; gap: 10px; align-items:center; margin-bottom: 10px; }
-.pfRepoRow{ border: 1px solid rgba(226,232,240,0.95); border-radius: 14px; padding: 10px; background:#fff; }
-.pfRepoHead{ display:flex; justify-content:space-between; gap: 10px; align-items:center; }
-.pfRepoMeta{ color:#64748b; font-size: 12px; font-weight: 900; }
+.pfBtnPrimarySm:hover {
+  background: rgba(2, 132, 199, 0.12);
+}
+
+.pfBtnPrimarySm:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.pfError {
+  color: #b91c1c;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.pfGithubTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pfRepoRow {
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 14px;
+  padding: 10px;
+  background: #fff;
+}
+
+.pfRepoHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.pfRepoMeta {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
 
 /* Floating windows */
-.floatingPalette, .floatingCustomization{
+.floatingPalette,
+.floatingCustomization {
   position: fixed;
   z-index: 1000;
   border-radius: 18px;
-  border: 1px solid rgba(226,232,240,0.95);
-  background: rgba(255,255,255,0.96);
-  box-shadow: 0 18px 45px rgba(2,6,23,0.14);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 45px rgba(2, 6, 23, 0.14);
   overflow: hidden;
   backdrop-filter: blur(10px);
 }
-.floatingPalette{ width: 300px; }
-.floatingCustomization{ width: 330px; }
 
-.floatingHeader{
+.floatingPalette {
+  width: 300px;
+}
+
+.floatingCustomization {
+  width: 330px;
+}
+
+.floatingHeader {
   padding: 12px 14px;
   background: #0f172a;
   color: #fff;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: move;
-  user-select:none;
+  user-select: none;
 }
-.floatingTitleRow{ display:flex; align-items:center; gap: 10px; }
-.floatingIconHead{
-  width: 34px; height: 34px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.16);
-  display:grid;
-  place-items:center;
-}
-.floatingTitleCol{ display:flex; flex-direction:column; gap: 2px; }
-.floatingTitleText{ font-weight: 950; font-size: 14px; }
-.floatingSub{ font-size: 11px; opacity: .86; font-weight: 800; }
 
-.floatingClose{
-  width: 30px; height: 30px;
+.floatingTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floatingIconHead {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: grid;
+  place-items: center;
+}
+
+.floatingTitleCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.floatingTitleText {
+  font-weight: 950;
+  font-size: 14px;
+}
+
+.floatingSub {
+  font-size: 11px;
+  opacity: .86;
+  font-weight: 800;
+}
+
+.floatingClose {
+  width: 30px;
+  height: 30px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.10);
-  color:#fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
   cursor: pointer;
   display: grid;
   place-items: center;
   transition: all 0.2s ease;
 }
-.floatingClose:hover{ background: rgba(255,255,255,0.15); transform: rotate(90deg); }
 
-.floatingContent{ padding: 14px; max-height: 520px; overflow-y: auto; }
-.floatingGrid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.floatingClose:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: rotate(90deg);
+}
 
-.floatingCard{
-  border: 1px solid rgba(226,232,240,0.95);
+.floatingContent {
+  padding: 14px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.floatingGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.floatingCard {
+  border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 14px;
   padding: 12px;
   background: #fff;
-  display:flex;
-  flex-direction:column;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items:flex-start;
+  align-items: flex-start;
   cursor: grab;
 }
-.floatingCard.disabled{ opacity: .5; cursor: not-allowed; }
-.floatingCard.disabled:hover{ transform:none; box-shadow:none; }
 
-.floatingIcon{
-  width: 36px; height: 36px;
-  border-radius: 12px;
-  display:flex; align-items:center; justify-content:center;
-  background: rgba(14,165,233,0.10);
-  color:#0284c7;
+.floatingCard.disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
-.floatingCardTitle{ font-weight: 950; color:#0f172a; font-size: 13px; }
 
-.customizationGrid{ display:grid; gap: 16px; }
-.customizationSection{
+.floatingCard.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.floatingIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 165, 233, 0.10);
+  color: #0284c7;
+}
+
+.floatingCardTitle {
+  font-weight: 950;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.customizationGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.customizationSection {
   background: #f8fafc;
   border-radius: 16px;
   padding: 14px;
-  border: 1px solid rgba(226,232,240,0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
 }
-.customizationTitle{
+
+.customizationTitle {
   font-weight: 950;
-  color:#0f172a;
+  color: #0f172a;
   font-size: 13px;
   margin-bottom: 12px;
 }
-.controlBlock{ display:grid; gap: 10px; }
-.customSelect{
+
+.controlBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.customSelect {
   width: 100%;
   padding: 11px 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226,232,240,0.95);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   font-weight: 900;
   font-size: 13px;
@@ -749,40 +976,46 @@
   outline: none;
 }
 
-.hintInline{
-  display:flex;
-  align-items:center;
+.hintInline {
+  display: flex;
+  align-items: center;
   gap: 8px;
   font-size: 11px;
   font-weight: 900;
-  color:#64748b;
+  color: #64748b;
   margin-top: 6px;
 }
 
-.tipLine{
-  display:flex;
-  align-items:center;
+.tipLine {
+  display: flex;
+  align-items: center;
   gap: 8px;
   font-size: 12px;
   font-weight: 900;
-  color:#64748b;
+  color: #64748b;
   padding-top: 10px;
 }
 
-.colorPickerRow{ display:flex; gap: 12px; align-items:center; }
-.colorPickerCircle{
+.colorPickerRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.colorPickerCircle {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  border: 2px solid rgba(226,232,240,0.95);
+  border: 2px solid rgba(226, 232, 240, 0.95);
   cursor: pointer;
   background: transparent;
 }
-.colorInput{
+
+.colorInput {
   flex: 1;
   padding: 11px 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226,232,240,0.95);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   font-weight: 900;
   font-size: 13px;
@@ -790,106 +1023,156 @@
   outline: none;
 }
 
-.layoutButtons{ display:flex; gap: 10px; }
-.layoutBtn{
-  flex:1;
+.layoutButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.layoutBtn {
+  flex: 1;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226,232,240,0.95);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   font-weight: 900;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.layoutBtn.active{
-  background: rgba(14,165,233,0.10);
-  border-color: rgba(14,165,233,0.45);
-  color:#0284c7;
+
+.layoutBtn.active {
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.45);
+  color: #0284c7;
 }
 
-.sliderControl{ margin-bottom: 14px; }
-.sliderControl:last-child{ margin-bottom: 0; }
-.sliderControl label{
-  display:block;
+.sliderControl {
+  margin-bottom: 14px;
+}
+
+.sliderControl:last-child {
+  margin-bottom: 0;
+}
+
+.sliderControl label {
+  display: block;
   font-size: 12px;
   font-weight: 900;
-  color:#475569;
+  color: #475569;
   margin-bottom: 8px;
 }
-.sliderRow{ display:flex; gap: 12px; align-items:center; }
-.sliderRow input[type="range"]{
-  flex:1;
+
+.sliderRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.sliderRow input[type="range"] {
+  flex: 1;
   height: 6px;
   border-radius: 10px;
   background: #e2e8f0;
-  outline:none;
-}
-.sliderRow span{
-  font-size: 12px;
-  font-weight: 950;
-  color:#0284c7;
-  min-width: 44px;
-  text-align:right;
+  outline: none;
 }
 
-.quickActions{ display:flex; flex-direction:column; gap: 10px; }
-.quickBtn{
+.sliderRow span {
+  font-size: 12px;
+  font-weight: 950;
+  color: #0284c7;
+  min-width: 44px;
+  text-align: right;
+}
+
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quickBtn {
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1.5px solid rgba(226,232,240,0.95);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
   font-weight: 900;
   font-size: 13px;
-  cursor:pointer;
+  cursor: pointer;
   transition: all 0.2s ease;
-  text-align:center;
+  text-align: center;
 }
-.quickBtn:hover{ background:#f8fafc; transform: translateY(-1px); }
-.quickBtn.save{ background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.30); color:#16a34a; }
-.quickBtn.danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.30); color:#b91c1c; }
+
+.quickBtn:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.quickBtn.save {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.30);
+  color: #16a34a;
+}
+
+.quickBtn.danger {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #b91c1c;
+}
 
 /* ✅ Glow / pulse ONLY on cards */
-.sfPulseBorder{ position: relative; }
-.sfPulseBorder::before{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  border-radius: 18px;
-  background: linear-gradient(120deg,
-    rgba(8, 30, 68, 0.60),
-    rgba(12, 42, 92, 0.25),
-    rgba(8, 30, 68, 0.60)
-  );
-  opacity: .20;
-  filter: blur(10px);
-  pointer-events:none;
-  animation: sfBorderPulse 4.2s ease-in-out infinite;
-}
-.sfPulseBorder::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: 18px;
-  pointer-events:none;
-  box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.22);
-}
-@keyframes sfBorderPulse{
-  0%,100%{ opacity: .16; transform: scale(1); }
-  50%{ opacity: .32; transform: scale(1.01); }
+.sfPulseBorder {
+  position: relative;
 }
 
-.sfCardHover{ transition: transform .25s ease, box-shadow .25s ease; }
-.sfCardHover:hover{
+.sfPulseBorder::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 18px;
+  background: linear-gradient(120deg,
+      rgba(8, 30, 68, 0.60),
+      rgba(12, 42, 92, 0.25),
+      rgba(8, 30, 68, 0.60));
+  opacity: .20;
+  filter: blur(10px);
+  pointer-events: none;
+  animation: sfBorderPulse 4.2s ease-in-out infinite;
+}
+
+.sfPulseBorder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.22);
+}
+
+@keyframes sfBorderPulse {
+  0%,
+  100% {
+    opacity: .16;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .32;
+    transform: scale(1.01);
+  }
+}
+
+.sfCardHover {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.sfCardHover:hover {
   transform: translateY(-3px);
-  box-shadow:
-    0 18px 45px rgba(2,6,23,0.10),
+  box-shadow: 0 18px 45px rgba(2, 6, 23, 0.10),
     0 0 0 1px rgba(8, 30, 68, 0.10);
 }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1280px) {
-  .pfTopSection,
   .pfContentArea {
     padding-left: 18px;
     padding-right: 18px;
@@ -897,47 +1180,69 @@
 }
 
 @media (max-width: 1024px) {
-  .pfTopActionsRow {
-    padding: 16px 20px !important;
+  .pfControlButtons {
     gap: 10px;
-    width: 90%;
-    max-width: 500px;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    top: 45vh !important;
+    padding: 10px 0;
   }
-  
-  .pfTopActionsRow .pfPill,
-  .pfTopActionsRow .pfBtnPrimary,
-  .pfTopActionsRow .pfBtnPrimaryGreen,
-  .pfTopActionsRow .pfBtnDanger {
-    padding: 10px 16px !important;
-    font-size: 13px !important;
+
+  .pfControlButtons .pfPill,
+  .pfControlButtons .pfBtnPrimary,
+  .pfControlButtons .pfBtnPrimaryGreen,
+  .pfControlButtons .pfBtnDanger {
+    padding: 9px 15px !important;
+    font-size: 12px !important;
   }
 }
 
 @media (max-width: 768px) {
-  .pfTopSection { padding: 16px 14px 10px; }
-  .pfContentArea { padding: 16px 14px; }
-  .pfTopActionsRow {
-    flex-direction: column;
-    gap: 8px;
-    padding: 20px !important;
-    width: 85%;
+  .pfTopSection {
+    padding: 14px 16px;
   }
-  
-  .pfTopActionsRow .pfPill,
-  .pfTopActionsRow .pfBtnPrimary,
-  .pfTopActionsRow .pfBtnPrimaryGreen,
-  .pfTopActionsRow .pfBtnDanger {
-    width: 100%;
+
+  .pfContentArea {
+    padding: 16px 14px;
+  }
+
+  .pfControlButtons {
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .pfControlButtons .pfPill,
+  .pfControlButtons .pfBtnPrimary,
+  .pfControlButtons .pfBtnPrimaryGreen,
+  .pfControlButtons .pfBtnDanger {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  .pfMainTitle {
+    font-size: 24px;
+  }
+
+  .pfSubTitle {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pfControlButtons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pfControlButtons .pfPill,
+  .pfControlButtons .pfBtnPrimary,
+  .pfControlButtons .pfBtnPrimaryGreen,
+  .pfControlButtons .pfBtnDanger {
+    min-width: 120px;
     text-align: center;
-    padding: 12px !important;
   }
 }
 
 /* ---------- Print ---------- */
 @media print {
+
   .no-print,
   .pfTopSection,
   .floatingPalette,
@@ -945,7 +1250,9 @@
     display: none !important;
   }
 
-  .pfContentArea { padding: 0 !important; }
+  .pfContentArea {
+    padding: 0 !important;
+  }
 
   .pfPaper {
     width: 210mm !important;
@@ -960,5 +1267,7 @@
     border: 1px solid #ddd !important;
   }
 
-  .sidebar { display: none !important; }
+  .sidebar {
+    display: none !important;
+  }
 }
