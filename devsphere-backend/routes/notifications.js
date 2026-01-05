@@ -8,7 +8,7 @@ const {
   createNotification  // ✅ ADD THIS LINE
 } = require("../controllers/notificationController");
 
-const authMiddleware = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
 // ✅ PUBLIC TEST ROUTE (No auth needed - for testing)
 router.get("/test", (req, res) => {
@@ -29,17 +29,17 @@ router.get("/test", (req, res) => {
 });
 
 // ✅ CREATE NOTIFICATION ROUTE - ADD THIS
-router.post("/", authMiddleware, createNotification);
+router.post("/", protect, createNotification);
 
 // ✅ PROTECTED ROUTES (Need valid JWT token)
 
 // Get all notifications for logged-in user
-router.get("/", authMiddleware, getNotifications);
+router.get("/", protect, getNotifications);
 
 // Mark a notification as read
-router.put("/read/:id", authMiddleware, markNotificationRead);
+router.put("/read/:id", protect, markNotificationRead);
 
 // Clear all notifications
-router.delete("/clear", authMiddleware, clearAllNotifications);
+router.delete("/clear", protect, clearAllNotifications);
 
 module.exports = router;

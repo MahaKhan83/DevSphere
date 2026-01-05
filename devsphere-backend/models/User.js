@@ -22,9 +22,4 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-<<<<<<< Updated upstream
 module.exports = mongoose.model("User", userSchema);
-=======
-// Model export karo
-module.exports = mongoose.model("User", userSchema);
->>>>>>> Stashed changes

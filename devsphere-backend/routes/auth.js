@@ -4,12 +4,8 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-<<<<<<< Updated upstream
 const jwt = require("jsonwebtoken");
 
-=======
-const jwt = require("jsonwebtoken"); // ✅ ADDED
->>>>>>> Stashed changes
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 const checkRole = require("../middleware/rolemiddleware");
@@ -29,7 +25,10 @@ router.post("/register", async (req, res) => {
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.json({ message: "User already exists" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "User already exists" 
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -43,29 +42,29 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-<<<<<<< Updated upstream
-    res.json({ message: "User registered successfully" });
-=======
-    // ✅ GENERATE JWT TOKEN
+    // ✅ COMBINED: Role included + Better response
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, role: user.role, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.json({ 
+    res.status(201).json({ 
       success: true, 
       message: "User registered successfully",
-      token: token, // ✅ ADD TOKEN
+      token: token,
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role
       }
     });
->>>>>>> Stashed changes
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
 });
 
@@ -76,37 +75,30 @@ router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid credentials" 
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid credentials" 
+      });
     }
 
-<<<<<<< Updated upstream
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      token,
-=======
-    // ✅ GENERATE JWT TOKEN
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, role: user.role, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // ✅ SUCCESS RESPONSE
     res.json({
       success: true,
       message: "Login successful!",
-      token: token, // ✅ JWT TOKEN
->>>>>>> Stashed changes
+      token: token,
       user: {
         id: user._id,
         name: user.name,
@@ -115,7 +107,10 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
 });
 
@@ -128,30 +123,20 @@ router.get("/user-dashboard", protect, (req, res) => {
 });
 
 // ----------------- MODERATOR DASHBOARD -----------------
-router.get(
-  "/moderator-dashboard",
-  protect,
-  checkRole("moderator"),
-  (req, res) => {
-    res.json({
-      message: "Welcome Moderator 🛡️",
-      user: req.user,
-    });
-  }
-);
+router.get("/moderator-dashboard", protect, checkRole("moderator"), (req, res) => {
+  res.json({
+    message: "Welcome Moderator 🛡️",
+    user: req.user,
+  });
+});
 
 // ----------------- ADMIN DASHBOARD -----------------
-router.get(
-  "/admin-dashboard",
-  protect,
-  checkRole("admin"),
-  (req, res) => {
-    res.json({
-      message: "Welcome Admin 👑",
-      user: req.user,
-    });
-  }
-);
+router.get("/admin-dashboard", protect, checkRole("admin"), (req, res) => {
+  res.json({
+    message: "Welcome Admin 👑",
+    user: req.user,
+  });
+});
 
 // ----------------- FORGOT PASSWORD -----------------
 router.post("/forgot-password", async (req, res) => {
@@ -183,4 +168,5 @@ router.post("/reset-password/:token", async (req, res) => {
   res.json({ message: "Password reset success" });
 });
 
+// ✅✅✅ MUST HAVE THIS LINE:
 module.exports = router;
