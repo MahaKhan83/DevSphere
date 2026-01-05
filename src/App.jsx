@@ -16,6 +16,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Support from "./pages/Support";
 
+
 import ResetPassword from "./pages/ResetPassword"; // ✅ add this
 import CollaborationWorkspace from "./pages/CollaborationWorkspace";
 
@@ -95,6 +96,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+           
 
             <Route path="/features" element={<Features />} />
             <Route path="/privacy" element={<Privacy />} />
