@@ -3,6 +3,7 @@ import React, { useContext, useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // ✅ Import axios instance
 
 /* =========================
    SAME Icons as Dashboard
@@ -125,7 +126,28 @@ export default function CollaborationRoom() {
     .slice(0, 2);
 
   const isOnline = true;
-  const [unreadCount] = useState(3);
+  
+  // ✅ ACTUAL Notification Count - Dashboard aur Settings ki tarah
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  /* =========================
+     ✅ Fetch Real Notification Count
+  ========================= */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (81 ya jo bhi ho)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotificationCount();
+  }, []);
 
   /* =========================
      Lobby Data (demo)
@@ -283,7 +305,7 @@ export default function CollaborationRoom() {
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
               label="Notifications"
-              badge={unreadCount > 0 ? unreadCount : null}
+              badge={unreadCount > 0 ? unreadCount : null} // ✅ Actual count show hoga
               onClick={() => navigate("/notifications")}
             />
             <NavItem active={location.pathname === "/settings"} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />

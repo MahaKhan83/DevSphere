@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // ✅ Import axios instance
 
 /* =========================
    Professional SVG Icons
@@ -48,7 +49,7 @@ const SettingsIcon = () => (
 
 const PlugIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 2h2v6h4V2h2v6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6h-1v4H9v-4H8a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2h2V2Zm-4 10a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4v-2H4v2Z" />
+    <path d="M8 2h2v6h4V2h2v6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6h-1v4H9v-4H8a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2h2V2Z" />
   </svg>
 );
 
@@ -280,8 +281,8 @@ export default function Settings() {
   // Sidebar toggle (same as Dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Demo notification badge (same behavior as Dashboard)
-  const [unreadCount, setUnreadCount] = useState(3);
+  // ✅ ACTUAL Notification Count - Dashboard ki tarah same API se fetch karega
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Online (demo)
   const isOnline = true;
@@ -290,6 +291,25 @@ export default function Settings() {
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
+  }, []);
+
+  /* ---------------------------
+     ✅ Fetch Real Notification Count (Dashboard ki tarah)
+  --------------------------- */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotificationCount();
   }, []);
 
   const displayName = user?.name || user?.email || "Guest";
@@ -524,7 +544,7 @@ export default function Settings() {
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
               label="Notifications"
-              badge={unreadCount > 0 ? unreadCount : null}
+              badge={unreadCount > 0 ? unreadCount : null} // ✅ Actual count show hoga
               onClick={() => navigate("/notifications")}
             />
             <NavItem
@@ -887,25 +907,20 @@ export default function Settings() {
 
                   <div className="mt-4 flex gap-2 flex-wrap">
                     <button
-                      onClick={() => setUnreadCount((c) => c + 1)}
-                      className={[
-                        "px-4 py-2 rounded-full text-xs font-bold transition border",
-                        isDark
-                          ? "bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800"
-                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
-                      ].join(" ")}
-                      title="Demo: increase badge"
-                    >
-                      + Badge
-                    </button>
-                    <button
-                      onClick={() => setUnreadCount(0)}
-                      className="px-4 py-2 rounded-full text-white text-xs font-bold transition"
+                      onClick={() => {
+                        // ✅ Refresh actual notification count from API
+                        fetchRealNotificationCount();
+                        toast.info("Refreshing notification count...");
+                      }}
+                      className="px-4 py-2 rounded-full text-white text-sm font-semibold transition"
                       style={{ backgroundColor: "var(--sf-accent)" }}
-                      title="Demo: clear badge"
+                      title="Refresh actual notification count from API"
                     >
-                      Clear badge
+                      Refresh Count
                     </button>
+                    <div className={`px-3 py-2 rounded-full ${isDark ? "bg-slate-800" : "bg-slate-100"} text-sm font-semibold`}>
+                      Current: {unreadCount} unread
+                    </div>
                   </div>
                 </SectionShell>
               )}

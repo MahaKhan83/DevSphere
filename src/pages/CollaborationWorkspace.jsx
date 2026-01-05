@@ -5,6 +5,7 @@ import Editor from "@monaco-editor/react";
 import { io } from "socket.io-client";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // ✅ Import axios instance
 
 /* ================= SOCKET (frontend only) =================
    NOTE: Without backend, socket won't actually deliver.
@@ -164,7 +165,28 @@ export default function CollaborationWorkspace() {
     .slice(0, 2);
 
   const isOnline = true;
-  const [unreadCount] = useState(3);
+  
+  // ✅ ACTUAL Notification Count - Dashboard aur Settings ki tarah
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  /* =========================
+     ✅ Fetch Real Notification Count
+  ========================= */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (81 ya jo bhi ho)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotificationCount();
+  }, []);
 
   /* ---------------- Meeting timer ---------------- */
   const [startTime] = useState(Date.now());
@@ -479,7 +501,7 @@ export default function CollaborationWorkspace() {
               active={false}
               icon={<BellIcon />}
               label="Notifications"
-              badge={unreadCount > 0 ? unreadCount : null}
+              badge={unreadCount > 0 ? unreadCount : null} // ✅ Actual count show hoga
               onClick={() => navigate("/notifications")}
             />
             <NavItem active={false} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
@@ -532,6 +554,18 @@ export default function CollaborationWorkspace() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate("/notifications")}
+                className="relative w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-300 transition"
+                title="Notifications"
+              >
+                <BellIcon />
+                {unreadCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-sky-500 text-white text-[11px] font-extrabold flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                ) : null}
+              </button>
               <button
                 onClick={() => navigate("/collaboration")}
                 className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
