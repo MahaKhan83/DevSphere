@@ -798,68 +798,67 @@ export default function Portfolio() {
           {/* MAIN */}
           <div className="pfMain">
             {/* TOPBAR */}
-            <div className="pfTopSection">
-              {/* ✅ Docked toggle */}
-              <button
-                onClick={() => setSidebarOpen((v) => !v)}
-                className="pfSidebarToggle pfSidebarToggleDock"
-                style={{ left: sidebarOpen ? "-10px" : "10px" }}
-                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-                type="button"
-              >
-                {sidebarOpen ? "⟨⟨" : "⟩⟩"}
-              </button>
+<div className="pfTopSection">
+  {/* ✅ Docked toggle */}
+  <button
+    onClick={() => setSidebarOpen((v) => !v)}
+    className="pfSidebarToggle"
+    title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+    type="button"
+  >
+    {sidebarOpen ? "⟨⟨" : "⟩⟩"}
+  </button>
 
-              <div className="pfTopLeft">
-                <div className="pfTitleSection">
-                  <h1 className="pfMainTitle">Portfolio Builder</h1>
-                  <p className="pfSubTitle">
-                    Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and Customize
-                  </p>
-                </div>
-              </div>
+  <div className="pfTopHeader">
+    <div className="pfTitleSection">
+      <h1 className="pfMainTitle">Portfolio Builder</h1>
+      <p className="pfSubTitle">
+        Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and Customize
+      </p>
+    </div>
 
-              <div className="pfModeButtons">
-                <button type="button" className={`pfPill ${editMode ? "pfPillOn" : ""}`} onClick={() => setEditMode(true)}>
-                  Edit mode
-                </button>
+    {/* ✅ CENTERED BUTTONS ROW */}
+    <div className="pfControlButtons">
+      <button type="button" className={`pfPill ${editMode ? "pfPillOn" : ""}`} onClick={() => setEditMode(true)}>
+        Edit mode
+      </button>
 
-                <button
-                  type="button"
-                  className={`pfPill ${!editMode ? "pfPillOn" : ""}`}
-                  onClick={() => {
-                    setEditMode(false);
-                    setOpenEditorId(null);
-                    toast("Preview mode ✅");
-                  }}
-                >
-                  Preview mode
-                </button>
+      <button
+        type="button"
+        className={`pfPill ${!editMode ? "pfPillOn" : ""}`}
+        onClick={() => {
+          setEditMode(false);
+          setOpenEditorId(null);
+          toast("Preview mode ✅");
+        }}
+      >
+        Preview mode
+      </button>
 
-                <button type="button" className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`} onClick={() => setPaletteVisible((v) => !v)}>
-                  Sections
-                </button>
+      <button type="button" className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`} onClick={() => setPaletteVisible((v) => !v)}>
+        Sections
+      </button>
 
-                <button
-                  type="button"
-                  className={`pfBtnPrimary ${customizationVisible ? "pfBtnPrimaryOn" : ""}`}
-                  onClick={() => setCustomizationVisible((v) => !v)}
-                >
-                  Customize
-                </button>
+      <button
+        type="button"
+        className={`pfBtnPrimary ${customizationVisible ? "pfBtnPrimaryOn" : ""}`}
+        onClick={() => setCustomizationVisible((v) => !v)}
+      >
+        Customize
+      </button>
 
-                <button type="button" className="pfBtnPrimaryGreen" onClick={downloadAsPDF}>
-                  Download PDF
-                </button>
-                <button type="button" className="pfBtnPrimaryGreen" onClick={save}>
-                  Save
-                </button>
-                <button type="button" className="pfBtnDanger" onClick={reset}>
-                  Reset
-                </button>
-              </div>
-            </div>
-
+      <button type="button" className="pfBtnPrimaryGreen" onClick={downloadAsPDF}>
+        Download PDF
+      </button>
+      <button type="button" className="pfBtnPrimaryGreen" onClick={save}>
+        Save
+      </button>
+      <button type="button" className="pfBtnDanger" onClick={reset}>
+        Reset
+      </button>
+    </div>
+  </div>
+</div>
             {/* Floating Palette */}
             {paletteVisible && (
               <div className="floatingPalette sfCardGlow" style={{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }} onMouseDown={onPaletteMouseDown}>
