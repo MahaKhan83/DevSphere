@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { getDashboardData } from "../services/api";
-import api from "../services/api"; // ✅ Import axios instance
+import api from "../services/api"; // ✅ axios instance
 
 /* =========================
    Professional SVG Icons
@@ -61,7 +61,7 @@ const SearchIcon = () => (
   </svg>
 );
 
-// Room Activity icons (no call)
+// Room Activity icons
 const ChatIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 4h16v11a3 3 0 0 1-3 3H9l-5 4v-4H7a3 3 0 0 1-3-3V4Z" />
@@ -108,21 +108,18 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 );
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext); // ✅ add logout
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // ✅ Notifications-like mount animations
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
 
-  // Search
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef(null);
@@ -134,10 +131,8 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Notification Counter - Start with 0, fetch real count from API
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Online Status (demo)
   const isOnline = true;
 
   const todayStr = useMemo(() => {
@@ -166,7 +161,6 @@ const Dashboard = () => {
     []
   );
 
-  // ✅ GitHub card reads from localStorage (Integration tab)
   const githubUsername = useMemo(() => {
     return (
       user?.githubUsername ||
@@ -186,9 +180,6 @@ const Dashboard = () => {
     [githubUsername]
   );
 
-  /* ---------------------------
-     Dropdown positioning (FIX)
-  --------------------------- */
   const updateDropdownPos = () => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
@@ -236,23 +227,27 @@ const Dashboard = () => {
   }, [query]);
 
   /* ---------------------------
-     Fetch Real Notification Count
+     Fetch Real Notification Count (robust)
   --------------------------- */
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
-      const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (67)
+
+      // ✅ Support both formats:
+      // 1) { notifications: [...] }
+      // 2) [...]
+      const notifications = Array.isArray(response.data)
+        ? response.data
+        : response.data?.notifications || [];
+
+      const totalUnread = notifications.filter((n) => !n.read).length;
+      setUnreadCount(totalUnread);
     } catch (err) {
-      console.warn("Could not fetch notification count:", err.message);
+      console.warn("Could not fetch notification count:", err?.message);
       setUnreadCount(0);
     }
   };
 
-  /* ---------------------------
-     Load dashboard
-  --------------------------- */
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
@@ -302,11 +297,9 @@ const Dashboard = () => {
           setProjects(defaultProjects);
         }
 
-        // ✅ If dashboard API returns count, use it; otherwise fetch from notifications API
         if (typeof res?.unreadNotifications === "number") {
           setUnreadCount(res.unreadNotifications);
         } else {
-          // ✅ Fetch actual count from notifications API
           await fetchRealNotificationCount();
         }
       } catch (e) {
@@ -316,7 +309,6 @@ const Dashboard = () => {
           { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
           { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
         ]);
-        // ✅ Even if dashboard fails, try to get notification count
         await fetchRealNotificationCount();
       } finally {
         setLoading(false);
@@ -324,6 +316,7 @@ const Dashboard = () => {
     };
 
     fetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const displayName = user?.name || user?.email || "Guest";
@@ -333,9 +326,6 @@ const Dashboard = () => {
     .join("")
     .slice(0, 2);
 
-  /* ---------------------------
-     Click helpers
-  --------------------------- */
   const openAnnouncement = (item) =>
     navigate("/notifications", { state: { focus: item?.title } });
 
@@ -346,9 +336,6 @@ const Dashboard = () => {
   const openShowcase = () => navigate("/showcase");
   const openSettings = () => navigate("/settings");
 
-  /* ---------------------------
-     Search results
-  --------------------------- */
   const searchResults = useMemo(() => {
     const q = (query || "").trim().toLowerCase();
     if (!q) return [];
@@ -364,7 +351,6 @@ const Dashboard = () => {
   return (
     <>
       <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* ✅ NAVY animated background (same vibe as Notifications) */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -409,7 +395,6 @@ const Dashboard = () => {
               label="Showcase feed"
               onClick={() => navigate("/showcase")}
             />
-           
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
@@ -425,30 +410,47 @@ const Dashboard = () => {
             />
           </nav>
 
-          <button
-            onClick={openSettings}
-            className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
-            title="Open Settings"
-          >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
-                {initials || "U"}
+          {/* ✅ Profile + Logout (added, minimal UI impact) */}
+          <div className="mt-6 space-y-2">
+            <button
+              onClick={openSettings}
+              className="w-full flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
+              title="Open Settings"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
+                  {initials || "U"}
+                </div>
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
+                    isOnline ? "bg-emerald-400" : "bg-slate-400"
+                  }`}
+                  title={isOnline ? "Online" : "Offline"}
+                />
               </div>
-              <span
-                className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
-                  isOnline ? "bg-emerald-400" : "bg-slate-400"
-                }`}
-                title={isOnline ? "Online" : "Offline"}
-              />
-            </div>
 
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300 truncate max-w-[160px]">
-                {isOnline ? "Online" : "Offline"} · Signed in
-              </p>
-            </div>
-          </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
+                <p className="text-xs text-slate-300 truncate max-w-[160px]">
+                  {isOnline ? "Online" : "Offline"} · Signed in
+                </p>
+                <p className="text-xs text-slate-300 truncate max-w-[160px]">
+  Role: <span className="font-semibold text-slate-100">{user?.role || "user"}</span>
+</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                logout?.();
+                navigate("/login", { replace: true });
+              }}
+              className="w-full px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-100 text-sm font-semibold transition"
+              title="Logout"
+            >
+              Logout
+            </button>
+          </div>
         </aside>
 
         {/* MAIN */}
@@ -478,7 +480,7 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* ✅ Quick Search (fixed dropdown) */}
+              {/* Quick Search */}
               <div ref={searchRef} className="relative w-full md:w-[360px]">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
@@ -501,7 +503,6 @@ const Dashboard = () => {
                   />
                 </div>
 
-                {/* ✅ DROPDOWN (position: fixed) */}
                 {searchOpen && query.trim() ? (
                   <div
                     className="fixed z-[99999] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden"
@@ -561,9 +562,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <section
-            className={`cardShell sfPulseBorder p-4 ${mounted ? "sfIn2" : "sfPre"}`}
-          >
+          <section className={`cardShell sfPulseBorder p-4 ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
@@ -847,7 +846,6 @@ const Dashboard = () => {
             </div>
           )}
         </main>
-
       </div>
 
       {/* Styles */}
@@ -866,7 +864,7 @@ const Dashboard = () => {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* ✅ NAVY animated blobs (same as Notifications) */
+        /* ✅ NAVY animated blobs */
         .sfBlob{
           position:absolute;
           width: 560px;
@@ -916,13 +914,11 @@ const Dashboard = () => {
           100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
         }
 
-        /* ✅ Entry animations (same style as Notifications) */
         .sfPre{ opacity: 0; transform: translateY(12px); }
         .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
         .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
         .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
 
-        /* ✅ Cards now match Notifications vibe */
         .cardShell{
           background: rgba(255,255,255,0.92);
           border-radius: 18px;
@@ -932,7 +928,6 @@ const Dashboard = () => {
           overflow: hidden;
         }
 
-        /* ✅ Navy pulse border (same as Notifications) */
         .sfPulseBorder{ position: relative; }
         .sfPulseBorder::before{
           content:"";
@@ -962,7 +957,6 @@ const Dashboard = () => {
           50%{ opacity: .34; transform: scale(1.01); }
         }
 
-        /* Row hover (same feeling) */
         .sfRow{
           transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
           will-change: transform;
@@ -974,7 +968,6 @@ const Dashboard = () => {
             0 0 0 1px rgba(8, 30, 68, 0.08);
         }
 
-        /* Quick Actions buttons */
         .qaBtn{
           padding: 9px 12px;
           border-radius: 999px;
@@ -986,7 +979,6 @@ const Dashboard = () => {
         }
         .qaBtn:hover{ transform: translateY(-2px); filter: brightness(1.05); }
 
-        /* GitHub stats */
         .statBox{
           border: 1px solid rgba(148,163,184,0.45);
           background: rgba(248,250,252,0.8);
@@ -996,7 +988,6 @@ const Dashboard = () => {
         .statNum{ font-size: 18px; font-weight: 900; color: rgb(15,23,42); }
         .statLbl{ font-size: 12px; font-weight: 700; color: rgb(51,65,85); margin-top: 2px; }
 
-        /* CTA Box */
         .ctaBox{
           width: 100%;
           border-radius: 18px;

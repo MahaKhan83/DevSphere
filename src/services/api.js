@@ -4,7 +4,13 @@ import axios from "axios";
 // ==============================
 // 🌐 BASE CONFIG
 // ==============================
-const API_BASE_URL = "http://localhost:5000/api";
+// ✅ Use Vite env if present, otherwise localhost
+const API_BASE_URL =
+  (import.meta?.env?.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "") +
+  "/api";
+
+// ✅ Same keys as AuthContext
+const TOKEN_KEY = "devsphere_token";
 
 // Reusable axios instance
 const api = axios.create({
@@ -19,7 +25,7 @@ const api = axios.create({
 // ==============================
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(TOKEN_KEY); // ✅ fixed key
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
@@ -54,15 +60,10 @@ export const register = async (data) => {
 };
 
 // LOGIN
+// ✅ IMPORTANT: Do NOT store token here anymore (AuthContext will do it)
 export const login = async (data) => {
   try {
     const res = await api.post("/auth/login", data);
-
-    // Save token
-    if (res.data?.token) {
-      localStorage.setItem("token", res.data.token);
-    }
-
     return res.data;
   } catch (err) {
     console.error("LOGIN ERROR:", err);
@@ -71,8 +72,10 @@ export const login = async (data) => {
 };
 
 // LOGOUT
+// ✅ Remove both possible keys just in case old token exists
 export const logout = () => {
-  localStorage.removeItem("token");
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem("token"); // legacy cleanup
 };
 
 // FORGOT PASSWORD
@@ -214,29 +217,19 @@ export const markNotificationRead = async (id) => {
     return { error: getErrorMessage(err, "Failed to update notification") };
   }
 };
+
 // ------------------------------
 //  CLEAR ALL NOTIFICATIONS
 // ------------------------------
 export const clearAllNotifications = async () => {
   try {
-    const token = localStorage.getItem("token");
-
-    const res = await axios.delete(`${API_BASE_URL}/notifications/clear`, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-    });
-
+    const res = await api.delete(`/notifications/clear`);
     return res.data;
   } catch (err) {
-    console.error(
-      "CLEAR NOTIFICATIONS ERROR:",
-      err.response?.data || err.message
-    );
+    console.error("CLEAR NOTIFICATIONS ERROR:", err.response?.data || err.message);
 
     return {
-      error:
-        err.response?.data?.message || "Failed to clear notifications",
+      error: err.response?.data?.message || "Failed to clear notifications",
     };
   }
 };

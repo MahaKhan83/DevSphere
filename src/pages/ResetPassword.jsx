@@ -4,7 +4,10 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
 
-const API_BASE_URL = "http://localhost:5000/api";
+// ✅ ENV support (fallback same as before)
+const API_BASE_URL =
+  (import.meta?.env?.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000") +
+  "/api";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -35,22 +38,26 @@ export default function ResetPassword() {
 
     if (!token) return toast.error("Invalid or missing reset token");
     if (password.length < 8) return toast.error("Password must be 8+ characters");
-    if (password !== confirmPassword)
-      return toast.error("Passwords do not match");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
 
     try {
       setLoading(true);
-     await axios.post(
-  `${API_BASE_URL}/auth/reset-password/${token}`,  // ✅ RIGHT - token URL mein
-  { password }  // ✅ RIGHT - sirf password body mein
-  // ✅ Authorization header HATA DIYA
-);
+
+      await axios.post(
+        `${API_BASE_URL}/auth/reset-password/${token}`,
+        { password }
+      );
 
       toast.success("Password reset successfully");
+
+      // ✅ small clean up (no UI change)
+      setPassword("");
+      setConfirmPassword("");
+
       navigate("/login");
     } catch (err) {
       toast.error(
-        err?.response?.data?.message || "Invalid or expired reset link"
+        err?.response?.data?.message || err?.response?.data?.error || "Invalid or expired reset link"
       );
     } finally {
       setLoading(false);
@@ -59,7 +66,7 @@ export default function ResetPassword() {
 
   return (
     <>
-      {/* 🔹 HEADER (Added) */}
+      {/* 🔹 HEADER */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur flex items-center justify-between px-6 md:px-10 py-3 shadow-lg">
         <div className="flex items-center gap-3">
           <img
