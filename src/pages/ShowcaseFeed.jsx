@@ -207,8 +207,9 @@ const NavItem = ({ active, icon, label, onClick }) => (
 const NAV_ITEMS = [
   { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
   { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
-  { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
+ 
   { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
+  { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
   { label: "Notifications", icon: <BellIcon />, to: "/notifications" },
   { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
 ];

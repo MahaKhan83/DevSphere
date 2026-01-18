@@ -18,6 +18,10 @@ import Support from "./pages/Support";
 
 import ResetPassword from "./pages/ResetPassword"; // ✅ add this
 import CollaborationWorkspace from "./pages/CollaborationWorkspace";
+import AdminUsers from "./pages/AdminUsers";
+import AdminRoles from "./pages/AdminRoles";
+import AdminReports from "./pages/AdminReports";
+import AdminModeration from "./pages/AdminModeration";
 
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -128,7 +132,10 @@ export default function App() {
     </RoleRoute>
   }
 />
-
+<Route path="/admin/users" element={<AdminUsers />} />
+<Route path="/admin/roles" element={<AdminRoles />} />
+<Route path="/admin/reports" element={<AdminReports />} />
+<Route path="/admin/moderation" element={<AdminModeration />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </Router>

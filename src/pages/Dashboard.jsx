@@ -1,11 +1,18 @@
 // src/pages/Dashboard.jsx
-import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { getDashboardData } from "../services/api";
-import api from "../services/api"; // ✅ axios instance
-
+import api from "../services/api"; // axios instance
+import AdminPanel from "./AdminPanel"; // 🟢 Admin panel
+import ModeratorPanel from "./ModeratorPanel"; // 🟣 Moderator panel
 /* =========================
    Professional SVG Icons
 ========================= */
@@ -108,13 +115,15 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 );
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext); // ✅ add logout
+  // 🟢 role helpers from context
+  const { user, role, isAdmin, isModerator, logout } = useContext(AuthContext);
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
@@ -227,15 +236,12 @@ const Dashboard = () => {
   }, [query]);
 
   /* ---------------------------
-     Fetch Real Notification Count (robust)
+     Fetch Real Notification Count
   --------------------------- */
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
 
-      // ✅ Support both formats:
-      // 1) { notifications: [...] }
-      // 2) [...]
       const notifications = Array.isArray(response.data)
         ? response.data
         : response.data?.notifications || [];
@@ -286,8 +292,14 @@ const Dashboard = () => {
 
         setRoomActivity(
           res?.roomActivity ?? [
-            { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
-            { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
+            {
+              title: "Collab Room Discussion (Frontend Sprint)",
+              time: "14:00 – 14:30",
+            },
+            {
+              title: "Code Review Thread (Portfolio Builder)",
+              time: "16:00 – 16:20",
+            },
           ]
         );
 
@@ -306,8 +318,14 @@ const Dashboard = () => {
         console.error(e);
         setProjects(defaultProjects);
         setRoomActivity([
-          { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
-          { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
+          {
+            title: "Collab Room Discussion (Frontend Sprint)",
+            time: "14:00 – 14:30",
+          },
+          {
+            title: "Code Review Thread (Portfolio Builder)",
+            time: "16:00 – 16:20",
+          },
         ]);
         await fetchRealNotificationCount();
       } finally {
@@ -340,10 +358,26 @@ const Dashboard = () => {
     const q = (query || "").trim().toLowerCase();
     if (!q) return [];
     const pool = [
-      ...projects.map((p) => ({ type: "project", title: p.name, onClick: () => openProject(p) })),
-      ...activeRooms.map((r) => ({ type: "room", title: r.name, onClick: openRoom })),
-      ...showcaseItems.map((s) => ({ type: "showcase", title: s.title, onClick: openShowcase })),
-      ...announcements.map((a) => ({ type: "announcement", title: a.title, onClick: () => openAnnouncement(a) })),
+      ...projects.map((p) => ({
+        type: "project",
+        title: p.name,
+        onClick: () => openProject(p),
+      })),
+      ...activeRooms.map((r) => ({
+        type: "room",
+        title: r.name,
+        onClick: openRoom,
+      })),
+      ...showcaseItems.map((s) => ({
+        type: "showcase",
+        title: s.title,
+        onClick: openShowcase,
+      })),
+      ...announcements.map((a) => ({
+        type: "announcement",
+        title: a.title,
+        onClick: () => openAnnouncement(a),
+      })),
     ];
     return pool.filter((x) => x.title.toLowerCase().includes(q)).slice(0, 6);
   }, [query, projects, activeRooms, showcaseItems, announcements]);
@@ -358,13 +392,19 @@ const Dashboard = () => {
         </div>
 
         {/* SIDEBAR */}
-        <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
+        <aside
+          className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}
+        >
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-3 px-2 mb-8 text-left"
             title="Go to Landing"
           >
-            <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
+            <img
+              src={logo}
+              alt="DevSphere"
+              className="w-10 h-10 object-contain drop-shadow-md"
+            />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
             </span>
@@ -410,7 +450,7 @@ const Dashboard = () => {
             />
           </nav>
 
-          {/* ✅ Profile + Logout (added, minimal UI impact) */}
+          {/* Profile + Logout */}
           <div className="mt-6 space-y-2">
             <button
               onClick={openSettings}
@@ -430,13 +470,18 @@ const Dashboard = () => {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
+                <p className="text-sm font-medium truncate max-w-[160px]">
+                  {displayName}
+                </p>
                 <p className="text-xs text-slate-300 truncate max-w-[160px]">
                   {isOnline ? "Online" : "Offline"} · Signed in
                 </p>
                 <p className="text-xs text-slate-300 truncate max-w-[160px]">
-  Role: <span className="font-semibold text-slate-100">{user?.role || "user"}</span>
-</p>
+                  Role:{" "}
+                  <span className="font-semibold text-slate-100">
+                    {role || "user"}
+                  </span>
+                </p>
               </div>
             </button>
 
@@ -471,9 +516,12 @@ const Dashboard = () => {
               </button>
 
               <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Dashboard</h1>
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                  Dashboard
+                </h1>
                 <p className="text-sm text-slate-700">
-                  Welcome back, <span className="font-semibold">{displayName}</span>.
+                  Welcome back,{" "}
+                  <span className="font-semibold">{displayName}</span>.
                 </p>
                 <p className="text-xs text-slate-600 mt-1">{todayStr}</p>
               </div>
@@ -526,8 +574,12 @@ const Dashboard = () => {
                             className="w-full text-left px-4 py-3 hover:bg-slate-50 transition flex items-start justify-between gap-3"
                           >
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">{r.title}</p>
-                              <p className="text-xs text-slate-600 capitalize">{r.type}</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {r.title}
+                              </p>
+                              <p className="text-xs text-slate-600 capitalize">
+                                {r.type}
+                              </p>
                             </div>
                             <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
                               Open
@@ -537,8 +589,12 @@ const Dashboard = () => {
                       </div>
                     ) : (
                       <div className="px-4 py-3">
-                        <p className="text-sm font-semibold text-slate-900">No results</p>
-                        <p className="text-xs text-slate-600 mt-1">Try: portfolio, rooms, showcase</p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          No results
+                        </p>
+                        <p className="text-xs text-slate-600 mt-1">
+                          Try: portfolio, rooms, showcase
+                        </p>
                       </div>
                     )}
                   </div>
@@ -562,24 +618,41 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <section className={`cardShell sfPulseBorder p-4 ${mounted ? "sfIn2" : "sfPre"}`}>
+          <section
+            className={`cardShell sfPulseBorder p-4 ${
+              mounted ? "sfIn2" : "sfPre"
+            }`}
+          >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
-                <p className="text-xs text-slate-700">Jump into core DevSphere modules</p>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Quick actions
+                </h2>
+                <p className="text-xs text-slate-700">
+                  Jump into core DevSphere modules
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => navigate("/portfolio")} className="qaBtn">
                   Build Portfolio
                 </button>
-                <button onClick={() => navigate("/collaboration")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/collaboration")}
+                  className="qaBtn"
+                >
                   Join Rooms
                 </button>
-                <button onClick={() => navigate("/showcase")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/showcase")}
+                  className="qaBtn"
+                >
                   Open Showcase
                 </button>
-                <button onClick={() => navigate("/notifications")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/notifications")}
+                  className="qaBtn"
+                >
                   View Notifications
                 </button>
               </div>
@@ -589,21 +662,38 @@ const Dashboard = () => {
           {loading ? (
             <div className="text-slate-700 text-sm">Loading dashboard</div>
           ) : (
-            <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${mounted ? "sfIn3" : "sfPre"}`}>
+            <div
+              className={`grid grid-cols-1 xl:grid-cols-3 gap-6 auto-rows-fr ${
+                mounted ? "sfIn3" : "sfPre"
+              }`}
+            >
               {/* LEFT */}
               <div className="xl:col-span-2 space-y-6">
+               
+                {/* 🟢 ADMIN PANEL – only for admin */}
+{isAdmin && <AdminPanel />}
+
+{/* 🟣 MODERATOR PANEL – only for moderator (agar ModeratorPanel banaya hua hai) */}
+{isModerator && <ModeratorPanel />}
+
                 {/* GitHub Widget */}
                 <section
                   className="cardShell sfPulseBorder p-5 cursor-pointer"
-                  onClick={() => navigate("/settings", { state: { tab: "integrations" } })}
+                  onClick={() =>
+                    navigate("/settings", { state: { tab: "integrations" } })
+                  }
                   title="Connect GitHub in Settings"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">GitHub activity</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      GitHub activity
+                    </h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate("/settings", { state: { tab: "integrations" } });
+                        navigate("/settings", {
+                          state: { tab: "integrations" },
+                        });
                       }}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
                     >
@@ -631,14 +721,19 @@ const Dashboard = () => {
                   </div>
 
                   <p className="text-xs text-slate-700 mt-3">
-                    Username: <span className="font-semibold">{githubActivity.username}</span>
+                    Username:{" "}
+                    <span className="font-semibold">
+                      {githubActivity.username}
+                    </span>
                   </p>
                 </section>
 
                 {/* Announcements */}
                 <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Announcements</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Announcements
+                    </h2>
                     <button
                       onClick={() => navigate("/notifications")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -656,8 +751,12 @@ const Dashboard = () => {
                         title="Open in Notifications"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="text-xs text-slate-800 mt-0.5">{item.desc}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-800 mt-0.5">
+                            {item.desc}
+                          </p>
                         </div>
                         <span className="text-xs text-slate-800 font-semibold whitespace-nowrap">
                           {item.time}
@@ -670,7 +769,9 @@ const Dashboard = () => {
                 {/* Recent Projects */}
                 <section className="cardShell sfPulseBorder p-5 min-h-[420px]">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-slate-900">Recent projects</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Recent projects
+                    </h2>
                     <button
                       onClick={() => navigate("/portfolio")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -696,11 +797,17 @@ const Dashboard = () => {
                                 </span>
                               </div>
                               <div>
-                                <h3 className="text-sm font-semibold text-slate-900">{project.name}</h3>
-                                <p className="text-xs text-slate-600">Last updated: Today</p>
+                                <h3 className="text-sm font-semibold text-slate-900">
+                                  {project.name}
+                                </h3>
+                                <p className="text-xs text-slate-600">
+                                  Last updated: Today
+                                </p>
                               </div>
                             </div>
-                            <span className="text-sm font-bold text-slate-900">{project.progress}%</span>
+                            <span className="text-sm font-bold text-slate-900">
+                              {project.progress}%
+                            </span>
                           </div>
 
                           <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
@@ -711,8 +818,12 @@ const Dashboard = () => {
                           </div>
 
                           <div className="flex justify-between mt-2">
-                            <span className="text-xs text-slate-600">Progress</span>
-                            <span className="text-xs text-sky-600 font-medium">View details</span>
+                            <span className="text-xs text-slate-600">
+                              Progress
+                            </span>
+                            <span className="text-xs text-sky-600 font-medium">
+                              View details
+                            </span>
                           </div>
                         </button>
                       ))
@@ -731,12 +842,14 @@ const Dashboard = () => {
                 </section>
               </div>
 
-              {/* RIGHT */}
-              <div className="space-y-6">
+              {/* RIGHT – equal-height cards */}
+              <div className="grid grid-cols-1 gap-6 auto-rows-fr">
                 {/* Collab Rooms */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Live collab rooms</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Live collab rooms
+                    </h2>
                     <button
                       onClick={() => navigate("/collaboration")}
                       className="text-xs px-3 py-1 rounded-full bg-sky-500 text-white hover:bg-sky-400 transition"
@@ -745,7 +858,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {activeRooms.map((room, idx) => (
                       <button
                         key={idx}
@@ -754,7 +867,9 @@ const Dashboard = () => {
                         title="Open Collaboration Rooms"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{room.name}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {room.name}
+                          </p>
                           <p className="text-xs text-slate-800">
                             {room.members} members · {room.status}
                           </p>
@@ -769,9 +884,11 @@ const Dashboard = () => {
                 </section>
 
                 {/* Room Activity */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Room activity</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Room activity
+                    </h2>
                     <button
                       onClick={() => navigate("/collaboration")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -780,7 +897,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {roomActivity.map((m, idx) => (
                       <button
                         key={idx}
@@ -792,7 +909,9 @@ const Dashboard = () => {
                           {idx === 0 ? <ChatIcon /> : <TaskIcon />}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{m.title}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {m.title}
+                          </p>
                           <p className="text-xs text-slate-800">{m.time}</p>
                         </div>
                       </button>
@@ -801,9 +920,11 @@ const Dashboard = () => {
                 </section>
 
                 {/* Showcase */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Showcase feed</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Showcase feed
+                    </h2>
                     <button
                       onClick={openShowcase}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -812,7 +933,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {showcaseItems.map((item, idx) => (
                       <button
                         key={idx}
@@ -821,10 +942,16 @@ const Dashboard = () => {
                         title="Open Showcase Feed"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="text-xs text-slate-800">by {item.author}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-800">
+                            by {item.author}
+                          </p>
                         </div>
-                        <span className="text-xs text-slate-900 font-semibold">❤ {item.likes}</span>
+                        <span className="text-xs text-slate-900 font-semibold">
+                          ❤ {item.likes}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -832,14 +959,17 @@ const Dashboard = () => {
 
                 {/* CTA Box */}
                 <section
-                  className="ctaBox cursor-pointer sfRow"
+                  className="ctaBox cursor-pointer sfRow h-full flex flex-col justify-between"
                   onClick={() => navigate("/collaboration")}
                   title="Join collaboration workspace"
                 >
-                  <h3 className="ctaTitle">Your workspace starts here</h3>
-                  <p className="ctaDesc">
-                    Join live rooms, discuss tasks, share snippets, and collaborate in real time inside DevSphere.
-                  </p>
+                  <div>
+                    <h3 className="ctaTitle">Your workspace starts here</h3>
+                    <p className="ctaDesc">
+                      Join live rooms, discuss tasks, share snippets, and
+                      collaborate in real time inside DevSphere.
+                    </p>
+                  </div>
                   <button className="ctaBtn">Join collaboration</button>
                 </section>
               </div>
@@ -864,7 +994,7 @@ const Dashboard = () => {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* ✅ NAVY animated blobs */
+        /* NAVY animated blobs */
         .sfBlob{
           position:absolute;
           width: 560px;
