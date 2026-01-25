@@ -1152,7 +1152,7 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className={ui.textMuted}>Quick</span>
-                    <span className={`${ui.textStrong} font-semibold`}>Edit profile →</span>
+                    <span className={`${ui.textStrong} font-semibold`}>Edit profile </span>
                   </div>
                 </div>
               </div>

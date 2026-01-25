@@ -1,11 +1,5 @@
 // src/pages/Dashboard.jsx
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
@@ -13,6 +7,7 @@ import { getDashboardData } from "../services/api";
 import api from "../services/api"; // axios instance
 import AdminPanel from "./AdminPanel"; // 🟢 Admin panel
 import ModeratorPanel from "./ModeratorPanel"; // 🟣 Moderator panel
+
 /* =========================
    Professional SVG Icons
 ========================= */
@@ -130,10 +125,6 @@ const Dashboard = () => {
   }, []);
 
   const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef(null);
-  const inputRef = useRef(null);
-  const [ddPos, setDdPos] = useState({ left: 0, top: 0, width: 0 });
 
   const [announcements, setAnnouncements] = useState([]);
   const [roomActivity, setRoomActivity] = useState([]);
@@ -188,52 +179,6 @@ const Dashboard = () => {
     }),
     [githubUsername]
   );
-
-  const updateDropdownPos = () => {
-    if (!inputRef.current) return;
-    const rect = inputRef.current.getBoundingClientRect();
-    setDdPos({
-      left: rect.left,
-      top: rect.bottom + 8,
-      width: rect.width,
-    });
-  };
-
-  useEffect(() => {
-    const onDocClick = (e) => {
-      if (!searchRef.current) return;
-      if (!searchRef.current.contains(e.target)) setSearchOpen(false);
-    };
-    const onEsc = (e) => {
-      if (e.key === "Escape") setSearchOpen(false);
-    };
-
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (searchOpen) updateDropdownPos();
-  }, [searchOpen, query]);
-
-  useEffect(() => {
-    const onResize = () => searchOpen && updateDropdownPos();
-    const onScroll = () => searchOpen && updateDropdownPos();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  }, [searchOpen]);
-
-  useEffect(() => {
-    if (!query.trim()) setSearchOpen(false);
-  }, [query]);
 
   /* ---------------------------
      Fetch Real Notification Count
@@ -353,34 +298,6 @@ const Dashboard = () => {
   const openRoom = () => navigate("/collaboration");
   const openShowcase = () => navigate("/showcase");
   const openSettings = () => navigate("/settings");
-
-  const searchResults = useMemo(() => {
-    const q = (query || "").trim().toLowerCase();
-    if (!q) return [];
-    const pool = [
-      ...projects.map((p) => ({
-        type: "project",
-        title: p.name,
-        onClick: () => openProject(p),
-      })),
-      ...activeRooms.map((r) => ({
-        type: "room",
-        title: r.name,
-        onClick: openRoom,
-      })),
-      ...showcaseItems.map((s) => ({
-        type: "showcase",
-        title: s.title,
-        onClick: openShowcase,
-      })),
-      ...announcements.map((a) => ({
-        type: "announcement",
-        title: a.title,
-        onClick: () => openAnnouncement(a),
-      })),
-    ];
-    return pool.filter((x) => x.title.toLowerCase().includes(q)).slice(0, 6);
-  }, [query, projects, activeRooms, showcaseItems, announcements]);
 
   return (
     <>
@@ -528,77 +445,26 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Quick Search */}
-              <div ref={searchRef} className="relative w-full md:w-[360px]">
+              {/* Search bar with Enter key functionality */}
+              <div className="relative w-full md:w-[360px]">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                     <SearchIcon />
                   </span>
                   <input
-                    ref={inputRef}
                     value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setSearchOpen(true);
-                      requestAnimationFrame(updateDropdownPos);
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && query.trim()) {
+                        // Enter press par search karein
+                        alert(`Searching for: ${query}`);
+                        setQuery("");
+                      }
                     }}
-                    onFocus={() => {
-                      setSearchOpen(true);
-                      requestAnimationFrame(updateDropdownPos);
-                    }}
-                    placeholder="Quick search: projects, rooms, showcase"
+                    placeholder="Search projects, rooms, showcase (Press Enter)"
                     className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-900/20"
                   />
                 </div>
-
-                {searchOpen && query.trim() ? (
-                  <div
-                    className="fixed z-[99999] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden"
-                    style={{
-                      left: ddPos.left,
-                      top: ddPos.top,
-                      width: ddPos.width,
-                      maxHeight: 260,
-                    }}
-                  >
-                    {searchResults.length > 0 ? (
-                      <div className="max-h-[260px] overflow-auto">
-                        {searchResults.map((r, i) => (
-                          <button
-                            key={`${r.type}-${i}`}
-                            onClick={() => {
-                              r.onClick();
-                              setQuery("");
-                              setSearchOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-3 hover:bg-slate-50 transition flex items-start justify-between gap-3"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {r.title}
-                              </p>
-                              <p className="text-xs text-slate-600 capitalize">
-                                {r.type}
-                              </p>
-                            </div>
-                            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                              Open
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-3">
-                        <p className="text-sm font-semibold text-slate-900">
-                          No results
-                        </p>
-                        <p className="text-xs text-slate-600 mt-1">
-                          Try: portfolio, rooms, showcase
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
 
               {/* Notifications */}
@@ -669,12 +535,11 @@ const Dashboard = () => {
             >
               {/* LEFT */}
               <div className="xl:col-span-2 space-y-6">
-               
                 {/* 🟢 ADMIN PANEL – only for admin */}
-{isAdmin && <AdminPanel />}
+                {isAdmin && <AdminPanel />}
 
-{/* 🟣 MODERATOR PANEL – only for moderator (agar ModeratorPanel banaya hua hai) */}
-{isModerator && <ModeratorPanel />}
+                {/* 🟣 MODERATOR PANEL – only for moderator */}
+                {isModerator && <ModeratorPanel />}
 
                 {/* GitHub Widget */}
                 <section
