@@ -496,7 +496,7 @@ export default function CollaborationWorkspace() {
             <NavItem active={false} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
             <NavItem active={true} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
             <NavItem active={false} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
-            <NavItem active={false} icon={<UserRolesIcon />} label="User roles" onClick={() => navigate("/roles")} />
+            
             <NavItem
               active={false}
               icon={<BellIcon />}

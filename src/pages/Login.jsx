@@ -1,6 +1,7 @@
+// src/pages/Login.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { register, login, forgotPassword } from "../services/api";
+import { forgotPassword } from "../services/api";
 import { toast } from "react-toastify";
 import { AuthContext } from "../context/AuthContext";
 
@@ -20,8 +21,9 @@ const Login = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
-  const setUser = auth?.setUser;
+
+  // ✅ use AuthContext functions (no UI change)
+  const { login: ctxLogin, register: ctxRegister } = useContext(AuthContext);
 
   const onChangeHandler = (e) => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -33,35 +35,36 @@ const Login = () => {
 
     try {
       if (currentState === "Sign Up") {
-        const res = await register(formData);
+        const res = await ctxRegister(formData);
 
-        if (!res || res.error) {
-          toast.error(res?.error || "Signup failed");
-        } else {
-          toast.success(res.message || "Registration successful! Please login.");
-          setCurrentState("Login");
-          setFormData({ name: "", email: "", password: "" });
-          setIsPasswordVisible(false);
+        // ✅ safety: show error if backend says fail
+        if (!res || res?.success === false) {
+          toast.error(res?.message || "Signup failed");
+          return; // ✅ finally will still run (loading off)
         }
+
+        toast.success(res?.message || "Registration successful! Please login.");
+        setCurrentState("Login");
+        setFormData({ name: "", email: "", password: "" });
+        setIsPasswordVisible(false);
       } else {
-        const res = await login({
+        const res = await ctxLogin({
           email: formData.email,
           password: formData.password,
         });
 
-        if (!res || res.error) {
-          toast.error(res?.error || "Login failed");
-        } else {
-          if (res.token) localStorage.setItem("token", res.token);
-          if (setUser && res.user) setUser(res.user);
-
-          toast.success(res.message || "Login successful!");
-          navigate("/dashboard");
+        // ✅ safety: don't navigate if login failed or token missing
+        if (!res || res?.success === false || !res?.token) {
+          toast.error(res?.message || "Login failed");
+          return; // ✅ finally will still run (loading off)
         }
+
+        toast.success(res?.message || "Login successful!");
+        navigate("/dashboard");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong");
+      toast.error(err?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -77,9 +80,11 @@ const Login = () => {
     setForgotPasswordLoading(true);
     try {
       const res = await forgotPassword(forgotPasswordEmail);
-      if (res?.error) toast.error(res.error);
-      else {
-        toast.success(res.message || "Reset link sent");
+
+      if (res?.error || res?.success === false) {
+        toast.error(res?.error || res?.message || "Failed");
+      } else {
+        toast.success(res?.message || "Reset link sent");
         setShowForgotPassword(false);
         setForgotPasswordEmail("");
       }
@@ -179,7 +184,7 @@ const Login = () => {
                   />
                 </div>
 
-                {/* ✅ PASSWORD (FIXED: two inputs + key forces re-mount) */}
+                {/* ✅ PASSWORD */}
                 <div className="flex flex-col gap-1">
                   <label className="text-slate-200 text-sm">Password</label>
 
@@ -218,7 +223,6 @@ const Login = () => {
                       title={isPasswordVisible ? "Hide password" : "Show password"}
                     >
                       {isPasswordVisible ? (
-                        // Eye icon - when password IS visible, show "eye" (means you can hide it)
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="18"
@@ -234,7 +238,6 @@ const Login = () => {
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       ) : (
-                        // Eye Off icon - when password is NOT visible, show "eye off" (means you can show it)
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="18"
@@ -304,33 +307,27 @@ const Login = () => {
 
         {/* FOOTER (NON-FIXED) */}
         <footer className="w-full bg-slate-900 border-t border-slate-800">
-                <div className="max-w-6xl mx-auto px-6 py-4">
-                  <div className="footer-wrap">
-                    <Link to="/" className="footer-linkBlock">
-                      <p className="footer-tagline">
-                        Developer Collaboration & Portfolio Platform
-                      </p>
-                    </Link>
-        
-                    <Link to="/" className="footer-linkBlock">
-                      <p className="footer-copy">
-                        © {new Date().getFullYear()} DevSphere
-                      </p>
-                    </Link>
-        
-                    <div className="footer-links">
-                      <Link to="/privacy" className="footer-link">Privacy</Link>
-                      <span className="footer-sep">|</span>
-                      <Link to="/terms" className="footer-link">Terms</Link>
-                      <span className="footer-sep">|</span>
-                      <Link to="/support" className="footer-link footer-link-accent">
-                        Support
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </footer>
-        
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="footer-wrap">
+              <Link to="/" className="footer-linkBlock">
+                <p className="footer-tagline">Developer Collaboration & Portfolio Platform</p>
+              </Link>
+
+              <Link to="/" className="footer-linkBlock">
+                <p className="footer-copy">© {new Date().getFullYear()} DevSphere</p>
+              </Link>
+
+              <div className="footer-links">
+                <Link to="/privacy" className="footer-link">Privacy</Link>
+                <span className="footer-sep">|</span>
+                <Link to="/terms" className="footer-link">Terms</Link>
+                <span className="footer-sep">|</span>
+                <Link to="/support" className="footer-link footer-link-accent">Support</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
+
         {/* FORGOT PASSWORD MODAL */}
         {showForgotPassword && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
@@ -363,8 +360,7 @@ const Login = () => {
                 <div className="flex gap-3">
                   <button
                     type="button"
-
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => setShowForgotPassword(false)}
                     className="flex-1 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-800 transition"
                   >
                     Cancel

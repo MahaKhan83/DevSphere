@@ -54,12 +54,6 @@ const ShowcaseIcon = () => (
   </svg>
 );
 
-const UserRolesIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
-  </svg>
-);
-
 const BellIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
@@ -180,7 +174,7 @@ function cloneTemplate(templateId) {
 /* ---------------- Defaults ---------------- */
 const DEFAULT_PROFILE = { name: "", role: "Full-Stack Developer", email: "", phone: "", location: "", photo: "" };
 const DEFAULT_THEME = {
-  appBg: "#f1f5f9",
+  appBg: "#0f172a", // static devsphere style background
   paperBg: "#FFFFFF",
   ink: "#0F172A",
   muted: "#475569",
@@ -191,12 +185,28 @@ const DEFAULT_THEME = {
   radius: 18,
   fontSize: 14,
   font: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
-  viewMode: "full", // ✅ FULL WIDTH by default
+  viewMode: "full",
   cardShadow: 18,
   sectionGap: 14,
   sectionPad: 18,
   headerCompact: false,
 };
+
+/* Font options */
+const FONT_OPTIONS = [
+  {
+    label: "System (default)",
+    value: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    label: "Serif",
+    value: "ui-serif, Georgia, Cambria, Times New Roman, serif",
+  },
+  {
+    label: "Mono (dev style)",
+    value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  },
+];
 
 /* ---------------- Small UI pieces ---------------- */
 const Field = ({ value, onChange, placeholder, className = "" }) => (
@@ -232,11 +242,9 @@ export default function Portfolio() {
   const [editMode, setEditMode] = useState(true);
   const [openEditorId, setOpenEditorId] = useState(null);
 
-  // floating palette
   const [paletteVisible, setPaletteVisible] = useState(false);
   const [palettePosition, setPalettePosition] = useState({ x: 110, y: 120 });
 
-  // floating customization tools
   const [customizationVisible, setCustomizationVisible] = useState(false);
   const [customizationPosition, setCustomizationPosition] = useState({ x: 450, y: 120 });
 
@@ -449,7 +457,6 @@ export default function Portfolio() {
     { to: "/portfolio", label: "Build portfolio", icon: <PortfolioIcon /> },
     { to: "/collaboration", label: "Collab rooms", icon: <CollabIcon /> },
     { to: "/showcase", label: "Showcase feed", icon: <ShowcaseIcon /> },
-    { to: "/roles", label: "User roles", icon: <UserRolesIcon /> },
     { to: "/notifications", label: "Notifications", icon: <BellIcon /> },
     { to: "/settings", label: "Settings", icon: <SettingsIcon /> },
   ];
@@ -466,7 +473,9 @@ export default function Portfolio() {
         <div className="pfList">
           {items.map((it, i) => (
             <div key={i} className="pfListRow">
-              <div className="pfListTitle">{it.role || "Role"} · {it.company || "Company"}</div>
+              <div className="pfListTitle">
+                {it.role || "Role"} · {it.company || "Company"}
+              </div>
               <div className="pfListMeta">{it.period || ""}</div>
               <div className="pfListDesc">{it.details || ""}</div>
             </div>
@@ -520,7 +529,9 @@ export default function Portfolio() {
         <div className="pfList">
           {items.map((it, i) => (
             <div key={i} className="pfListRow">
-              <div className="pfListTitle">{it.degree || "Degree"} · {it.institute || "Institute"}</div>
+              <div className="pfListTitle">
+                {it.degree || "Degree"} · {it.institute || "Institute"}
+              </div>
               <div className="pfListMeta">{it.year || ""}</div>
               <div className="pfListDesc">{it.details || ""}</div>
             </div>
@@ -550,7 +561,9 @@ export default function Portfolio() {
                     <a className="pfLink" href={r.url} target="_blank" rel="noreferrer">
                       {r.name}
                     </a>
-                    <div className="pfRepoMeta">⭐ {r.stars} {r.language ? ` · ${r.language}` : ""}</div>
+                    <div className="pfRepoMeta">
+                      ⭐ {r.stars} {r.language ? ` · ${r.language}` : ""}
+                    </div>
                   </div>
                   {r.desc ? <div className="pfListDesc">{r.desc}</div> : null}
                 </div>
@@ -571,7 +584,11 @@ export default function Portfolio() {
       return (
         <div className="pfEditorGrid">
           <label className="pfLabel">Objective / Summary</label>
-          <TextArea value={sec.data?.text || ""} onChange={(v) => updateSectionData(sec.instanceId, { text: v })} placeholder="Write a short objective/summary..." />
+          <TextArea
+            value={sec.data?.text || ""}
+            onChange={(v) => updateSectionData(sec.instanceId, { text: v })}
+            placeholder="Write a short objective/summary..."
+          />
         </div>
       );
     }
@@ -582,19 +599,39 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Experience items</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
 
           {items.map((it, i) => (
             <div key={i} className="pfItemCard sfCardGlow">
               <div className="pfItemGrid">
-                <Field value={it.role || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { role: v })} placeholder="Role" />
-                <Field value={it.company || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { company: v })} placeholder="Company" />
-                <Field value={it.period || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { period: v })} placeholder="Period (e.g. 2025)" />
-                <TextArea value={it.details || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })} placeholder="Details..." />
+                <Field
+                  value={it.role || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { role: v })}
+                  placeholder="Role"
+                />
+                <Field
+                  value={it.company || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { company: v })}
+                  placeholder="Company"
+                />
+                <Field
+                  value={it.period || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { period: v })}
+                  placeholder="Period (e.g. 2025)"
+                />
+                <TextArea
+                  value={it.details || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })}
+                  placeholder="Details..."
+                />
               </div>
               <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">Remove</MiniBtn>
+                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
+                  Remove
+                </MiniBtn>
               </div>
             </div>
           ))}
@@ -608,18 +645,34 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Projects</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
 
           {items.map((it, i) => (
             <div key={i} className="pfItemCard sfCardGlow">
               <div className="pfItemGrid">
-                <Field value={it.name || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })} placeholder="Project name" />
-                <Field value={it.link || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { link: v })} placeholder="Live/GitHub link (optional)" />
-                <TextArea value={it.desc || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { desc: v })} placeholder="Description..." />
+                <Field
+                  value={it.name || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })}
+                  placeholder="Project name"
+                />
+                <Field
+                  value={it.link || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { link: v })}
+                  placeholder="Live/GitHub link (optional)"
+                />
+                <TextArea
+                  value={it.desc || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { desc: v })}
+                  placeholder="Description..."
+                />
               </div>
               <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">Remove</MiniBtn>
+                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
+                  Remove
+                </MiniBtn>
               </div>
             </div>
           ))}
@@ -633,13 +686,19 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Skills</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
 
           {items.map((it, i) => (
             <div key={i} className="pfItemCard sfCardGlow">
               <div className="pfItemGrid">
-                <Field value={it.name || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })} placeholder="Skill (e.g. React)" />
+                <Field
+                  value={it.name || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })}
+                  placeholder="Skill (e.g. React)"
+                />
                 <div className="pfRangeRow">
                   <span className="pfMuted">Level</span>
                   <input
@@ -647,14 +706,18 @@ export default function Portfolio() {
                     min="0"
                     max="100"
                     value={Number(it.level) || 0}
-                    onChange={(e) => updateSectionItem(sec.instanceId, i, { level: Number(e.target.value) })}
+                    onChange={(e) =>
+                      updateSectionItem(sec.instanceId, i, { level: Number(e.target.value) })
+                    }
                     className="pfRange"
                   />
                   <span className="pfMono">{Number(it.level) || 0}%</span>
                 </div>
               </div>
               <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">Remove</MiniBtn>
+                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
+                  Remove
+                </MiniBtn>
               </div>
             </div>
           ))}
@@ -668,19 +731,39 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Education</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
 
           {items.map((it, i) => (
             <div key={i} className="pfItemCard sfCardGlow">
               <div className="pfItemGrid">
-                <Field value={it.degree || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { degree: v })} placeholder="Degree" />
-                <Field value={it.institute || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { institute: v })} placeholder="Institute" />
-                <Field value={it.year || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { year: v })} placeholder="Year (e.g. 2022–2026)" />
-                <TextArea value={it.details || ""} onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })} placeholder="Details..." />
+                <Field
+                  value={it.degree || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { degree: v })}
+                  placeholder="Degree"
+                />
+                <Field
+                  value={it.institute || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { institute: v })}
+                  placeholder="Institute"
+                />
+                <Field
+                  value={it.year || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { year: v })}
+                  placeholder="Year (e.g. 2022–2026)"
+                />
+                <TextArea
+                  value={it.details || ""}
+                  onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })}
+                  placeholder="Details..."
+                />
               </div>
               <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">Remove</MiniBtn>
+                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
+                  Remove
+                </MiniBtn>
               </div>
             </div>
           ))}
@@ -693,13 +776,21 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <label className="pfLabel">GitHub username</label>
           <div className="pfGithubEditRow">
-            <Field value={sec.data?.username || ""} onChange={(v) => updateSectionData(sec.instanceId, { username: v })} placeholder="e.g. octocat" />
-            <button type="button" className="pfBtnPrimary" onClick={() => fetchGithubRepos(sec.data?.username)} disabled={githubLoading}>
+            <Field
+              value={sec.data?.username || ""}
+              onChange={(v) => updateSectionData(sec.instanceId, { username: v })}
+              placeholder="e.g. octocat"
+            />
+            <button
+              type="button"
+              className="pfBtnPrimary"
+              onClick={() => fetchGithubRepos(sec.data?.username)}
+              disabled={githubLoading}
+            >
               {githubLoading ? "Loading..." : "Fetch"}
             </button>
           </div>
 
-          {/* ✅ Tip one-line (no box) */}
           <div className="tipLine">
             <InfoIcon />
             <span>Tip: Enter only the username (not the full profile URL).</span>
@@ -752,7 +843,11 @@ export default function Portfolio() {
         <div className="pfShell">
           {/* LEFT SIDEBAR */}
           <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Dashboard">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-3 px-2 mb-8 text-left"
+              title="Go to Dashboard"
+            >
               <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
               <span className="text-xl font-semibold">
                 Dev<span className="text-cyan-300">Sphere</span>
@@ -771,7 +866,9 @@ export default function Portfolio() {
                     }`}
                   >
                     <span className="flex items-center gap-3">
-                      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">{it.icon}</span>
+                      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+                        {it.icon}
+                      </span>
                       <span>{it.label}</span>
                     </span>
                   </button>
@@ -798,73 +895,87 @@ export default function Portfolio() {
           {/* MAIN */}
           <div className="pfMain">
             {/* TOPBAR */}
-<div className="pfTopSection">
-  {/* ✅ Docked toggle */}
-  <button
-    onClick={() => setSidebarOpen((v) => !v)}
-    className="pfSidebarToggle"
-    title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-    type="button"
-  >
-    {sidebarOpen ? "⟨⟨" : "⟩⟩"}
-  </button>
+            <div className="pfTopSection">
+              <button
+                onClick={() => setSidebarOpen((v) => !v)}
+                className="pfSidebarToggle"
+                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                type="button"
+              >
+                {sidebarOpen ? "⟨⟨" : "⟩⟩"}
+              </button>
 
-  <div className="pfTopHeader">
-    <div className="pfTitleSection">
-      <h1 className="pfMainTitle">Portfolio Builder</h1>
-      <p className="pfSubTitle">
-        Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and Customize
-      </p>
-    </div>
+              <div className="pfTopHeader">
+                <div className="pfTitleSection">
+                  <h1 className="pfMainTitle">Portfolio Builder</h1>
+                  <p className="pfSubTitle">
+                    Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and
+                    Customize
+                  </p>
+                </div>
 
-    {/* ✅ CENTERED BUTTONS ROW */}
-    <div className="pfControlButtons">
-      <button type="button" className={`pfPill ${editMode ? "pfPillOn" : ""}`} onClick={() => setEditMode(true)}>
-        Edit mode
-      </button>
+                <div className="pfControlButtons">
+                  <button
+                    type="button"
+                    className={`pfPill ${editMode ? "pfPillOn" : ""}`}
+                    onClick={() => setEditMode(true)}
+                  >
+                    Edit mode
+                  </button>
 
-      <button
-        type="button"
-        className={`pfPill ${!editMode ? "pfPillOn" : ""}`}
-        onClick={() => {
-          setEditMode(false);
-          setOpenEditorId(null);
-          toast("Preview mode ✅");
-        }}
-      >
-        Preview mode
-      </button>
+                  <button
+                    type="button"
+                    className={`pfPill ${!editMode ? "pfPillOn" : ""}`}
+                    onClick={() => {
+                      setEditMode(false);
+                      setOpenEditorId(null);
+                      toast("Preview mode ✅");
+                    }}
+                  >
+                    Preview mode
+                  </button>
 
-      <button type="button" className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`} onClick={() => setPaletteVisible((v) => !v)}>
-        Sections
-      </button>
+                  <button
+                    type="button"
+                    className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`}
+                    onClick={() => setPaletteVisible((v) => !v)}
+                  >
+                    Sections
+                  </button>
 
-      <button
-        type="button"
-        className={`pfBtnPrimary ${customizationVisible ? "pfBtnPrimaryOn" : ""}`}
-        onClick={() => setCustomizationVisible((v) => !v)}
-      >
-        Customize
-      </button>
+                  <button
+                    type="button"
+                    className={`pfBtnPrimary ${customizationVisible ? "pfBtnPrimaryOn" : ""}`}
+                    onClick={() => setCustomizationVisible((v) => !v)}
+                  >
+                    Customize
+                  </button>
 
-      <button type="button" className="pfBtnPrimaryGreen" onClick={downloadAsPDF}>
-        Download PDF
-      </button>
-      <button type="button" className="pfBtnPrimaryGreen" onClick={save}>
-        Save
-      </button>
-      <button type="button" className="pfBtnDanger" onClick={reset}>
-        Reset
-      </button>
-    </div>
-  </div>
-</div>
+                  <button type="button" className="pfBtnPrimaryGreen" onClick={downloadAsPDF}>
+                    Download PDF
+                  </button>
+                  <button type="button" className="pfBtnPrimaryGreen" onClick={save}>
+                    Save
+                  </button>
+                  <button type="button" className="pfBtnDanger" onClick={reset}>
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Floating Palette */}
             {paletteVisible && (
-              <div className="floatingPalette sfCardGlow" style={{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }} onMouseDown={onPaletteMouseDown}>
+              <div
+                className="floatingPalette sfCardGlow"
+                style={{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }}
+                onMouseDown={onPaletteMouseDown}
+              >
                 <div className="floatingHeader">
                   <div className="floatingTitleRow">
-                    <span className="floatingIconHead"><GridIcon /></span>
+                    <span className="floatingIconHead">
+                      <GridIcon />
+                    </span>
                     <div className="floatingTitleCol">
                       <div className="floatingTitleText">Sections</div>
                       <div className="floatingSub">Drag and drop into your portfolio</div>
@@ -872,7 +983,11 @@ export default function Portfolio() {
                   </div>
 
                   <div className="floatingControls">
-                    <button type="button" className="floatingClose" onClick={() => setPaletteVisible(false)}>
+                    <button
+                      type="button"
+                      className="floatingClose"
+                      onClick={() => setPaletteVisible(false)}
+                    >
                       ✕
                     </button>
                   </div>
@@ -881,18 +996,33 @@ export default function Portfolio() {
                 <div className="floatingContent">
                   <Droppable droppableId="palette" isDropDisabled={true}>
                     {(provided) => (
-                      <div className="floatingGrid" ref={provided.innerRef} {...provided.droppableProps}>
+                      <div
+                        className="floatingGrid"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
                         {SECTION_TEMPLATES.map((t, idx) => {
                           const disabled = !canAddTemplate(t.id);
                           return (
-                            <Draggable draggableId={`tpl-${t.id}`} index={idx} key={t.id} isDragDisabled={disabled || !editMode}>
+                            <Draggable
+                              draggableId={`tpl-${t.id}`}
+                              index={idx}
+                              key={t.id}
+                              isDragDisabled={disabled || !editMode}
+                            >
                               {(p) => (
                                 <div
                                   ref={p.innerRef}
                                   {...p.draggableProps}
                                   {...p.dragHandleProps}
                                   className={`floatingCard ${disabled ? "disabled" : ""}`}
-                                  title={!editMode ? "Enable Edit mode to drag" : disabled ? "Already added" : `Drag to add: ${t.title}`}
+                                  title={
+                                    !editMode
+                                      ? "Enable Edit mode to drag"
+                                      : disabled
+                                      ? "Already added"
+                                      : `Drag to add: ${t.title}`
+                                  }
                                 >
                                   <div className="floatingIcon">{SECTION_ICON[t.id]}</div>
                                   <div className="floatingCardTitle">{t.title}</div>
@@ -906,7 +1036,6 @@ export default function Portfolio() {
                     )}
                   </Droppable>
 
-                  {/* ✅ Tip one-line */}
                   <div className="tipLine">
                     <InfoIcon />
                     <span>Tip: Turn on Edit mode to drag sections.</span>
@@ -915,54 +1044,233 @@ export default function Portfolio() {
               </div>
             )}
 
-            {/* Floating Customization */}
+            {/* Floating Customization - NEAT LAYOUT */}
             {customizationVisible && (
-              <div className="floatingCustomization sfCardGlow" style={{ left: `${customizationPosition.x}px`, top: `${customizationPosition.y}px` }} onMouseDown={onCustomizationMouseDown}>
+              <div
+                className="floatingCustomization sfCardGlow"
+                style={{ left: `${customizationPosition.x}px`, top: `${customizationPosition.y}px` }}
+                onMouseDown={onCustomizationMouseDown}
+              >
                 <div className="floatingHeader">
                   <div className="floatingTitleRow">
-                    <span className="floatingIconHead"><SlidersIcon /></span>
+                    <span className="floatingIconHead">
+                      <SlidersIcon />
+                    </span>
                     <div className="floatingTitleCol">
                       <div className="floatingTitleText">Customization</div>
-                      <div className="floatingSub">Theme and layout controls</div>
+                      <div className="floatingSub">Theme, layout & typography</div>
                     </div>
                   </div>
 
                   <div className="floatingControls">
-                    <button type="button" className="floatingClose" onClick={() => setCustomizationVisible(false)}>
+                    <button
+                      type="button"
+                      className="floatingClose"
+                      onClick={() => setCustomizationVisible(false)}
+                    >
                       ✕
                     </button>
                   </div>
                 </div>
 
                 <div className="floatingContent">
-                  {/* (Customization UI same as your previous version)
-                      CSS me hum isko professional spacing + alignment denge */}
                   <div className="customizationGrid">
-                    <div className="customizationSection">
-                      <div className="customizationTitle">Accent</div>
-                      <div className="colorPickerRow">
-                        <input type="color" value={theme.accent} onChange={(e) => setTheme((t) => ({ ...t, accent: e.target.value }))} className="colorPickerCircle" />
-                        <input type="text" value={theme.accent} onChange={(e) => setTheme((t) => ({ ...t, accent: e.target.value }))} className="colorInput" placeholder="#0ea5e9" />
-                      </div>
-                      <div className="tipLine">
-                        <InfoIcon />
-                        <span>Tip: Used for highlights (skill bars, key UI).</span>
-                      </div>
-                    </div>
-
+                    {/* Layout */}
                     <div className="customizationSection">
                       <div className="customizationTitle">Layout</div>
                       <div className="layoutButtons">
-                        <button type="button" className={`layoutBtn ${theme.viewMode === "A4" ? "active" : ""}`} onClick={() => setTheme((t) => ({ ...t, viewMode: "A4" }))}>
+                        <button
+                          type="button"
+                          className={`layoutBtn ${
+                            theme.viewMode === "A4" ? "active" : ""
+                          }`}
+                          onClick={() =>
+                            setTheme((t) => ({ ...t, viewMode: "A4" }))
+                          }
+                        >
                           A4 resume
                         </button>
-                        <button type="button" className={`layoutBtn ${theme.viewMode === "full" ? "active" : ""}`} onClick={() => setTheme((t) => ({ ...t, viewMode: "full" }))}>
+                        <button
+                          type="button"
+                          className={`layoutBtn ${
+                            theme.viewMode === "full" ? "active" : ""
+                          }`}
+                          onClick={() =>
+                            setTheme((t) => ({ ...t, viewMode: "full" }))
+                          }
+                        >
                           Full width
                         </button>
                       </div>
                       <div className="tipLine">
                         <InfoIcon />
-                        <span>Tip: Full width for web view, A4 for printing.</span>
+                        <span>Tip: A4 for print, Full width for web view.</span>
+                      </div>
+                    </div>
+
+                    {/* Typography */}
+                    <div className="customizationSection">
+                      <div className="customizationTitle">Typography</div>
+
+                      <div className="fieldRow">
+                        <div className="fieldLabelRow">
+                          <span className="fieldLabel">Base font size</span>
+                          <span className="pfMono">{theme.fontSize}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="12"
+                          max="18"
+                          value={theme.fontSize}
+                          onChange={(e) =>
+                            setTheme((t) => ({
+                              ...t,
+                              fontSize: Number(e.target.value),
+                            }))
+                          }
+                          className="pfRange"
+                        />
+                      </div>
+
+                      <div className="fieldRow">
+                        <div className="fieldLabel">Font family</div>
+                        <select
+                          className="fontSelect"
+                          value={theme.font}
+                          onChange={(e) =>
+                            setTheme((t) => ({ ...t, font: e.target.value }))
+                          }
+                        >
+                          {FONT_OPTIONS.map((f) => (
+                            <option key={f.value} value={f.value}>
+                              {f.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Colors (Accent + text + paper) */}
+                    <div className="customizationSection">
+                      <div className="customizationTitle">Colors</div>
+
+                      {/* Accent */}
+                      <div className="fieldRow">
+                        <div className="fieldLabel">Accent color</div>
+                        <div className="colorPickerRow">
+                          <input
+                            type="color"
+                            value={theme.accent}
+                            onChange={(e) =>
+                              setTheme((t) => ({ ...t, accent: e.target.value }))
+                            }
+                            className="colorPickerCircle"
+                          />
+                          <input
+                            type="text"
+                            value={theme.accent}
+                            onChange={(e) =>
+                              setTheme((t) => ({ ...t, accent: e.target.value }))
+                            }
+                            className="colorInput"
+                            placeholder="#0ea5e9"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Heading color */}
+                      <div className="fieldRow">
+                        <div className="fieldLabel">Heading color</div>
+                        <div className="colorPickerRow">
+                          <input
+                            type="color"
+                            value={theme.headingColor}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                headingColor: e.target.value,
+                              }))
+                            }
+                            className="colorPickerCircle"
+                          />
+                          <input
+                            type="text"
+                            value={theme.headingColor}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                headingColor: e.target.value,
+                              }))
+                            }
+                            className="colorInput"
+                            placeholder="#0F172A"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Body text color */}
+                      <div className="fieldRow">
+                        <div className="fieldLabel">Body text color</div>
+                        <div className="colorPickerRow">
+                          <input
+                            type="color"
+                            value={theme.bodyColor}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                bodyColor: e.target.value,
+                              }))
+                            }
+                            className="colorPickerCircle"
+                          />
+                          <input
+                            type="text"
+                            value={theme.bodyColor}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                bodyColor: e.target.value,
+                              }))
+                            }
+                            className="colorInput"
+                            placeholder="#334155"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Paper background only (app background removed) */}
+                      <div className="fieldRow">
+                        <div className="fieldLabel">Paper background</div>
+                        <div className="colorPickerRow">
+                          <input
+                            type="color"
+                            value={theme.paperBg}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                paperBg: e.target.value,
+                              }))
+                            }
+                            className="colorPickerCircle"
+                          />
+                          <input
+                            type="text"
+                            value={theme.paperBg}
+                            onChange={(e) =>
+                              setTheme((t) => ({
+                                ...t,
+                                paperBg: e.target.value,
+                              }))
+                            }
+                            className="colorInput"
+                            placeholder="#FFFFFF"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="tipLine">
+                        <InfoIcon />
+                        <span>Tip: Dark outer background + light paper fits DevSphere theme.</span>
                       </div>
                     </div>
                   </div>
@@ -978,11 +1286,16 @@ export default function Portfolio() {
                   background: theme.paperBg,
                   borderRadius: theme.radius,
                   border: `1px solid ${theme.line}`,
-                  boxShadow: `0 ${theme.cardShadow}px ${theme.cardShadow * 2.2}px rgba(2,6,23,0.08)`,
+                  boxShadow: `0 ${theme.cardShadow}px ${
+                    theme.cardShadow * 2.2
+                  }px rgba(2,6,23,0.08)`,
                   width: theme.viewMode === "A4" ? "210mm" : "100%",
                   maxWidth: "100%",
                   minHeight: "297mm",
                   overflow: "hidden",
+                  color: theme.bodyColor || theme.ink,
+                  fontFamily: theme.font,
+                  fontSize: theme.fontSize,
                 }}
               >
                 {/* HEADER */}
@@ -990,13 +1303,39 @@ export default function Portfolio() {
                   <div className="stLeft">
                     {editMode ? (
                       <>
-                        <input className="stNameInpV2" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} placeholder="Your Name" />
-                        <input className="stRoleInpV2" value={profile.role} onChange={(e) => setProfile((p) => ({ ...p, role: e.target.value }))} placeholder="Full-Stack Developer" />
+                        <input
+                          className="stNameInpV2"
+                          style={{ color: theme.headingColor }}
+                          value={profile.name}
+                          onChange={(e) =>
+                            setProfile((p) => ({ ...p, name: e.target.value }))
+                          }
+                          placeholder="Your Name"
+                        />
+                        <input
+                          className="stRoleInpV2"
+                          style={{ color: theme.bodyColor }}
+                          value={profile.role}
+                          onChange={(e) =>
+                            setProfile((p) => ({ ...p, role: e.target.value }))
+                          }
+                          placeholder="Full-Stack Developer"
+                        />
                       </>
                     ) : (
                       <>
-                        <div className="stNameTextV2">{profile.name || "Your Name"}</div>
-                        <div className="stRoleTextV2">{profile.role || "Full-Stack Developer"}</div>
+                        <div
+                          className="stNameTextV2"
+                          style={{ color: theme.headingColor }}
+                        >
+                          {profile.name || "Your Name"}
+                        </div>
+                          <div
+                          className="stRoleTextV2"
+                          style={{ color: theme.bodyColor }}
+                        >
+                          {profile.role || "Full-Stack Developer"}
+                        </div>
                       </>
                     )}
                   </div>
@@ -1005,15 +1344,54 @@ export default function Portfolio() {
                     <div className="stInfoList">
                       {editMode ? (
                         <>
-                          <input className="stInpV2" value={profile.email} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} placeholder="Email" />
-                          <input className="stInpV2" value={profile.phone} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" />
-                          <input className="stInpV2" value={profile.location} onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))} placeholder="Location" />
+                          <input
+                            className="stInpV2"
+                            style={{ color: theme.bodyColor }}
+                            value={profile.email}
+                            onChange={(e) =>
+                              setProfile((p) => ({
+                                ...p,
+                                email: e.target.value,
+                              }))
+                            }
+                            placeholder="Email"
+                          />
+                          <input
+                            className="stInpV2"
+                            style={{ color: theme.bodyColor }}
+                            value={profile.phone}
+                            onChange={(e) =>
+                              setProfile((p) => ({
+                                ...p,
+                                phone: e.target.value,
+                              }))
+                            }
+                            placeholder="Phone"
+                          />
+                          <input
+                            className="stInpV2"
+                            style={{ color: theme.bodyColor }}
+                            value={profile.location}
+                            onChange={(e) =>
+                              setProfile((p) => ({
+                                ...p,
+                                location: e.target.value,
+                              }))
+                            }
+                            placeholder="Location"
+                          />
                         </>
                       ) : (
                         <>
-                          <div className="stInfoRow">{profile.email || "Email"}</div>
-                          <div className="stInfoRow">{profile.phone || "Phone"}</div>
-                          <div className="stInfoRow">{profile.location || "Location"}</div>
+                          <div className="stInfoRow" style={{ color: theme.bodyColor }}>
+                            {profile.email || "Email"}
+                          </div>
+                          <div className="stInfoRow" style={{ color: theme.bodyColor }}>
+                            {profile.phone || "Phone"}
+                          </div>
+                          <div className="stInfoRow" style={{ color: theme.bodyColor }}>
+                            {profile.location || "Location"}
+                          </div>
                         </>
                       )}
                     </div>
@@ -1030,11 +1408,23 @@ export default function Portfolio() {
 
                     {editMode && (
                       <div className="stPhotoBtns no-print">
-                        <label className="stMiniBtn" style={{ background: theme.accent, color: "#fff" }}>
+                        <label
+                          className="stMiniBtn"
+                          style={{ background: theme.accent, color: "#fff" }}
+                        >
                           Upload
-                          <input type="file" accept="image/*" className="pfHidden" onChange={(e) => onPickPhoto(e.target.files?.[0])} />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="pfHidden"
+                            onChange={(e) => onPickPhoto(e.target.files?.[0])}
+                          />
                         </label>
-                        <button type="button" className="stMiniBtnAlt" onClick={clearPhoto}>
+                        <button
+                          type="button"
+                          className="stMiniBtnAlt"
+                          onClick={clearPhoto}
+                        >
                           Remove
                         </button>
                       </div>
@@ -1045,30 +1435,69 @@ export default function Portfolio() {
                 {/* SECTIONS */}
                 <Droppable droppableId="portfolio">
                   {(provided) => (
-                    <div className="pfSections" style={{ gap: theme.sectionGap, padding: theme.sectionPad }} ref={provided.innerRef} {...provided.droppableProps}>
+                    <div
+                      className="pfSections"
+                      style={{
+                        gap: theme.sectionGap,
+                        padding: theme.sectionPad,
+                      }}
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                    >
                       {sections.map((sec, index) => {
                         const isOpen = openEditorId === sec.instanceId;
                         return (
-                          <Draggable draggableId={sec.instanceId} index={index} key={sec.instanceId} isDragDisabled={!editMode}>
+                          <Draggable
+                            draggableId={sec.instanceId}
+                            index={index}
+                            key={sec.instanceId}
+                            isDragDisabled={!editMode}
+                          >
                             {(p) => (
-                              <div ref={p.innerRef} {...p.draggableProps} className="pfSectionCard sfCardGlow">
+                              <div
+                                ref={p.innerRef}
+                                {...p.draggableProps}
+                                className="pfSectionCard sfCardGlow"
+                              >
                                 <div className="pfSectionTop">
                                   <div className="pfSecLeft">
-                                    <div className="pfSecBadge">{SECTION_ICON[sec.templateId] || <SecProjectsIcon />}</div>
-                                    <div className="pfSecTitle">{sec.title}</div>
+                                    <div className="pfSecBadge">
+                                      {SECTION_ICON[sec.templateId] || <SecProjectsIcon />}
+                                    </div>
+                                    <div
+                                      className="pfSecTitle"
+                                      style={{ color: theme.headingColor }}
+                                    >
+                                      {sec.title}
+                                    </div>
                                   </div>
 
                                   {editMode && (
                                     <div className="pfSecActions">
-                                      <MiniBtn onClick={() => setOpenEditorId((v) => (v === sec.instanceId ? null : sec.instanceId))} tone="primary">
+                                      <MiniBtn
+                                        onClick={() =>
+                                          setOpenEditorId((v) =>
+                                            v === sec.instanceId ? null : sec.instanceId
+                                          )
+                                        }
+                                        tone="primary"
+                                      >
                                         {isOpen ? "Close" : "Edit"}
                                       </MiniBtn>
 
-                                      <MiniBtn onClick={() => removeSection(sec.instanceId)} tone="danger">
+                                      <MiniBtn
+                                        onClick={() => removeSection(sec.instanceId)}
+                                        tone="danger"
+                                      >
                                         Remove
                                       </MiniBtn>
 
-                                      <button type="button" className="pfDragHandle" {...p.dragHandleProps} title="Drag to reorder">
+                                      <button
+                                        type="button"
+                                        className="pfDragHandle"
+                                        {...p.dragHandleProps}
+                                        title="Drag to reorder"
+                                      >
                                         ⋮⋮
                                       </button>
                                     </div>

@@ -1,10 +1,12 @@
 // src/pages/Dashboard.jsx
-import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { getDashboardData } from "../services/api";
-import api from "../services/api"; // ✅ Import axios instance
+import api from "../services/api"; // axios instance
+import AdminPanel from "./AdminPanel"; // 🟢 Admin panel
+import ModeratorPanel from "./ModeratorPanel"; // 🟣 Moderator panel
 
 /* =========================
    Professional SVG Icons
@@ -30,12 +32,6 @@ const CollabIcon = () => (
 const ShowcaseIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
-  </svg>
-);
-
-const UserRolesIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
   </svg>
 );
 
@@ -67,7 +63,7 @@ const SearchIcon = () => (
   </svg>
 );
 
-// Room Activity icons (no call)
+// Room Activity icons
 const ChatIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 4h16v11a3 3 0 0 1-3 3H9l-5 4v-4H7a3 3 0 0 1-3-3V4Z" />
@@ -114,36 +110,29 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 );
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  // 🟢 role helpers from context
+  const { user, role, isAdmin, isModerator, logout } = useContext(AuthContext);
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // ✅ Notifications-like mount animations
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
 
-  // Search
   const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef(null);
-  const inputRef = useRef(null);
-  const [ddPos, setDdPos] = useState({ left: 0, top: 0, width: 0 });
 
   const [announcements, setAnnouncements] = useState([]);
   const [roomActivity, setRoomActivity] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Notification Counter - Start with 0, fetch real count from API
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Online Status (demo)
   const isOnline = true;
 
   const todayStr = useMemo(() => {
@@ -172,7 +161,6 @@ const Dashboard = () => {
     []
   );
 
-  // ✅ GitHub card reads from localStorage (Integration tab)
   const githubUsername = useMemo(() => {
     return (
       user?.githubUsername ||
@@ -193,72 +181,24 @@ const Dashboard = () => {
   );
 
   /* ---------------------------
-     Dropdown positioning (FIX)
-  --------------------------- */
-  const updateDropdownPos = () => {
-    if (!inputRef.current) return;
-    const rect = inputRef.current.getBoundingClientRect();
-    setDdPos({
-      left: rect.left,
-      top: rect.bottom + 8,
-      width: rect.width,
-    });
-  };
-
-  useEffect(() => {
-    const onDocClick = (e) => {
-      if (!searchRef.current) return;
-      if (!searchRef.current.contains(e.target)) setSearchOpen(false);
-    };
-    const onEsc = (e) => {
-      if (e.key === "Escape") setSearchOpen(false);
-    };
-
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (searchOpen) updateDropdownPos();
-  }, [searchOpen, query]);
-
-  useEffect(() => {
-    const onResize = () => searchOpen && updateDropdownPos();
-    const onScroll = () => searchOpen && updateDropdownPos();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  }, [searchOpen]);
-
-  useEffect(() => {
-    if (!query.trim()) setSearchOpen(false);
-  }, [query]);
-
-  /* ---------------------------
      Fetch Real Notification Count
   --------------------------- */
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
-      const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (67)
+
+      const notifications = Array.isArray(response.data)
+        ? response.data
+        : response.data?.notifications || [];
+
+      const totalUnread = notifications.filter((n) => !n.read).length;
+      setUnreadCount(totalUnread);
     } catch (err) {
-      console.warn("Could not fetch notification count:", err.message);
+      console.warn("Could not fetch notification count:", err?.message);
       setUnreadCount(0);
     }
   };
 
-  /* ---------------------------
-     Load dashboard
-  --------------------------- */
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
@@ -297,8 +237,14 @@ const Dashboard = () => {
 
         setRoomActivity(
           res?.roomActivity ?? [
-            { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
-            { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
+            {
+              title: "Collab Room Discussion (Frontend Sprint)",
+              time: "14:00 – 14:30",
+            },
+            {
+              title: "Code Review Thread (Portfolio Builder)",
+              time: "16:00 – 16:20",
+            },
           ]
         );
 
@@ -308,21 +254,24 @@ const Dashboard = () => {
           setProjects(defaultProjects);
         }
 
-        // ✅ If dashboard API returns count, use it; otherwise fetch from notifications API
         if (typeof res?.unreadNotifications === "number") {
           setUnreadCount(res.unreadNotifications);
         } else {
-          // ✅ Fetch actual count from notifications API
           await fetchRealNotificationCount();
         }
       } catch (e) {
         console.error(e);
         setProjects(defaultProjects);
         setRoomActivity([
-          { title: "Collab Room Discussion (Frontend Sprint)", time: "14:00 – 14:30" },
-          { title: "Code Review Thread (Portfolio Builder)", time: "16:00 – 16:20" },
+          {
+            title: "Collab Room Discussion (Frontend Sprint)",
+            time: "14:00 – 14:30",
+          },
+          {
+            title: "Code Review Thread (Portfolio Builder)",
+            time: "16:00 – 16:20",
+          },
         ]);
-        // ✅ Even if dashboard fails, try to get notification count
         await fetchRealNotificationCount();
       } finally {
         setLoading(false);
@@ -330,6 +279,7 @@ const Dashboard = () => {
     };
 
     fetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const displayName = user?.name || user?.email || "Guest";
@@ -339,9 +289,6 @@ const Dashboard = () => {
     .join("")
     .slice(0, 2);
 
-  /* ---------------------------
-     Click helpers
-  --------------------------- */
   const openAnnouncement = (item) =>
     navigate("/notifications", { state: { focus: item?.title } });
 
@@ -352,25 +299,9 @@ const Dashboard = () => {
   const openShowcase = () => navigate("/showcase");
   const openSettings = () => navigate("/settings");
 
-  /* ---------------------------
-     Search results
-  --------------------------- */
-  const searchResults = useMemo(() => {
-    const q = (query || "").trim().toLowerCase();
-    if (!q) return [];
-    const pool = [
-      ...projects.map((p) => ({ type: "project", title: p.name, onClick: () => openProject(p) })),
-      ...activeRooms.map((r) => ({ type: "room", title: r.name, onClick: openRoom })),
-      ...showcaseItems.map((s) => ({ type: "showcase", title: s.title, onClick: openShowcase })),
-      ...announcements.map((a) => ({ type: "announcement", title: a.title, onClick: () => openAnnouncement(a) })),
-    ];
-    return pool.filter((x) => x.title.toLowerCase().includes(q)).slice(0, 6);
-  }, [query, projects, activeRooms, showcaseItems, announcements]);
-
   return (
     <>
       <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* ✅ NAVY animated background (same vibe as Notifications) */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -378,13 +309,19 @@ const Dashboard = () => {
         </div>
 
         {/* SIDEBAR */}
-        <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
+        <aside
+          className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}
+        >
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-3 px-2 mb-8 text-left"
             title="Go to Landing"
           >
-            <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
+            <img
+              src={logo}
+              alt="DevSphere"
+              className="w-10 h-10 object-contain drop-shadow-md"
+            />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
             </span>
@@ -416,12 +353,6 @@ const Dashboard = () => {
               onClick={() => navigate("/showcase")}
             />
             <NavItem
-              active={location.pathname === "/roles"}
-              icon={<UserRolesIcon />}
-              label="User roles"
-              onClick={() => navigate("/roles")}
-            />
-            <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
               label="Notifications"
@@ -436,30 +367,52 @@ const Dashboard = () => {
             />
           </nav>
 
-          <button
-            onClick={openSettings}
-            className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
-            title="Open Settings"
-          >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
-                {initials || "U"}
+          {/* Profile + Logout */}
+          <div className="mt-6 space-y-2">
+            <button
+              onClick={openSettings}
+              className="w-full flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
+              title="Open Settings"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
+                  {initials || "U"}
+                </div>
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
+                    isOnline ? "bg-emerald-400" : "bg-slate-400"
+                  }`}
+                  title={isOnline ? "Online" : "Offline"}
+                />
               </div>
-              <span
-                className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
-                  isOnline ? "bg-emerald-400" : "bg-slate-400"
-                }`}
-                title={isOnline ? "Online" : "Offline"}
-              />
-            </div>
 
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300 truncate max-w-[160px]">
-                {isOnline ? "Online" : "Offline"} · Signed in
-              </p>
-            </div>
-          </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate max-w-[160px]">
+                  {displayName}
+                </p>
+                <p className="text-xs text-slate-300 truncate max-w-[160px]">
+                  {isOnline ? "Online" : "Offline"} · Signed in
+                </p>
+                <p className="text-xs text-slate-300 truncate max-w-[160px]">
+                  Role:{" "}
+                  <span className="font-semibold text-slate-100">
+                    {role || "user"}
+                  </span>
+                </p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                logout?.();
+                navigate("/login", { replace: true });
+              }}
+              className="w-full px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-100 text-sm font-semibold transition"
+              title="Logout"
+            >
+              Logout
+            </button>
+          </div>
         </aside>
 
         {/* MAIN */}
@@ -480,79 +433,38 @@ const Dashboard = () => {
               </button>
 
               <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Dashboard</h1>
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                  Dashboard
+                </h1>
                 <p className="text-sm text-slate-700">
-                  Welcome back, <span className="font-semibold">{displayName}</span>.
+                  Welcome back,{" "}
+                  <span className="font-semibold">{displayName}</span>.
                 </p>
                 <p className="text-xs text-slate-600 mt-1">{todayStr}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* ✅ Quick Search (fixed dropdown) */}
-              <div ref={searchRef} className="relative w-full md:w-[360px]">
+              {/* Search bar with Enter key functionality */}
+              <div className="relative w-full md:w-[360px]">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                     <SearchIcon />
                   </span>
                   <input
-                    ref={inputRef}
                     value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setSearchOpen(true);
-                      requestAnimationFrame(updateDropdownPos);
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && query.trim()) {
+                        // Enter press par search karein
+                        alert(`Searching for: ${query}`);
+                        setQuery("");
+                      }
                     }}
-                    onFocus={() => {
-                      setSearchOpen(true);
-                      requestAnimationFrame(updateDropdownPos);
-                    }}
-                    placeholder="Quick search: projects, rooms, showcase"
+                    placeholder="Search projects, rooms, showcase (Press Enter)"
                     className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-900/20"
                   />
                 </div>
-
-                {/* ✅ DROPDOWN (position: fixed) */}
-                {searchOpen && query.trim() ? (
-                  <div
-                    className="fixed z-[99999] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden"
-                    style={{
-                      left: ddPos.left,
-                      top: ddPos.top,
-                      width: ddPos.width,
-                      maxHeight: 260,
-                    }}
-                  >
-                    {searchResults.length > 0 ? (
-                      <div className="max-h-[260px] overflow-auto">
-                        {searchResults.map((r, i) => (
-                          <button
-                            key={`${r.type}-${i}`}
-                            onClick={() => {
-                              r.onClick();
-                              setQuery("");
-                              setSearchOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-3 hover:bg-slate-50 transition flex items-start justify-between gap-3"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">{r.title}</p>
-                              <p className="text-xs text-slate-600 capitalize">{r.type}</p>
-                            </div>
-                            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                              Open
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-3">
-                        <p className="text-sm font-semibold text-slate-900">No results</p>
-                        <p className="text-xs text-slate-600 mt-1">Try: portfolio, rooms, showcase</p>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
 
               {/* Notifications */}
@@ -573,25 +485,40 @@ const Dashboard = () => {
 
           {/* Quick Actions */}
           <section
-            className={`cardShell sfPulseBorder p-4 ${mounted ? "sfIn2" : "sfPre"}`}
+            className={`cardShell sfPulseBorder p-4 ${
+              mounted ? "sfIn2" : "sfPre"
+            }`}
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
-                <p className="text-xs text-slate-700">Jump into core DevSphere modules</p>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Quick actions
+                </h2>
+                <p className="text-xs text-slate-700">
+                  Jump into core DevSphere modules
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => navigate("/portfolio")} className="qaBtn">
                   Build Portfolio
                 </button>
-                <button onClick={() => navigate("/collaboration")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/collaboration")}
+                  className="qaBtn"
+                >
                   Join Rooms
                 </button>
-                <button onClick={() => navigate("/showcase")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/showcase")}
+                  className="qaBtn"
+                >
                   Open Showcase
                 </button>
-                <button onClick={() => navigate("/notifications")} className="qaBtn">
+                <button
+                  onClick={() => navigate("/notifications")}
+                  className="qaBtn"
+                >
                   View Notifications
                 </button>
               </div>
@@ -601,21 +528,37 @@ const Dashboard = () => {
           {loading ? (
             <div className="text-slate-700 text-sm">Loading dashboard</div>
           ) : (
-            <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${mounted ? "sfIn3" : "sfPre"}`}>
+            <div
+              className={`grid grid-cols-1 xl:grid-cols-3 gap-6 auto-rows-fr ${
+                mounted ? "sfIn3" : "sfPre"
+              }`}
+            >
               {/* LEFT */}
               <div className="xl:col-span-2 space-y-6">
+                {/* 🟢 ADMIN PANEL – only for admin */}
+                {isAdmin && <AdminPanel />}
+
+                {/* 🟣 MODERATOR PANEL – only for moderator */}
+                {isModerator && <ModeratorPanel />}
+
                 {/* GitHub Widget */}
                 <section
                   className="cardShell sfPulseBorder p-5 cursor-pointer"
-                  onClick={() => navigate("/settings", { state: { tab: "integrations" } })}
+                  onClick={() =>
+                    navigate("/settings", { state: { tab: "integrations" } })
+                  }
                   title="Connect GitHub in Settings"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">GitHub activity</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      GitHub activity
+                    </h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate("/settings", { state: { tab: "integrations" } });
+                        navigate("/settings", {
+                          state: { tab: "integrations" },
+                        });
                       }}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
                     >
@@ -643,14 +586,19 @@ const Dashboard = () => {
                   </div>
 
                   <p className="text-xs text-slate-700 mt-3">
-                    Username: <span className="font-semibold">{githubActivity.username}</span>
+                    Username:{" "}
+                    <span className="font-semibold">
+                      {githubActivity.username}
+                    </span>
                   </p>
                 </section>
 
                 {/* Announcements */}
                 <section className="cardShell sfPulseBorder p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Announcements</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Announcements
+                    </h2>
                     <button
                       onClick={() => navigate("/notifications")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -668,8 +616,12 @@ const Dashboard = () => {
                         title="Open in Notifications"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="text-xs text-slate-800 mt-0.5">{item.desc}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-800 mt-0.5">
+                            {item.desc}
+                          </p>
                         </div>
                         <span className="text-xs text-slate-800 font-semibold whitespace-nowrap">
                           {item.time}
@@ -682,7 +634,9 @@ const Dashboard = () => {
                 {/* Recent Projects */}
                 <section className="cardShell sfPulseBorder p-5 min-h-[420px]">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-slate-900">Recent projects</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Recent projects
+                    </h2>
                     <button
                       onClick={() => navigate("/portfolio")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -708,11 +662,17 @@ const Dashboard = () => {
                                 </span>
                               </div>
                               <div>
-                                <h3 className="text-sm font-semibold text-slate-900">{project.name}</h3>
-                                <p className="text-xs text-slate-600">Last updated: Today</p>
+                                <h3 className="text-sm font-semibold text-slate-900">
+                                  {project.name}
+                                </h3>
+                                <p className="text-xs text-slate-600">
+                                  Last updated: Today
+                                </p>
                               </div>
                             </div>
-                            <span className="text-sm font-bold text-slate-900">{project.progress}%</span>
+                            <span className="text-sm font-bold text-slate-900">
+                              {project.progress}%
+                            </span>
                           </div>
 
                           <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
@@ -723,8 +683,12 @@ const Dashboard = () => {
                           </div>
 
                           <div className="flex justify-between mt-2">
-                            <span className="text-xs text-slate-600">Progress</span>
-                            <span className="text-xs text-sky-600 font-medium">View details</span>
+                            <span className="text-xs text-slate-600">
+                              Progress
+                            </span>
+                            <span className="text-xs text-sky-600 font-medium">
+                              View details
+                            </span>
                           </div>
                         </button>
                       ))
@@ -743,12 +707,14 @@ const Dashboard = () => {
                 </section>
               </div>
 
-              {/* RIGHT */}
-              <div className="space-y-6">
+              {/* RIGHT – equal-height cards */}
+              <div className="grid grid-cols-1 gap-6 auto-rows-fr">
                 {/* Collab Rooms */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Live collab rooms</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Live collab rooms
+                    </h2>
                     <button
                       onClick={() => navigate("/collaboration")}
                       className="text-xs px-3 py-1 rounded-full bg-sky-500 text-white hover:bg-sky-400 transition"
@@ -757,7 +723,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {activeRooms.map((room, idx) => (
                       <button
                         key={idx}
@@ -766,7 +732,9 @@ const Dashboard = () => {
                         title="Open Collaboration Rooms"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{room.name}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {room.name}
+                          </p>
                           <p className="text-xs text-slate-800">
                             {room.members} members · {room.status}
                           </p>
@@ -781,9 +749,11 @@ const Dashboard = () => {
                 </section>
 
                 {/* Room Activity */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Room activity</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Room activity
+                    </h2>
                     <button
                       onClick={() => navigate("/collaboration")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -792,7 +762,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {roomActivity.map((m, idx) => (
                       <button
                         key={idx}
@@ -804,7 +774,9 @@ const Dashboard = () => {
                           {idx === 0 ? <ChatIcon /> : <TaskIcon />}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{m.title}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {m.title}
+                          </p>
                           <p className="text-xs text-slate-800">{m.time}</p>
                         </div>
                       </button>
@@ -813,9 +785,11 @@ const Dashboard = () => {
                 </section>
 
                 {/* Showcase */}
-                <section className="cardShell sfPulseBorder p-5">
+                <section className="cardShell sfPulseBorder p-5 h-full flex flex-col">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">Showcase feed</h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Showcase feed
+                    </h2>
                     <button
                       onClick={openShowcase}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
@@ -824,7 +798,7 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {showcaseItems.map((item, idx) => (
                       <button
                         key={idx}
@@ -833,10 +807,16 @@ const Dashboard = () => {
                         title="Open Showcase Feed"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="text-xs text-slate-800">by {item.author}</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-800">
+                            by {item.author}
+                          </p>
                         </div>
-                        <span className="text-xs text-slate-900 font-semibold">❤ {item.likes}</span>
+                        <span className="text-xs text-slate-900 font-semibold">
+                          ❤ {item.likes}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -844,21 +824,23 @@ const Dashboard = () => {
 
                 {/* CTA Box */}
                 <section
-                  className="ctaBox cursor-pointer sfRow"
+                  className="ctaBox cursor-pointer sfRow h-full flex flex-col justify-between"
                   onClick={() => navigate("/collaboration")}
                   title="Join collaboration workspace"
                 >
-                  <h3 className="ctaTitle">Your workspace starts here</h3>
-                  <p className="ctaDesc">
-                    Join live rooms, discuss tasks, share snippets, and collaborate in real time inside DevSphere.
-                  </p>
+                  <div>
+                    <h3 className="ctaTitle">Your workspace starts here</h3>
+                    <p className="ctaDesc">
+                      Join live rooms, discuss tasks, share snippets, and
+                      collaborate in real time inside DevSphere.
+                    </p>
+                  </div>
                   <button className="ctaBtn">Join collaboration</button>
                 </section>
               </div>
             </div>
           )}
         </main>
-
       </div>
 
       {/* Styles */}
@@ -877,7 +859,7 @@ const Dashboard = () => {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* ✅ NAVY animated blobs (same as Notifications) */
+        /* NAVY animated blobs */
         .sfBlob{
           position:absolute;
           width: 560px;
@@ -927,13 +909,11 @@ const Dashboard = () => {
           100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
         }
 
-        /* ✅ Entry animations (same style as Notifications) */
         .sfPre{ opacity: 0; transform: translateY(12px); }
         .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
         .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
         .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
 
-        /* ✅ Cards now match Notifications vibe */
         .cardShell{
           background: rgba(255,255,255,0.92);
           border-radius: 18px;
@@ -943,7 +923,6 @@ const Dashboard = () => {
           overflow: hidden;
         }
 
-        /* ✅ Navy pulse border (same as Notifications) */
         .sfPulseBorder{ position: relative; }
         .sfPulseBorder::before{
           content:"";
@@ -973,7 +952,6 @@ const Dashboard = () => {
           50%{ opacity: .34; transform: scale(1.01); }
         }
 
-        /* Row hover (same feeling) */
         .sfRow{
           transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
           will-change: transform;
@@ -985,7 +963,6 @@ const Dashboard = () => {
             0 0 0 1px rgba(8, 30, 68, 0.08);
         }
 
-        /* Quick Actions buttons */
         .qaBtn{
           padding: 9px 12px;
           border-radius: 999px;
@@ -997,7 +974,6 @@ const Dashboard = () => {
         }
         .qaBtn:hover{ transform: translateY(-2px); filter: brightness(1.05); }
 
-        /* GitHub stats */
         .statBox{
           border: 1px solid rgba(148,163,184,0.45);
           background: rgba(248,250,252,0.8);
@@ -1007,7 +983,6 @@ const Dashboard = () => {
         .statNum{ font-size: 18px; font-weight: 900; color: rgb(15,23,42); }
         .statLbl{ font-size: 12px; font-weight: 700; color: rgb(51,65,85); margin-top: 2px; }
 
-        /* CTA Box */
         .ctaBox{
           width: 100%;
           border-radius: 18px;

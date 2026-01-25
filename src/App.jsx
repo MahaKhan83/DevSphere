@@ -18,14 +18,23 @@ import Support from "./pages/Support";
 
 import ResetPassword from "./pages/ResetPassword"; // ✅ add this
 import CollaborationWorkspace from "./pages/CollaborationWorkspace";
+import AdminUsers from "./pages/AdminUsers";
+import AdminRoles from "./pages/AdminRoles";
+import AdminReports from "./pages/AdminReports";
+import AdminModeration from "./pages/AdminModeration";
 
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
-
+import RoleRoute from "./components/RoleRoute";
+import AdminPanel from "./pages/AdminPanel";
+ import ModeratorPanel from "./pages/ModeratorPanel.jsx";
 import "react-toastify/dist/ReactToastify.css";
 
+// ✅ IMPORTANT: must match AuthContext/api token key
+const TOKEN_KEY = "devsphere_token";
+
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem("token"); // legacy fallback
   if (!token) return <Navigate to="/login" replace />;
   return children;
 };
@@ -67,16 +76,23 @@ export default function App() {
               }
             />
 
+            <Route
+              path="/collaboration"
+              element={
+                <ProtectedRoute>
+                  <CollaborationRoom />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/collaboration"
-            element={
-              <ProtectedRoute>
-                <CollaborationRoom />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/workspace/:roomCode" element={<CollaborationWorkspace />} />
+            <Route
+              path="/workspace/:roomCode"
+              element={
+                <ProtectedRoute>
+                  <CollaborationWorkspace />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/notifications"
@@ -100,7 +116,26 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/support" element={<Support />} />
-
+            <Route
+  path="/admin"
+  element={
+    <RoleRoute roles={["admin"]}>
+      <AdminPanel />
+    </RoleRoute>
+  }
+/>
+<Route
+  path="/moderator"
+  element={
+    <RoleRoute roles={["moderator", "admin"]}>
+      <ModeratorPanel />
+    </RoleRoute>
+  }
+/>
+<Route path="/admin/users" element={<AdminUsers />} />
+<Route path="/admin/roles" element={<AdminRoles />} />
+<Route path="/admin/reports" element={<AdminReports />} />
+<Route path="/admin/moderation" element={<AdminModeration />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </Router>
