@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
+import api from "../services/api"; // ✅ Import axios instance
 import "./Portfolio.css";
 
 const STORAGE_KEY = "devsphere_portfolio_builder_v16_settings_theme_fullwidth";
@@ -227,6 +228,30 @@ const MiniBtn = ({ children, onClick, tone = "normal", type = "button" }) => (
   </button>
 );
 
+// ✅ NavItem component with badge support
+const NavItem = ({ active, icon, label, onClick, badge }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative ${
+      active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
+    }`}
+  >
+    <span className="flex items-center gap-3">
+      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+        {icon}
+      </span>
+      <span>{label}</span>
+    </span>
+    
+    {/* ✅ Badge for notification count */}
+    {badge !== null && badge !== undefined && badge > 0 && (
+      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
+        {badge}
+      </span>
+    )}
+  </button>
+);
+
 export default function Portfolio() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -250,6 +275,28 @@ export default function Portfolio() {
 
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState("");
+
+  // ✅ NEW: Notification count (Settings ki tarah)
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  /* ---------------------------
+     ✅ Fetch Real Notification Count 
+  --------------------------- */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotificationCount();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -457,7 +504,7 @@ export default function Portfolio() {
     { to: "/portfolio", label: "Build portfolio", icon: <PortfolioIcon /> },
     { to: "/collaboration", label: "Collab rooms", icon: <CollabIcon /> },
     { to: "/showcase", label: "Showcase feed", icon: <ShowcaseIcon /> },
-    { to: "/notifications", label: "Notifications", icon: <BellIcon /> },
+    { to: "/notifications", label: "Notifications", icon: <BellIcon />, badge: unreadCount > 0 ? unreadCount : null }, // ✅ Add badge here
     { to: "/settings", label: "Settings", icon: <SettingsIcon /> },
   ];
   const activePath = location.pathname;
@@ -858,20 +905,14 @@ export default function Portfolio() {
               {NAV.map((it) => {
                 const isActive = activePath === it.to;
                 return (
-                  <button
+                  <NavItem
                     key={it.to}
+                    active={isActive}
+                    icon={it.icon}
+                    label={it.label}
+                    badge={it.badge} // ✅ Pass badge here
                     onClick={() => navigate(it.to)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
-                      isActive ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
-                        {it.icon}
-                      </span>
-                      <span>{it.label}</span>
-                    </span>
-                  </button>
+                  />
                 );
               })}
             </nav>

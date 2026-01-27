@@ -164,7 +164,7 @@ const Login = () => {
                       name="name"
                       value={formData.name}
                       onChange={onChangeHandler}
-                      placeholder="John Doe"
+                      placeholder="Enter your Name"
                       className="bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                       required
                     />
@@ -208,7 +208,7 @@ const Login = () => {
                         name="password"
                         value={formData.password}
                         onChange={onChangeHandler}
-                        placeholder="••••••••"
+                        placeholder="Enter your password"
                         className="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                         autoComplete="current-password"
                         required

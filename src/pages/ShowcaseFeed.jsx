@@ -2,6 +2,7 @@
 import React, { useMemo, useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // ✅ Import axios instance
 import logo from "../assets/logo.png";
 
 /* ---------------- Demo data ---------------- */
@@ -192,27 +193,26 @@ const IconWrap = ({ children }) => (
   </span>
 );
 
-const NavItem = ({ active, icon, label, onClick }) => (
+const NavItem = ({ active, icon, label, onClick, badge }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
+    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative ${
       active ? "bg-slate-800 text-slate-50 font-semibold" : "text-slate-200/90 hover:bg-slate-800/60"
     }`}
   >
-    <IconWrap>{icon}</IconWrap>
-    <span>{label}</span>
+    <span className="flex items-center gap-3">
+      <IconWrap>{icon}</IconWrap>
+      <span>{label}</span>
+    </span>
+    
+    {/* ✅ Badge for notification count */}
+    {badge !== null && badge !== undefined && badge > 0 && (
+      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
+        {badge}
+      </span>
+    )}
   </button>
 );
-
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
-  { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
- 
-  { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
-  { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
-  { label: "Notifications", icon: <BellIcon />, to: "/notifications" },
-  { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
-];
 
 export default function ShowcaseFeed() {
   const navigate = useNavigate();
@@ -243,6 +243,42 @@ export default function ShowcaseFeed() {
 
   const [likedIds, setLikedIds] = useState(() => new Set());
   const [savedIds, setSavedIds] = useState(() => new Set());
+
+  // ✅ NEW: Notification count (Settings ki tarah)
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  /* ---------------------------
+     ✅ Fetch Real Notification Count 
+  --------------------------- */
+  const fetchRealNotificationCount = async () => {
+    try {
+      const response = await api.get("/notifications");
+      const notifications = response.data.notifications || [];
+      const totalUnread = notifications.filter(n => !n.read).length;
+      setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
+    } catch (err) {
+      console.warn("Could not fetch notification count:", err.message);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotificationCount();
+  }, []);
+
+  const NAV_ITEMS = [
+    { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
+    { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
+    { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
+    { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
+    { 
+      label: "Notifications", 
+      icon: <BellIcon />, 
+      to: "/notifications",
+      badge: unreadCount > 0 ? unreadCount : null // ✅ Yeh add karein
+    },
+    { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
+  ];
 
   // Modals
   const [openProject, setOpenProject] = useState(null);
@@ -510,6 +546,7 @@ export default function ShowcaseFeed() {
                 active={location.pathname === item.to}
                 icon={item.icon}
                 label={item.label}
+                badge={item.badge} // ✅ Yeh pass karein
                 onClick={() => navigate(item.to)}
               />
             ))}
