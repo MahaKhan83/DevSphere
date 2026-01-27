@@ -36,16 +36,39 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ✅ 1. PEHLE REQUIRED FIELDS CHECK
+    if (!password.trim()) {
+      return toast.error("Password is required");
+    }
+    
+    if (!confirmPassword.trim()) {
+      return toast.error("Confirm password is required");
+    }
+
+    // ✅ 2. TOKEN CHECK
     if (!token) return toast.error("Invalid or missing reset token");
-    if (password.length < 8) return toast.error("Password must be 8+ characters");
+    
+    // ✅ 3. PASSWORD LENGTH CHECK
+    if (password.length < 8) return toast.error("Password must be at least 8 characters");
+    
+    // ✅ 4. PASSWORD MATCH CHECK
     if (password !== confirmPassword) return toast.error("Passwords do not match");
+
+    // ✅ 5. PASSWORD STRENGTH CHECK
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
+      return toast.error("Password must contain uppercase, lowercase letters and numbers");
+    }
 
     try {
       setLoading(true);
 
       await axios.post(
         `${API_BASE_URL}/auth/reset-password/${token}`,
-        { password }
+        { password, confirmPassword } // ✅ dono fields bhejo
       );
 
       toast.success("Password reset successfully");
@@ -112,7 +135,7 @@ export default function ResetPassword() {
             {/* Password */}
             <div>
               <label className="text-sm font-semibold text-slate-800">
-                New Password
+                New Password <span className="text-red-500">*</span>
               </label>
               <div className="relative mt-2">
                 <input
@@ -152,7 +175,7 @@ export default function ResetPassword() {
             {/* Confirm */}
             <div>
               <label className="text-sm font-semibold text-slate-800">
-                Confirm Password
+                Confirm Password <span className="text-red-500">*</span>
               </label>
               <div className="relative mt-2">
                 <input
@@ -160,9 +183,11 @@ export default function ResetPassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm password"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200
-                             focus:ring-2 focus:ring-sky-600 focus:border-sky-600
-                             outline-none text-slate-900"
+                  className={`w-full px-4 py-3 rounded-xl border outline-none
+                    ${password && confirmPassword && password !== confirmPassword 
+                      ? "border-red-500 focus:ring-2 focus:ring-red-500" 
+                      : "border-slate-200 focus:ring-2 focus:ring-sky-600 focus:border-sky-600"
+                    } text-slate-900`}
                   required
                 />
                 <button
@@ -174,16 +199,37 @@ export default function ResetPassword() {
                   {showConfirm ? "Hide" : "Show"}
                 </button>
               </div>
+              
+              {/* ✅ Password Match Indicator */}
+              {confirmPassword.length > 0 && (
+                <div className="mt-2">
+                  {password === confirmPassword ? (
+                    <div className="flex items-center text-green-600 text-xs">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Passwords match
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-red-600 text-xs">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Passwords do not match
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (password && confirmPassword && password !== confirmPassword)}
               className={`w-full py-3 rounded-xl font-semibold text-white transition
                 ${
-                  loading
-                    ? "bg-slate-400"
+                  loading || (password && confirmPassword && password !== confirmPassword)
+                    ? "bg-slate-400 cursor-not-allowed"
                     : "bg-sky-600 hover:bg-sky-700 active:scale-[0.99]"
                 }`}
             >

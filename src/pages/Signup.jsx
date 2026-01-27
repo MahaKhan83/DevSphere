@@ -12,6 +12,28 @@ const Signup = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Password strength calculation
+  const calculatePasswordStrength = (password) => {
+    if (password.length === 0) return { strength: "none", message: "" };
+    
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    if (password.length >= 12 && hasUpperCase && hasLowerCase && hasNumbers && hasSpecial) {
+      return { strength: "strong", message: "Strong password ✓" };
+    } else if (password.length >= 8 && hasUpperCase && hasLowerCase && hasNumbers) {
+      return { strength: "normal", message: "Good password ✓" };
+    } else if (password.length >= 8) {
+      return { strength: "weak", message: "Weak - add uppercase, lowercase & numbers" };
+    } else {
+      return { strength: "too-weak", message: `Too short (${password.length}/8)` };
+    }
+  };
+
+  const passwordStrength = calculatePasswordStrength(formData.password);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -19,22 +41,34 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // ✅ PASSWORD VALIDATION ADD KARO (Yahi change karna hai)
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
+    // ✅ 1. PEHLE REQUIRED FIELDS CHECK
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+      setError("All fields are required");
       return;
     }
     
-    // ✅ Email format validation (optional)
+    // ✅ 2. PHIR NAME VALIDATION
+    if (formData.name.trim().length < 2) {
+      setError("Name must be at least 2 characters");
+      return;
+    }
+    
+    // ✅ 3. PHIR EMAIL VALIDATION
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError("Please enter a valid email address");
       return;
     }
     
-    // ✅ Name validation (optional)
-    if (formData.name.trim().length < 2) {
-      setError("Name must be at least 2 characters");
+    // ✅ 4. PHIR PASSWORD LENGTH CHECK
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+    
+    // ✅ 5. PASSWORD STRENGTH CHECK
+    if (passwordStrength.strength === "weak" || passwordStrength.strength === "too-weak") {
+      setError("Password is too weak. Use uppercase, lowercase letters and numbers");
       return;
     }
     
@@ -55,12 +89,37 @@ const Signup = () => {
     }
   };
 
-  // ✅ Password strength indicator (optional but good)
-  const getPasswordStrength = () => {
-    const length = formData.password.length;
-    if (length === 0) return "";
-    if (length < 8) return "text-red-500";
-    return "text-green-500";
+  // Strength bar color
+  const getStrengthColor = () => {
+    switch (passwordStrength.strength) {
+      case "strong": return "bg-green-500";
+      case "normal": return "bg-yellow-500";
+      case "weak": return "bg-red-500";
+      case "too-weak": return "bg-red-500";
+      default: return "bg-slate-700";
+    }
+  };
+
+  // Strength text color
+  const getStrengthTextColor = () => {
+    switch (passwordStrength.strength) {
+      case "strong": return "text-green-500";
+      case "normal": return "text-yellow-500";
+      case "weak": return "text-red-500";
+      case "too-weak": return "text-red-500";
+      default: return "text-slate-400";
+    }
+  };
+
+  // Fill strength bars
+  const getStrengthBars = () => {
+    switch (passwordStrength.strength) {
+      case "strong": return 3;
+      case "normal": return 2;
+      case "weak": return 1;
+      case "too-weak": return 1;
+      default: return 0;
+    }
   };
 
   return (
@@ -135,17 +194,64 @@ const Signup = () => {
               onChange={handleChange}
               required
             />
-            {/* ✅ Password length indicator (optional) */}
-            <div className="mt-1 flex justify-between">
-              <span className={`text-xs ${getPasswordStrength()}`}>
-                {formData.password.length < 8 
-                  ? `Too short (${formData.password.length}/8)` 
-                  : "✓ Good length"}
-              </span>
-              <span className="text-xs text-slate-500">
-                {formData.password.length} characters
-              </span>
-            </div>
+            
+            {/* Password Strength Indicator */}
+            {formData.password.length > 0 && (
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs text-slate-400">Password strength:</span>
+                  <span className={`text-xs font-medium ${getStrengthTextColor()}`}>
+                    {passwordStrength.strength === "strong" ? "STRONG" :
+                     passwordStrength.strength === "normal" ? "NORMAL" :
+                     passwordStrength.strength === "weak" ? "WEAK" :
+                     "TOO WEAK"}
+                  </span>
+                </div>
+                
+                {/* Strength Bars */}
+                <div className="flex h-1.5 space-x-1 mb-1">
+                  {[1, 2, 3].map((bar) => (
+                    <div
+                      key={bar}
+                      className={`flex-1 rounded-full ${
+                        bar <= getStrengthBars() ? getStrengthColor() : "bg-slate-700"
+                      }`}
+                    ></div>
+                  ))}
+                </div>
+                
+                {/* Strength Message */}
+                <p className={`text-xs ${getStrengthTextColor()}`}>
+                  {passwordStrength.message}
+                  {formData.password.length > 0 && (
+                    <span className="text-slate-500 ml-2">
+                      ({formData.password.length} characters)
+                    </span>
+                  )}
+                </p>
+                
+                {/* Password Requirements */}
+                {passwordStrength.strength === "weak" && (
+                  <div className="mt-2 text-xs text-slate-500 space-y-1">
+                    <p>Requirements:</p>
+                    <ul className="list-disc list-inside ml-2">
+                      <li className={formData.password.length >= 8 ? "text-green-500" : "text-red-500"}>
+                        At least 8 characters {formData.password.length >= 8 ? "✓" : "✗"}
+                      </li>
+                      <li className={/[A-Z]/.test(formData.password) ? "text-green-500" : "text-red-500"}>
+                        Uppercase letter {/[A-Z]/.test(formData.password) ? "✓" : "✗"}
+                      </li>
+                      <li className={/[a-z]/.test(formData.password) ? "text-green-500" : "text-red-500"}>
+                        Lowercase letter {/[a-z]/.test(formData.password) ? "✓" : "✗"}
+                      </li>
+                      <li className={/\d/.test(formData.password) ? "text-green-500" : "text-red-500"}>
+                        Number {/\d/.test(formData.password) ? "✓" : "✗"}
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <button
