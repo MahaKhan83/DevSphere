@@ -23,6 +23,10 @@ app.use("/api/auth", authRoutes);
 const notificationRoutes = require("./routes/notifications");
 app.use("/api/notifications", notificationRoutes);
 
+// ✅ NEW 👉 Showcase routes (YE LINE ADD KI)
+const showcaseRoutes = require("./routes/showcase.routes");
+app.use("/api/showcase", showcaseRoutes);
+
 // ✅ Optional: root route for testing server
 app.get("/", (req, res) => {
   res.send("DevSphere Backend is running!");
