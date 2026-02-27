@@ -234,7 +234,7 @@ export default function ShowcaseFeed() {
     return () => clearTimeout(t);
   }, []);
 
-  const [projects, setProjects] = useState(() => DEMO_PROJECTS);
+  const [projects, setProjects] = useState([]);
 
   const [query, setQuery] = useState("");
   const [techFilter, setTechFilter] = useState("All");
@@ -246,6 +246,24 @@ export default function ShowcaseFeed() {
 
   // ✅ NEW: Notification count (Settings ki tarah)
   const [unreadCount, setUnreadCount] = useState(0);
+    /* ---------------------------
+     ✅ Fetch Showcase Feed (Backend)
+  --------------------------- */
+  const fetchFeed = async () => {
+    try {
+      const res = await api.get("/showcase", {
+        params: { q: query, tech: techFilter, sort: sortBy },
+      });
+      const list = res.data.projects || [];
+setProjects(list);
+
+// ✅ liked/saved state backend se set
+setLikedIds(new Set(list.filter(p => p.isLiked).map(p => p.id)));
+setSavedIds(new Set(list.filter(p => p.isSaved).map(p => p.id)));
+    } catch (e) {
+      console.warn("feed error", e?.message);
+    }
+  };
 
   /* ---------------------------
      ✅ Fetch Real Notification Count 
@@ -265,6 +283,16 @@ export default function ShowcaseFeed() {
   useEffect(() => {
     fetchRealNotificationCount();
   }, []);
+    // ✅ Load feed on page open
+  useEffect(() => {
+    fetchFeed();
+    // eslint-disable-next-line
+  }, []);
+    // ✅ Reload feed when filters/search change
+  useEffect(() => {
+    fetchFeed();
+    // eslint-disable-next-line
+  }, [query, techFilter, sortBy]);
 
   const NAV_ITEMS = [
     { label: "Dashboard", icon: <DashboardIcon />, to: "/dashboard" },
@@ -289,13 +317,7 @@ export default function ShowcaseFeed() {
   const [uploadOpen, setUploadOpen] = useState(false);
 
   // Comments
-  const [commentsByProject, setCommentsByProject] = useState(() => ({
-    p1: [
-      { id: "c1", name: "Laiba", text: "UI boht clean hai 🔥", time: "just now", likes: 2, likedBy: new Set() },
-      { id: "c2", name: "Ali", text: "Charts layout zabardast!", time: "5m ago", likes: 0, likedBy: new Set() },
-    ],
-    p6: [{ id: "c3", name: "Fatima", text: "Nice portfolio structure ✅", time: "1h ago", likes: 1, likedBy: new Set() }],
-  }));
+  const [commentsByProject, setCommentsByProject] = useState(() => ({}));
   const [newComment, setNewComment] = useState("");
 
   // Invite
@@ -348,75 +370,134 @@ export default function ShowcaseFeed() {
 
   const savedProjectsList = useMemo(() => projects.filter((p) => savedIds.has(p.id)), [projects, savedIds]);
 
-  const toggleLike = (id) => {
+  const toggleLike = async (id) => {
+  // UI instant feel
+  setLikedIds((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  try {
+    await api.post(`/showcase/${id}/like`);
+    fetchFeed();
+  } catch (e) {
+    // rollback if login issue
     setLikedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+    alert("Login required for like 😭");
+  }
+};
 
-  const toggleSave = (id) => {
+ const toggleSave = async (id) => {
+  // UI instant feel
+  setSavedIds((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  try {
+    await api.post(`/showcase/${id}/save`);
+    fetchFeed();
+  } catch (e) {
+    // rollback
     setSavedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+    alert("Login required for save 😭");
+  }
+};
 
-  const openComments = (project) => {
-    setOpenCommentsFor(project);
+  const openComments = async (project) => {
+  setOpenCommentsFor(project);
+  setNewComment("");
+
+  try {
+    const res = await api.get(`/showcase/${project.id}/comments`);
+    const list = (res.data.comments || []).map((c) => ({
+      ...c,
+      likedBy: new Set(), // UI compatibility
+    }));
+
+    setCommentsByProject((prev) => ({
+      ...prev,
+      [project.id]: list,
+    }));
+  } catch (e) {
+    setCommentsByProject((prev) => ({
+      ...prev,
+      [project.id]: [],
+    }));
+  }
+};
+
+const submitComment = async () => {
+  if (!openCommentsFor) return;
+  const text = newComment.trim();
+  if (!text) return;
+
+  try {
+    await api.post(`/showcase/${openCommentsFor.id}/comments`, { text });
+
     setNewComment("");
-  };
 
-  const submitComment = () => {
-    if (!openCommentsFor) return;
-    const text = newComment.trim();
-    if (!text) return;
+    const res = await api.get(`/showcase/${openCommentsFor.id}/comments`);
+    const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
 
-    const pid = openCommentsFor.id;
-    const item = {
-      id: `c_${Date.now()}`,
-      name: displayName,
-      text,
-      time: "just now",
-      likes: 0,
-      likedBy: new Set(),
-    };
+    setCommentsByProject((prev) => ({
+      ...prev,
+      [openCommentsFor.id]: list,
+    }));
 
-    setCommentsByProject((prev) => {
-      const list = prev[pid] || [];
-      return { ...prev, [pid]: [item, ...list] };
-    });
-
-    setNewComment("");
-  };
+    fetchFeed();
+  } catch (e) {
+    alert("Login required to comment 😭");
+  }
+};
+  
+      
+   
 
   // ✅ delete only in UI; button will appear only for own comment (below)
-  const deleteComment = (projectId, commentId) => {
-    setCommentsByProject((prev) => {
-      const list = prev[projectId] || [];
-      return { ...prev, [projectId]: list.filter((c) => c.id !== commentId) };
-    });
-  };
+  const deleteComment = async (projectId, commentId) => {
+  try {
+    await api.delete(`/showcase/${projectId}/comments/${commentId}`);
 
-  const likeComment = (projectId, commentId) => {
-    setCommentsByProject((prev) => {
-      const list = prev[projectId] || [];
-      const next = list.map((c) => {
-        if (c.id !== commentId) return c;
-        const likedBy = new Set(c.likedBy || []);
-        if (likedBy.has(displayName)) {
-          likedBy.delete(displayName);
-          return { ...c, likedBy, likes: Math.max(0, (c.likes || 0) - 1) };
-        } else {
-          likedBy.add(displayName);
-          return { ...c, likedBy, likes: (c.likes || 0) + 1 };
-        }
-      });
-      return { ...prev, [projectId]: next };
-    });
-  };
+    const res = await api.get(`/showcase/${projectId}/comments`);
+    const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
+
+    setCommentsByProject((prev) => ({
+      ...prev,
+      [projectId]: list,
+    }));
+
+    fetchFeed();
+  } catch (e) {
+    alert("Only your comment can be deleted 😭");
+  }
+};
+
+  const likeComment = async (projectId, commentId) => {
+  try {
+    // ✅ backend call (likes DB me save)
+    await api.post(`/showcase/${projectId}/comments/${commentId}/like`);
+
+    // ✅ reload comments from backend
+    const res = await api.get(`/showcase/${projectId}/comments`);
+    setCommentsByProject((prev) => ({
+      ...prev,
+      [projectId]: res.data.comments || [],
+    }));
+  } catch (e) {
+    alert("Login required to like comment 😭");
+  }
+};
 
   const shareProject = async (project) => {
     const shareText = `${project.title} — DevSphere Showcase\n${project.github}`;
@@ -436,24 +517,44 @@ export default function ShowcaseFeed() {
     setInviteMsg("Hey! Check this DevSphere project 🔥");
   };
 
-  const sendInvite = () => {
-    if (!inviteProject) return;
-    const target = inviteTo.trim();
-    if (!target) return alert("Invite target likho (email/username).");
-    alert(`Invite sent ✅\nTo: ${target}\nProject: ${inviteProject.title}`);
+  const sendInvite = async () => {
+  if (!inviteProject) return;
+
+  const target = inviteTo.trim();
+  if (!target) return alert("Invite target likho (email/username).");
+
+  try {
+    await api.post(`/showcase/${inviteProject.id}/invite`, {
+      inviteTo: target,
+      message: inviteMsg,
+    });
+
+    alert("Invite sent ✅");
     setInviteProject(null);
-  };
+  } catch (e) {
+    alert(e?.response?.data?.message || "Invite failed 😭");
+  }
+};
 
   const openRequest = (project) => {
     setRequestProject(project);
     setRequestMsg("Hi! I want to work on this project. Please add me as a collaborator.");
   };
 
-  const sendRequest = () => {
-    if (!requestProject) return;
-    alert(`Request sent ✅\nTo owner: ${requestProject.author}\nProject: ${requestProject.title}`);
+  const sendRequest = async () => {
+  if (!requestProject) return;
+
+  try {
+    await api.post(`/showcase/${requestProject.id}/request`, {
+      message: requestMsg,
+    });
+
+    alert("Request sent ✅");
     setRequestProject(null);
-  };
+  } catch (e) {
+    alert(e?.response?.data?.message || "Request failed 😭");
+  }
+};
 
   const openUpload = () => {
     setUploadOpen(true);
@@ -464,45 +565,43 @@ export default function ShowcaseFeed() {
     setUpThumb("https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=60");
   };
 
-  const handleUpload = () => {
-    const title = upTitle.trim();
-    const desc = upDesc.trim();
-    const github = upGithub.trim() || "https://github.com/";
-    const thumb = upThumb.trim();
+ const handleUpload = async () => {
+  const title = upTitle.trim();
+  const desc = upDesc.trim();
+  const github = upGithub.trim() || "https://github.com/";
+  const thumb = upThumb.trim();
 
-    if (!title || !desc || !thumb) return alert("Title + Description + Thumbnail required.");
+  if (!title || !desc || !thumb) return alert("Title + Description + Thumbnail required.");
 
-    const id = `u_${Date.now()}`;
-    const newP = {
-      id,
+  try {
+    await api.post("/showcase", {
       title,
-      tech: [upTech],
-      likes: 0,
-      comments: 0,
-      saves: 0,
-      author: displayName,
-      time: "just now",
       desc,
       github,
       thumb,
-      isOwner: true,
-    };
+      tech: [upTech],
+    });
 
-    setProjects((prev) => [newP, ...prev]);
     setUploadOpen(false);
+    fetchFeed();
     alert("Project uploaded ✅");
-  };
+  } catch (e) {
+    alert("Upload failed (login required?) 😭");
+  }
+};
+    const deleteProject = async (projectId) => {
+  if (!window.confirm("Delete this project?")) return;
 
-  const deleteProject = (projectId) => {
-    if (!window.confirm("Delete this project?")) return;
+  try {
+    await api.delete(`/showcase/${projectId}`);
 
-    setProjects((prev) => prev.filter((p) => p.id !== projectId));
-
+    // local UI cleanup
     setSavedIds((prev) => {
       const next = new Set(prev);
       next.delete(projectId);
       return next;
     });
+
     setLikedIds((prev) => {
       const next = new Set(prev);
       next.delete(projectId);
@@ -515,9 +614,17 @@ export default function ShowcaseFeed() {
       return next;
     });
 
+    fetchFeed();
     alert("Project deleted ✅");
-  };
+  } catch (e) {
+    alert("Delete failed (only owner can delete) 😭");
+  }
+};
+      
 
+ 
+      
+      
   return (
     <>
       <div className="min-h-screen bg-[#eef3f7] flex overflow-hidden relative">
@@ -718,7 +825,7 @@ export default function ShowcaseFeed() {
                           title="Like"
                         >
                           <HeartIcon filled={liked} />
-                          <span className="text-xs font-semibold">{p.likes + (liked ? 1 : 0)}</span>
+                          <span className="text-xs font-semibold">{p.likes}</span>
                         </button>
 
                         <button
@@ -736,7 +843,7 @@ export default function ShowcaseFeed() {
                           title={saved ? "Unsave" : "Save"}
                         >
                           <BookmarkIcon filled={saved} />
-                          <span className="text-xs font-semibold">{p.saves + (saved ? 1 : 0)}</span>
+                          <span className="text-xs font-semibold">{p.saves}</span>
                         </button>
                       </div>
 
@@ -891,7 +998,7 @@ export default function ShowcaseFeed() {
                       <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">No comments yet.</div>
                     ) : (
                       (commentsByProject[openCommentsFor.id] || []).map((c) => {
-                        const liked = (c.likedBy || new Set()).has(displayName);
+                        const liked = !!c.likedByMe;
 
                         // ✅ only own comment can be deleted
                         const isMyComment = (c.name || "").trim().toLowerCase() === displayName.trim().toLowerCase();
