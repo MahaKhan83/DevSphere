@@ -1,11 +1,11 @@
 // src/pages/Portfolio.jsx
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
-import api from "../services/api"; // ✅ Import axios instance
+import api from "../services/api";
 import "./Portfolio.css";
 
 const STORAGE_KEY = "devsphere_portfolio_builder_v16_settings_theme_fullwidth";
@@ -175,7 +175,7 @@ function cloneTemplate(templateId) {
 /* ---------------- Defaults ---------------- */
 const DEFAULT_PROFILE = { name: "", role: "Full-Stack Developer", email: "", phone: "", location: "", photo: "" };
 const DEFAULT_THEME = {
-  appBg: "#0f172a", // static devsphere style background
+  appBg: "#0f172a",
   paperBg: "#FFFFFF",
   ink: "#0F172A",
   muted: "#475569",
@@ -210,13 +210,37 @@ const FONT_OPTIONS = [
 ];
 
 /* ---------------- Small UI pieces ---------------- */
-const Field = ({ value, onChange, placeholder, className = "" }) => (
-  <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`pfField ${className}`} />
-);
+const Field = React.memo(({ value, onChange, placeholder, className = "" }) => {
+  const inputRef = useRef(null);
+  const handleBlur = useCallback(() => {
+    onChange(inputRef.current.value);
+  }, [onChange]);
+  return (
+    <input
+      ref={inputRef}
+      defaultValue={value}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      className={`pfField ${className}`}
+    />
+  );
+});
 
-const TextArea = ({ value, onChange, placeholder, className = "" }) => (
-  <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`pfArea ${className}`} />
-);
+const TextArea = React.memo(({ value, onChange, placeholder, className = "" }) => {
+  const textareaRef = useRef(null);
+  const handleBlur = useCallback(() => {
+    onChange(textareaRef.current.value);
+  }, [onChange]);
+  return (
+    <textarea
+      ref={textareaRef}
+      defaultValue={value}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      className={`pfArea ${className}`}
+    />
+  );
+});
 
 const MiniBtn = ({ children, onClick, tone = "normal", type = "button" }) => (
   <button
@@ -276,7 +300,7 @@ export default function Portfolio() {
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState("");
 
-  // ✅ NEW: Notification count (Settings ki tarah)
+  // ✅ NEW: Notification count
   const [unreadCount, setUnreadCount] = useState(0);
 
   /* ---------------------------
@@ -287,7 +311,7 @@ export default function Portfolio() {
       const response = await api.get("/notifications");
       const notifications = response.data.notifications || [];
       const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
+      setUnreadCount(totalUnread);
     } catch (err) {
       console.warn("Could not fetch notification count:", err.message);
       setUnreadCount(0);
@@ -417,11 +441,12 @@ export default function Portfolio() {
     if (openEditorId === instanceId) setOpenEditorId(null);
   };
 
-  const updateSectionData = (instanceId, updates) => {
+  // Stable update functions
+  const updateSectionData = useCallback((instanceId, updates) => {
     setSections((prev) => prev.map((s) => (s.instanceId === instanceId ? { ...s, data: { ...s.data, ...updates } } : s)));
-  };
+  }, []);
 
-  const updateSectionItem = (instanceId, index, updates) => {
+  const updateSectionItem = useCallback((instanceId, index, updates) => {
     setSections((prev) =>
       prev.map((s) => {
         if (s.instanceId !== instanceId) return s;
@@ -430,7 +455,7 @@ export default function Portfolio() {
         return { ...s, data: { ...s.data, items } };
       })
     );
-  };
+  }, []);
 
   const addItem = (instanceId, templateId) => {
     setSections((prev) =>
@@ -504,7 +529,7 @@ export default function Portfolio() {
     { to: "/portfolio", label: "Build portfolio", icon: <PortfolioIcon /> },
     { to: "/collaboration", label: "Collab rooms", icon: <CollabIcon /> },
     { to: "/showcase", label: "Showcase feed", icon: <ShowcaseIcon /> },
-    { to: "/notifications", label: "Notifications", icon: <BellIcon />, badge: unreadCount > 0 ? unreadCount : null }, // ✅ Add badge here
+    { to: "/notifications", label: "Notifications", icon: <BellIcon />, badge: unreadCount > 0 ? unreadCount : null },
     { to: "/settings", label: "Settings", icon: <SettingsIcon /> },
   ];
   const activePath = location.pathname;
@@ -624,7 +649,91 @@ export default function Portfolio() {
     return <div className="pfMuted">Unknown section</div>;
   };
 
-  const SectionEditor = ({ sec }) => {
+  // ========== STABLE ITEM COMPONENTS ==========
+  const ExperienceItem = React.memo(({ item, index, instanceId }) => {
+    const handleRoleChange = useCallback((v) => updateSectionItem(instanceId, index, { role: v }), [instanceId, index]);
+    const handleCompanyChange = useCallback((v) => updateSectionItem(instanceId, index, { company: v }), [instanceId, index]);
+    const handlePeriodChange = useCallback((v) => updateSectionItem(instanceId, index, { period: v }), [instanceId, index]);
+    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index]);
+
+    return (
+      <div className="pfItemCard sfCardGlow">
+        <div className="pfItemGrid">
+          <Field value={item.role || ""} onChange={handleRoleChange} placeholder="Role" />
+          <Field value={item.company || ""} onChange={handleCompanyChange} placeholder="Company" />
+          <Field value={item.period || ""} onChange={handlePeriodChange} placeholder="Period (e.g. 2025)" />
+          <TextArea value={item.details || ""} onChange={handleDetailsChange} placeholder="Details..." />
+        </div>
+        <div className="pfItemActions">
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+        </div>
+      </div>
+    );
+  });
+
+  const ProjectItem = React.memo(({ item, index, instanceId }) => {
+    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index]);
+    const handleLinkChange = useCallback((v) => updateSectionItem(instanceId, index, { link: v }), [instanceId, index]);
+    const handleDescChange = useCallback((v) => updateSectionItem(instanceId, index, { desc: v }), [instanceId, index]);
+
+    return (
+      <div className="pfItemCard sfCardGlow">
+        <div className="pfItemGrid">
+          <Field value={item.name || ""} onChange={handleNameChange} placeholder="Project name" />
+          <Field value={item.link || ""} onChange={handleLinkChange} placeholder="Live/GitHub link (optional)" />
+          <TextArea value={item.desc || ""} onChange={handleDescChange} placeholder="Description..." />
+        </div>
+        <div className="pfItemActions">
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+        </div>
+      </div>
+    );
+  });
+
+  const SkillItem = React.memo(({ item, index, instanceId }) => {
+    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index]);
+    const handleLevelChange = useCallback((e) => updateSectionItem(instanceId, index, { level: Number(e.target.value) }), [instanceId, index]);
+
+    return (
+      <div className="pfItemCard sfCardGlow">
+        <div className="pfItemGrid">
+          <Field value={item.name || ""} onChange={handleNameChange} placeholder="Skill (e.g. React)" />
+          <div className="pfRangeRow">
+            <span className="pfMuted">Level</span>
+            <input type="range" min="0" max="100" value={Number(item.level) || 0} onChange={handleLevelChange} className="pfRange" />
+            <span className="pfMono">{Number(item.level) || 0}%</span>
+          </div>
+        </div>
+        <div className="pfItemActions">
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+        </div>
+      </div>
+    );
+  });
+
+  const EducationItem = React.memo(({ item, index, instanceId }) => {
+    const handleDegreeChange = useCallback((v) => updateSectionItem(instanceId, index, { degree: v }), [instanceId, index]);
+    const handleInstituteChange = useCallback((v) => updateSectionItem(instanceId, index, { institute: v }), [instanceId, index]);
+    const handleYearChange = useCallback((v) => updateSectionItem(instanceId, index, { year: v }), [instanceId, index]);
+    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index]);
+
+    return (
+      <div className="pfItemCard sfCardGlow">
+        <div className="pfItemGrid">
+          <Field value={item.degree || ""} onChange={handleDegreeChange} placeholder="Degree" />
+          <Field value={item.institute || ""} onChange={handleInstituteChange} placeholder="Institute" />
+          <Field value={item.year || ""} onChange={handleYearChange} placeholder="Year (e.g. 2022–2026)" />
+          <TextArea value={item.details || ""} onChange={handleDetailsChange} placeholder="Details..." />
+        </div>
+        <div className="pfItemActions">
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+        </div>
+      </div>
+    );
+  });
+  // =============================================
+
+  const SectionEditor = React.memo(({ sec }) => {
     const t = sec.templateId;
 
     if (t === "about") {
@@ -646,41 +755,10 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Experience items</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">
-              + Add
-            </MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">+ Add</MiniBtn>
           </div>
-
           {items.map((it, i) => (
-            <div key={i} className="pfItemCard sfCardGlow">
-              <div className="pfItemGrid">
-                <Field
-                  value={it.role || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { role: v })}
-                  placeholder="Role"
-                />
-                <Field
-                  value={it.company || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { company: v })}
-                  placeholder="Company"
-                />
-                <Field
-                  value={it.period || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { period: v })}
-                  placeholder="Period (e.g. 2025)"
-                />
-                <TextArea
-                  value={it.details || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })}
-                  placeholder="Details..."
-                />
-              </div>
-              <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
-                  Remove
-                </MiniBtn>
-              </div>
-            </div>
+            <ExperienceItem key={i} item={it} index={i} instanceId={sec.instanceId} />
           ))}
         </div>
       );
@@ -692,36 +770,10 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Projects</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">
-              + Add
-            </MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">+ Add</MiniBtn>
           </div>
-
           {items.map((it, i) => (
-            <div key={i} className="pfItemCard sfCardGlow">
-              <div className="pfItemGrid">
-                <Field
-                  value={it.name || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })}
-                  placeholder="Project name"
-                />
-                <Field
-                  value={it.link || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { link: v })}
-                  placeholder="Live/GitHub link (optional)"
-                />
-                <TextArea
-                  value={it.desc || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { desc: v })}
-                  placeholder="Description..."
-                />
-              </div>
-              <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
-                  Remove
-                </MiniBtn>
-              </div>
-            </div>
+            <ProjectItem key={i} item={it} index={i} instanceId={sec.instanceId} />
           ))}
         </div>
       );
@@ -733,40 +785,10 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Skills</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">
-              + Add
-            </MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">+ Add</MiniBtn>
           </div>
-
           {items.map((it, i) => (
-            <div key={i} className="pfItemCard sfCardGlow">
-              <div className="pfItemGrid">
-                <Field
-                  value={it.name || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { name: v })}
-                  placeholder="Skill (e.g. React)"
-                />
-                <div className="pfRangeRow">
-                  <span className="pfMuted">Level</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={Number(it.level) || 0}
-                    onChange={(e) =>
-                      updateSectionItem(sec.instanceId, i, { level: Number(e.target.value) })
-                    }
-                    className="pfRange"
-                  />
-                  <span className="pfMono">{Number(it.level) || 0}%</span>
-                </div>
-              </div>
-              <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
-                  Remove
-                </MiniBtn>
-              </div>
-            </div>
+            <SkillItem key={i} item={it} index={i} instanceId={sec.instanceId} />
           ))}
         </div>
       );
@@ -778,41 +800,10 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Education</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">
-              + Add
-            </MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">+ Add</MiniBtn>
           </div>
-
           {items.map((it, i) => (
-            <div key={i} className="pfItemCard sfCardGlow">
-              <div className="pfItemGrid">
-                <Field
-                  value={it.degree || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { degree: v })}
-                  placeholder="Degree"
-                />
-                <Field
-                  value={it.institute || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { institute: v })}
-                  placeholder="Institute"
-                />
-                <Field
-                  value={it.year || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { year: v })}
-                  placeholder="Year (e.g. 2022–2026)"
-                />
-                <TextArea
-                  value={it.details || ""}
-                  onChange={(v) => updateSectionItem(sec.instanceId, i, { details: v })}
-                  placeholder="Details..."
-                />
-              </div>
-              <div className="pfItemActions">
-                <MiniBtn onClick={() => removeItem(sec.instanceId, i)} tone="danger">
-                  Remove
-                </MiniBtn>
-              </div>
-            </div>
+            <EducationItem key={i} item={it} index={i} instanceId={sec.instanceId} />
           ))}
         </div>
       );
@@ -849,7 +840,7 @@ export default function Portfolio() {
     }
 
     return null;
-  };
+  });
 
   const createDragHandler = (position, setPosition) => (e) => {
     if (!e.target.closest(".floatingHeader")) return;
@@ -910,7 +901,7 @@ export default function Portfolio() {
                     active={isActive}
                     icon={it.icon}
                     label={it.label}
-                    badge={it.badge} // ✅ Pass badge here
+                    badge={it.badge}
                     onClick={() => navigate(it.to)}
                   />
                 );

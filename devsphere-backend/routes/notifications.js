@@ -8,7 +8,14 @@ const {
   createNotification  // ✅ ADD THIS LINE
 } = require("../controllers/notificationController");
 
-const protect = require("../middleware/authMiddleware");
+
+
+let protect;
+try {
+  protect = require("../middleware/protect"); // ✅ main
+} catch (e) {
+  protect = require("../middleware/authMiddleware"); // ✅ fallback
+}
 
 // ✅ PUBLIC TEST ROUTE (No auth needed - for testing)
 router.get("/test", (req, res) => {
