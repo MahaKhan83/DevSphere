@@ -1,31 +1,27 @@
 // src/pages/CollaborationRoom.jsx
-import React, { useContext, useMemo, useState, useEffect } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
-import api from "../services/api"; // ✅ Import axios instance
+import api from "../services/api";
+import socket from "../sockets/socket";
 
-/* =========================
-   SAME Icons as Dashboard
-========================= */
+/* ================= Icons ================= */
 const DashboardIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
   </svg>
 );
-
 const PortfolioIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M10 4h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a2 2 0 0 1 2-2h3V6a2 2 0 0 1 2-2Zm5 3V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1h6Z" />
   </svg>
 );
-
 const CollabIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M7 12a3 3 0 1 1 2.82-4H14a3 3 0 1 1 0 2H9.82A3 3 0 0 1 7 12Zm10 10a3 3 0 1 1 2.82-4H20v2h-.18A3 3 0 0 1 17 22ZM4 18h10v2H4v-2Z" />
   </svg>
 );
-
 const ShowcaseIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
@@ -36,7 +32,6 @@ const BellIcon = () => (
     <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
   </svg>
 );
-
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
@@ -49,34 +44,24 @@ const CopyIcon = () => (
     <rect x="2" y="2" width="13" height="13" rx="2" />
   </svg>
 );
-
 const CheckIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M20 6 9 17l-5-5" />
   </svg>
 );
-
 const XIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 6 6 18M6 6l12 12" />
   </svg>
 );
 
-/* =========================
-   Dashboard UI Helpers
-========================= */
+/* ================= UI Helpers ================= */
 const IconWrap = ({ children }) => (
-  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
-    {children}
-  </span>
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">{children}</span>
 );
-
 const BadgePill = ({ children }) => (
-  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
-    {children}
-  </span>
+  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">{children}</span>
 );
-
 const NavItem = ({ active, icon, label, onClick, badge }) => (
   <button
     onClick={onClick}
@@ -92,26 +77,12 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
   </button>
 );
 
-/* =========================
-   Room Code generator
-========================= */
-const genRoomCode = (existing = []) => {
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const make = () => Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  let code = make();
-  while (existing.includes(code)) code = make();
-  return code;
-};
-
 export default function CollaborationRoom() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // ✅ Notifications-like mount animations
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
@@ -119,46 +90,37 @@ export default function CollaborationRoom() {
   }, []);
 
   const displayName = user?.name || user?.email || "Guest";
-  const initials = displayName
-    .split(" ")
-    .map((p) => p[0]?.toUpperCase())
-    .join("")
-    .slice(0, 2);
-
+  const initials = displayName.split(" ").map((p) => p[0]?.toUpperCase()).join("").slice(0, 2);
   const isOnline = true;
-  
-  // ✅ ACTUAL Notification Count - Dashboard aur Settings ki tarah
+
   const [unreadCount, setUnreadCount] = useState(0);
-
-  /* =========================
-     ✅ Fetch Real Notification Count
-  ========================= */
-  const fetchRealNotificationCount = async () => {
-    try {
-      const response = await api.get("/notifications");
-      const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (81 ya jo bhi ho)
-    } catch (err) {
-      console.warn("Could not fetch notification count:", err.message);
-      setUnreadCount(0);
-    }
-  };
-
   useEffect(() => {
-    fetchRealNotificationCount();
+    (async () => {
+      try {
+        const response = await api.get("/notifications");
+        const notifications = response.data.notifications || [];
+        setUnreadCount(notifications.filter((n) => !n.read).length);
+      } catch {
+        setUnreadCount(0);
+      }
+    })();
   }, []);
 
-  /* =========================
-     Lobby Data (demo)
-  ========================= */
-  const [rooms, setRooms] = useState([
-    { id: "r1", name: "Frontend Sprint", code: "DSF123", members: 4, maxMembers: 8, owner: "Maha" },
-    { id: "r2", name: "API Integration", code: "AP1X99", members: 2, maxMembers: 4, owner: "Ava" },
-    { id: "r3", name: "UI Polish", code: "UIP777", members: 1, maxMembers: 5, owner: "James" },
-  ]);
+  // ✅ Lobby state from backend
+  const [rooms, setRooms] = useState([]);
+  const [pendingByRoom, setPendingByRoom] = useState({}); // {ROOMCODE: [reqs]}
 
-  const roomCodes = useMemo(() => rooms.map((r) => r.code), [rooms]);
+  const myOwnedRooms = useMemo(
+    () => rooms.filter((r) => (r.owner || "").toLowerCase() === (displayName || "").toLowerCase()),
+    [rooms, displayName]
+  );
+  const ownedCodes = useMemo(() => new Set(myOwnedRooms.map((r) => r.code)), [myOwnedRooms]);
+
+  const ownerPending = useMemo(() => {
+    return Object.entries(pendingByRoom)
+      .filter(([code]) => ownedCodes.has(code))
+      .flatMap(([, list]) => (Array.isArray(list) ? list : []).filter((x) => x.status === "pending"));
+  }, [pendingByRoom, ownedCodes]);
 
   const [joinName, setJoinName] = useState(displayName);
   const [joinCode, setJoinCode] = useState("");
@@ -166,91 +128,152 @@ export default function CollaborationRoom() {
   const [createName, setCreateName] = useState("");
   const [maxMembers, setMaxMembers] = useState(6);
 
-  // join requests (demo)
-  const [pendingRequests, setPendingRequests] = useState([{ id: "p1", roomCode: "DSF123", user: "Sarah", status: "pending" }]);
+  /* ================== NEW: helpers for approval/pending ================== */
+  const norm = (v) => String(v || "").trim().toLowerCase();
 
-  // approved rooms (demo)
-  const [approvedRooms, setApprovedRooms] = useState(() => ({}));
+  const getMyRequestStatusForRoom = (roomCode) => {
+    const list = pendingByRoom?.[roomCode] || [];
+    const me = norm(joinName || displayName);
 
-  const myOwnedRooms = useMemo(
-    () => rooms.filter((r) => (r.owner || "").toLowerCase() === (displayName || "").toLowerCase()),
-    [rooms, displayName]
-  );
-
-  const requestToJoin = (forcedCode) => {
-    const code = (forcedCode || joinCode).trim().toUpperCase();
-    const name = (joinName || "").trim() || "Guest";
-    if (!code) return alert("Enter a room code.");
-
-    const found = rooms.find((r) => r.code === code);
-    if (!found) return alert("Room not found. Please enter a valid code.");
-    if (found.members >= found.maxMembers) return alert("This room is full.");
-
-    // owner -> allow directly
-    if ((found.owner || "").toLowerCase() === (displayName || "").toLowerCase()) {
-      setApprovedRooms((prev) => ({ ...prev, [found.code]: true }));
-      return navigate(`/workspace/${found.code}`);
-    }
-
-    const already = pendingRequests.some(
-      (x) => x.roomCode === found.code && (x.user || "").toLowerCase() === name.toLowerCase() && x.status === "pending"
-    );
-    if (already) return alert("Request already sent. Wait for approval (demo).");
-
-    const req = { id: `p${Date.now()}`, roomCode: found.code, user: name, status: "pending" };
-    setPendingRequests((prev) => [req, ...prev]);
-    setJoinCode("");
-    alert("Join request sent. Owner must approve (demo).");
+    // newest first (backend unshift), so find first match
+    const found = list.find((r) => norm(r.user) === me);
+    return found?.status || null; // "pending" | "approved" | "rejected" | null
   };
 
-  const approveRequest = (reqId) => {
-    const req = pendingRequests.find((x) => x.id === reqId);
-    if (!req) return;
+  const canEnterRoom = (room) => {
+    if (!room?.code) return false;
 
-    const room = rooms.find((r) => r.code === req.roomCode);
-    if (!room) return;
+    const isOwner = norm(room.owner) === norm(displayName);
+    if (isOwner) return true;
 
-    if (room.members >= room.maxMembers) {
-      alert("Room is full. Cannot approve.");
-      setPendingRequests((p) => p.filter((x) => x.id !== reqId));
-      return;
-    }
-
-    setRooms((prev) => prev.map((r) => (r.code === req.roomCode ? { ...r, members: r.members + 1 } : r)));
-    setPendingRequests((p) => p.map((x) => (x.id === reqId ? { ...x, status: "approved" } : x)));
-
-    if ((req.user || "").toLowerCase() === (displayName || "").toLowerCase()) {
-      setApprovedRooms((prev) => ({ ...prev, [req.roomCode]: true }));
-    }
+    const st = getMyRequestStatusForRoom(room.code);
+    return st === "approved";
   };
 
-  const rejectRequest = (reqId) => {
-    const req = pendingRequests.find((x) => x.id === reqId);
-    setPendingRequests((p) => p.filter((x) => x.id !== reqId));
-    if (req && (req.user || "").toLowerCase() === (displayName || "").toLowerCase()) {
-      alert("Your request was rejected (demo).");
-    }
+  const isPendingRoom = (room) => {
+    const st = getMyRequestStatusForRoom(room.code);
+    return st === "pending";
   };
+
+  /* ✅ Socket lobby listeners */
+  useEffect(() => {
+    const ensureConnected = () => {
+      try {
+        if (!socket.connected) socket.connect();
+      } catch {}
+    };
+
+    const onRooms = (list) => setRooms(Array.isArray(list) ? list : []);
+
+    const onRoomCreated = (room) => {
+      alert(`Room created! Code: ${room.code}`);
+      socket.emit("lobby:sync");
+    };
+
+    const onPendingUpdated = ({ roomCode, pending }) => {
+      if (!roomCode) return;
+      setPendingByRoom((prev) => ({ ...prev, [roomCode]: Array.isArray(pending) ? pending : [] }));
+    };
+
+    const onError = (msg) => alert(msg || "Something went wrong.");
+
+    const onAlreadyApproved = ({ roomCode }) => {
+      alert("You are already approved. You can enter workspace.");
+      navigate(`/workspace/${roomCode}`);
+    };
+
+    const onCanEnterResult = ({ ok, room }) => {
+      if (!ok) return alert("Approval required OR wrong code.");
+      navigate(`/workspace/${room.code}`);
+    };
+
+    /* ================== NEW: request sent popup + approved popup ================== */
+    const onRequested = (req) => {
+      // requester ko popup
+      alert(`Request sent ✅\nRoom: ${req?.roomCode}\nWaiting for owner approval...`);
+      // refresh state
+      socket.emit("lobby:sync");
+    };
+
+    const onApproved = ({ roomCode, user: approvedUser }) => {
+      // sabko aata hai; sirf apni approval pe popup
+      if (norm(approvedUser) === norm(joinName || displayName)) {
+        alert(`Approved ✅\nYou can enter workspace now.\nRoom: ${roomCode}`);
+        socket.emit("lobby:sync");
+      }
+    };
+
+    ensureConnected();
+
+    socket.on("lobby:rooms", onRooms);
+    socket.on("lobby:room-created", onRoomCreated);
+    socket.on("lobby:pending-updated", onPendingUpdated);
+    socket.on("lobby:error", onError);
+    socket.on("lobby:already-approved", onAlreadyApproved);
+    socket.on("lobby:can-enter:result", onCanEnterResult);
+
+    socket.on("lobby:requested", onRequested);
+    socket.on("lobby:approved", onApproved);
+
+    // ✅ IMPORTANT: lobby open pe always sync
+    socket.emit("lobby:sync");
+
+    return () => {
+      socket.off("lobby:rooms", onRooms);
+      socket.off("lobby:room-created", onRoomCreated);
+      socket.off("lobby:pending-updated", onPendingUpdated);
+      socket.off("lobby:error", onError);
+      socket.off("lobby:already-approved", onAlreadyApproved);
+      socket.off("lobby:can-enter:result", onCanEnterResult);
+
+      socket.off("lobby:requested", onRequested);
+      socket.off("lobby:approved", onApproved);
+    };
+  }, [navigate, displayName, joinName]);
+
+  // ✅ Also sync whenever route is /collaboration (back to lobby case)
+  useEffect(() => {
+    if (location.pathname === "/collaboration") {
+      try {
+        if (!socket.connected) socket.connect();
+      } catch {}
+      socket.emit("lobby:sync");
+    }
+  }, [location.pathname]);
 
   const createRoom = () => {
     const name = createName.trim();
     if (!name) return alert("Enter a room name.");
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
+    socket.emit("lobby:create-room", { name, maxMembers, owner: displayName });
 
-    const code = genRoomCode(roomCodes);
-    const newRoom = {
-      id: `r${Date.now()}`,
-      name,
-      code,
-      members: 1,
-      maxMembers: Number(maxMembers) || 6,
-      owner: displayName,
-    };
-
-    setRooms((prev) => [newRoom, ...prev]);
-    setApprovedRooms((prev) => ({ ...prev, [code]: true }));
     setCreateName("");
     setMaxMembers(6);
-    alert(`Room created! Code: ${code}`);
+  };
+
+  const requestToJoin = (forcedCode) => {
+    const code = (forcedCode || joinCode).trim().toUpperCase();
+    const nm = (joinName || "").trim() || "Guest";
+    if (!code) return alert("Enter a room code.");
+
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
+
+    // ✅ allow retry after leaving / re-request
+    socket.emit("lobby:request-join", { code, user: nm, force: true });
+
+    setJoinCode("");
+  };
+
+  const approveRequest = (req) => {
+    socket.emit("lobby:approve", { roomCode: req.roomCode, reqId: req.id, owner: displayName });
+  };
+
+  const rejectRequest = (req) => {
+    socket.emit("lobby:reject", { roomCode: req.roomCode, reqId: req.id, owner: displayName });
   };
 
   const copyCode = async (code) => {
@@ -262,31 +285,53 @@ export default function CollaborationRoom() {
     }
   };
 
-  const goToWorkspace = (code, ownerName) => {
-    const room = rooms.find((r) => r.code === code);
-    if (!room) return;
+  const enterWorkspaceByCode = () => {
+    const code = (joinCode || "").trim().toUpperCase();
+    const who = (joinName || displayName || "Guest").trim();
+    if (!code) return alert("Enter room code first.");
 
-    const isOwner = (ownerName || "").toLowerCase() === (displayName || "").toLowerCase();
-    const ok = isOwner || approvedRooms[code];
+    // ✅ DISABLE RULE: if not approved (and not owner), stop here
+    const room = rooms.find((r) => String(r.code || "").toUpperCase() === code);
+    if (room && !canEnterRoom(room)) {
+      return alert("Approval required. Owner has not approved yet.");
+    }
 
-    if (!ok) return alert("You must be approved by owner before entering workspace (demo).");
-    navigate(`/workspace/${code}`);
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
+    socket.emit("lobby:can-enter", { code, user: who });
   };
 
-  const ownedRoomCodes = new Set(myOwnedRooms.map((r) => r.code));
-  const ownerPending = pendingRequests.filter((req) => ownedRoomCodes.has(req.roomCode) && req.status === "pending");
+  const goToWorkspace = (code) => {
+    const roomCode = String(code || "").trim().toUpperCase();
+    const room = rooms.find((r) => String(r.code || "").toUpperCase() === roomCode);
+
+    // ✅ DISABLE RULE
+    if (room && !canEnterRoom(room)) {
+      return alert("Approval required. Owner has not approved yet.");
+    }
+
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
+    socket.emit("lobby:can-enter", { code: roomCode, user: displayName });
+  };
+
+  const deleteRoom = (code) => {
+    const ok = window.confirm("Delete this room?");
+    if (!ok) return;
+    socket.emit("lobby:delete-room", { code, owner: displayName });
+  };
 
   return (
     <>
       <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* ✅ NAVY animated background (same as Notifications) */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
           <div className="sfShimmer" />
         </div>
 
-        {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
           <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
@@ -300,18 +345,16 @@ export default function CollaborationRoom() {
             <NavItem active={location.pathname === "/portfolio"} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
             <NavItem active={location.pathname === "/collaboration"} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
             <NavItem active={location.pathname === "/showcase"} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
-           
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
               label="Notifications"
-              badge={unreadCount > 0 ? unreadCount : null} // ✅ Actual count show hoga
+              badge={unreadCount > 0 ? unreadCount : null}
               onClick={() => navigate("/notifications")}
             />
             <NavItem active={location.pathname === "/settings"} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
           </nav>
 
-          {/* bottom profile */}
           <button
             onClick={() => navigate("/settings")}
             className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
@@ -325,7 +368,6 @@ export default function CollaborationRoom() {
                 className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
                   isOnline ? "bg-emerald-400" : "bg-slate-400"
                 }`}
-                title={isOnline ? "Online" : "Offline"}
               />
             </div>
 
@@ -336,44 +378,37 @@ export default function CollaborationRoom() {
           </button>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 p-6 md:p-8 relative">
-          {/* Top Bar (Notifications-like entry animation) */}
           <div className={`flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
                 className="mt-1 w-10 h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
-                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
               >
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
 
               <div>
                 <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Collaboration Lobby</h1>
-                <p className="text-sm text-slate-500 mt-1">Create rooms, browse rooms, request to join, and enter workspace.</p>
+                <p className="text-sm text-slate-500 mt-1">Backend-synced: create, request, approve, enter by code.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/notifications")}
-                className="relative w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-300 transition"
-                title="Notifications"
-              >
-                <BellIcon />
-                {unreadCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-sky-500 text-white text-[11px] font-extrabold flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/notifications")}
+              className="relative w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-300 transition"
+              title="Notifications"
+            >
+              <BellIcon />
+              {unreadCount > 0 ? (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-sky-500 text-white text-[11px] font-extrabold flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              ) : null}
+            </button>
           </div>
 
-          {/* ✅ Main grid uses Notifications cards style */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* LEFT: Rooms list */}
             <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden sfPulseBorder ${mounted ? "sfIn2" : "sfPre"} xl:col-span-2`}>
               <div className="p-5 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Available rooms</h2>
@@ -384,17 +419,18 @@ export default function CollaborationRoom() {
                 <div className="space-y-3">
                   {rooms.map((r, idx) => {
                     const full = r.members >= r.maxMembers;
-                    const isOwner = (r.owner || "").toLowerCase() === (displayName || "").toLowerCase();
-                    const canEnter = isOwner || !!approvedRooms[r.code];
+                    const isOwner = norm(r.owner) === norm(displayName);
+
+                    const st = getMyRequestStatusForRoom(r.code); // pending/approved/rejected/null
+                    const pendingMe = st === "pending";
+                    const approvedMe = st === "approved";
+
+                    const enterAllowed = isOwner || approvedMe;
 
                     return (
                       <div
                         key={r.id}
-                        className={[
-                          "rounded-2xl border border-slate-200 bg-white p-4 transition sfRow",
-                          "hover:bg-slate-50",
-                          mounted ? "sfRowIn" : "sfRowPre",
-                        ].join(" ")}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 transition sfRow hover:bg-slate-50"
                         style={{ transitionDelay: `${Math.min(idx, 10) * 60}ms` }}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -405,10 +441,17 @@ export default function CollaborationRoom() {
                               <span className="font-semibold">{r.owner}</span>
                             </p>
 
-                            {canEnter ? (
-                              <p className="text-[11px] mt-1 font-extrabold text-emerald-600">Access granted: you can enter workspace</p>
+                            {/* ✅ tiny status line */}
+                            {!isOwner ? (
+                              <p className="text-[11px] mt-1 font-semibold">
+                                {pendingMe ? (
+                                  <span className="text-amber-600">Status: Pending approval…</span>
+                                ) : approvedMe ? (
+                                  <span className="text-emerald-600">Status: Approved ✅</span>
+                                ) : null}
+                              </p>
                             ) : (
-                              <p className="text-[11px] mt-1 font-extrabold text-slate-500">Enter workspace after approval (demo)</p>
+                              <p className="text-[11px] mt-1 font-semibold text-slate-500">You are the owner</p>
                             )}
                           </div>
 
@@ -427,30 +470,52 @@ export default function CollaborationRoom() {
                             onClick={() => copyCode(r.code)}
                             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition inline-flex items-center gap-2"
                           >
-                            <CopyIcon />
-                            Copy code
+                            <CopyIcon /> Copy code
                           </button>
 
                           <button
                             onClick={() => requestToJoin(r.code)}
-                            disabled={full}
+                            disabled={full || pendingMe || approvedMe || isOwner}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
-                              full ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800"
+                              full || pendingMe || approvedMe || isOwner
+                                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                : "bg-slate-900 text-white hover:bg-slate-800"
                             }`}
+                            title={
+                              isOwner
+                                ? "You are owner"
+                                : approvedMe
+                                ? "Already approved"
+                                : pendingMe
+                                ? "Already requested (pending)"
+                                : "Request to join"
+                            }
                           >
-                            Request to join
+                            {isOwner ? "Owner" : approvedMe ? "Approved" : pendingMe ? "Pending…" : "Request to join"}
                           </button>
 
                           <button
-                            onClick={() => goToWorkspace(r.code, r.owner)}
-                            disabled={!canEnter}
+                            onClick={() => goToWorkspace(r.code)}
+                            disabled={!enterAllowed}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
-                              !canEnter ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800"
+                              enterAllowed
+                                ? "bg-slate-900 text-white hover:bg-slate-800"
+                                : "bg-slate-200 text-slate-400 cursor-not-allowed"
                             }`}
-                            title={!canEnter ? "Approval required (demo)" : "Open workspace"}
+                            title={enterAllowed ? "Enter workspace" : "Disabled until owner approves"}
                           >
                             Enter workspace
                           </button>
+
+                          {/* ✅ Delete button for owner only */}
+                          {isOwner ? (
+                            <button
+                              onClick={() => deleteRoom(r.code)}
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold transition bg-rose-500 text-white hover:bg-rose-400"
+                            >
+                              Delete
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -459,12 +524,10 @@ export default function CollaborationRoom() {
               </div>
             </section>
 
-            {/* RIGHT */}
             <div className="space-y-6">
-              {/* Join */}
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join a room</h2>
-                <p className="text-xs text-slate-500 mt-1">Send a request. Owner will approve (demo).</p>
+                <p className="text-xs text-slate-500 mt-1">Request join, then owner approve.</p>
 
                 <div className="mt-4 space-y-3">
                   <input
@@ -487,22 +550,29 @@ export default function CollaborationRoom() {
                     Send join request
                   </button>
 
+                  {/* ✅ Disabled until approved */}
                   <button
-                    onClick={() =>
-                      goToWorkspace(joinCode.trim().toUpperCase(), rooms.find((x) => x.code === joinCode.trim().toUpperCase())?.owner)
-                    }
-                    className="w-full px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
-                    title="Enter workspace if approved"
-                  >
-                    Enter workspace (by code)
-                  </button>
+  onClick={enterWorkspaceByCode}
+  disabled={
+    (() => {
+      const code = (joinCode || "").trim().toUpperCase();
+      const room = rooms.find(
+        (r) => String(r.code || "").toUpperCase() === code
+      );
+      if (!room) return false;
+      return !canEnterRoom(room);
+    })()
+  }
+  className="w-full px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50"
+>
+  Enter workspace (by code)
+</button>
                 </div>
               </section>
 
-              {/* Create */}
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Create a room</h2>
-                <p className="text-xs text-slate-500 mt-1">Set a name and maximum members.</p>
+                <p className="text-xs text-slate-500 mt-1">Backend creates a real shared room.</p>
 
                 <div className="mt-4 space-y-3">
                   <input
@@ -537,19 +607,16 @@ export default function CollaborationRoom() {
                   >
                     Create room
                   </button>
-
-                  <p className="text-[11px] text-slate-500">A unique room code is generated for every new room.</p>
                 </div>
               </section>
 
-              {/* Owner approvals */}
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join requests (Owner)</h2>
-                <p className="text-xs text-slate-500 mt-1">Only your rooms show requests here (demo).</p>
+                <p className="text-xs text-slate-500 mt-1">Only your rooms will show here.</p>
 
                 <div className="mt-4 space-y-3">
                   {ownerPending.length === 0 ? (
-                    <div className="text-sm text-slate-500">No pending requests for your rooms.</div>
+                    <div className="text-sm text-slate-500">No pending requests.</div>
                   ) : (
                     ownerPending.map((req) => (
                       <div key={req.id} className="rounded-2xl border border-slate-200 bg-white p-4 sfRow">
@@ -560,13 +627,13 @@ export default function CollaborationRoom() {
 
                         <div className="mt-3 flex gap-2">
                           <button
-                            onClick={() => approveRequest(req.id)}
+                            onClick={() => approveRequest(req)}
                             className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition inline-flex items-center gap-2 shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                           >
                             <CheckIcon /> Approve
                           </button>
                           <button
-                            onClick={() => rejectRequest(req.id)}
+                            onClick={() => rejectRequest(req)}
                             className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition inline-flex items-center gap-2"
                           >
                             <XIcon /> Reject
@@ -582,122 +649,32 @@ export default function CollaborationRoom() {
         </main>
       </div>
 
-      {/* Styles (same theme system as Notifications.jsx) */}
-      <style>{`
-        /* Sidebar show/hide (same as Dashboard/Notifications) */
-        .sidebar{
-          background: #0f172a;
-          color: #f8fafc;
-          display:flex;
-          flex-direction:column;
-          padding: 24px 16px;
-          overflow:hidden;
-          transition: width .25s ease, padding .25s ease, opacity .25s ease;
-          z-index: 10;
-        }
-        .sidebarOpen{ width: 288px; opacity:1; }
-        .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
-
-        /* NAVY BLUE ONLY animated blobs */
-        .sfBlob{
-          position:absolute;
-          width: 560px;
-          height: 560px;
-          border-radius: 999px;
-          filter: blur(95px);
-          opacity: .34;
-          animation: sfFloat 14s ease-in-out infinite;
-          background: radial-gradient(circle at 30% 30%,
-            rgba(12, 42, 92, 0.65),
-            rgba(6, 22, 58, 0.35),
-            rgba(3, 12, 28, 0)
-          );
-        }
-        .sfBlob1{ left: -180px; top: -180px; }
-        .sfBlob2{
-          right: -220px; bottom: -260px;
-          width: 650px; height: 650px;
-          opacity: .28;
-          animation-duration: 18s;
-        }
-
-        .sfShimmer{
-          position:absolute;
-          inset:-2px;
-          pointer-events:none;
-          background:
-            linear-gradient(120deg,
-              rgba(3, 12, 28, 0) 0%,
-              rgba(12, 42, 92, 0.22) 45%,
-              rgba(3, 12, 28, 0) 70%
-            );
-          mix-blend-mode: multiply;
-          opacity: .55;
-          transform: translateX(-30%);
-          animation: sfSweep 6.5s ease-in-out infinite;
-        }
-
-        @keyframes sfFloat{
-          0%{ transform: translate(0px,0px) scale(1); }
-          50%{ transform: translate(32px,-28px) scale(1.06); }
-          100%{ transform: translate(0px,0px) scale(1); }
-        }
-        @keyframes sfSweep{
-          0%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
-          50%{ transform: translateX(30%) skewX(-8deg); opacity:.65; }
-          100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
-        }
-
-        /* Entry animations */
-        .sfPre{ opacity: 0; transform: translateY(12px); }
-        .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
-        .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
-        .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
-
-        /* Navy pulse border */
-        .sfPulseBorder{ position: relative; }
-        .sfPulseBorder::before{
-          content:"";
-          position:absolute;
-          inset:-1px;
-          border-radius: 18px;
-          background: linear-gradient(120deg,
-            rgba(8, 30, 68, 0.85),
-            rgba(12, 42, 92, 0.35),
-            rgba(8, 30, 68, 0.85)
-          );
-          opacity: .28;
-          filter: blur(10px);
-          pointer-events:none;
-          animation: sfBorderPulse 4.2s ease-in-out infinite;
-        }
-        .sfPulseBorder::after{
-          content:"";
-          position:absolute;
-          inset:0;
-          border-radius: 18px;
-          pointer-events:none;
-          box-shadow: 0 0 0 1px rgba(10, 28, 64, 0.30);
-        }
-        @keyframes sfBorderPulse{
-          0%,100%{ opacity: .18; transform: scale(1); }
-          50%{ opacity: .40; transform: scale(1.01); }
-        }
-
-        /* Row hover + stagger animation */
-        .sfRow{
-          transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
-          will-change: transform;
-        }
-        .sfRow:hover{
-          transform: translateY(-4px);
-          box-shadow:
-            0 18px 45px rgba(2,6,23,0.10),
-            0 0 0 1px rgba(8, 30, 68, 0.10);
-        }
-        .sfRowPre{ opacity: 0; transform: translateY(18px); }
-        .sfRowIn{ opacity: 1; transform: translateY(0); }
-      `}</style>
+      <style>{styles}</style>
     </>
   );
 }
+
+const styles = `
+  .sidebar{background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;padding:24px 16px;overflow:hidden;transition:width .25s ease,padding .25s ease,opacity .25s ease;z-index:10;}
+  .sidebarOpen{width:288px;opacity:1;}
+  .sidebarClosed{width:0px;padding:24px 0px;opacity:0;}
+  .sfBlob{position:absolute;width:560px;height:560px;border-radius:999px;filter:blur(95px);opacity:.34;animation:sfFloat 14s ease-in-out infinite;
+    background:radial-gradient(circle at 30% 30%, rgba(12,42,92,.65), rgba(6,22,58,.35), rgba(3,12,28,0));}
+  .sfBlob1{left:-180px;top:-180px;}
+  .sfBlob2{right:-220px;bottom:-260px;width:650px;height:650px;opacity:.28;animation-duration:18s;}
+  .sfShimmer{position:absolute;inset:-2px;pointer-events:none;background:linear-gradient(120deg, rgba(3,12,28,0) 0%, rgba(12,42,92,.22) 45%, rgba(3,12,28,0) 70%);
+    mix-blend-mode:multiply;opacity:.55;transform:translateX(-30%);animation:sfSweep 6.5s ease-in-out infinite;}
+  @keyframes sfFloat{0%{transform:translate(0,0) scale(1);}50%{transform:translate(32px,-28px) scale(1.06);}100%{transform:translate(0,0) scale(1);}}
+  @keyframes sfSweep{0%{transform:translateX(-35%) skewX(-8deg);opacity:.25;}50%{transform:translateX(30%) skewX(-8deg);opacity:.65;}100%{transform:translateX(-35%) skewX(-8deg);opacity:.25;}}
+  .sfPre{opacity:0;transform:translateY(12px);}
+  .sfIn{opacity:1;transform:translateY(0);transition:all .6s cubic-bezier(.2,.8,.2,1);}
+  .sfIn2{opacity:1;transform:translateY(0);transition:all .65s cubic-bezier(.2,.8,.2,1);transition-delay:.08s;}
+  .sfIn3{opacity:1;transform:translateY(0);transition:all .7s cubic-bezier(.2,.8,.2,1);transition-delay:.12s;}
+  .sfPulseBorder{position:relative;}
+  .sfPulseBorder::before{content:"";position:absolute;inset:-1px;border-radius:18px;background:linear-gradient(120deg, rgba(8,30,68,.85), rgba(12,42,92,.35), rgba(8,30,68,.85));
+    opacity:.28;filter:blur(10px);pointer-events:none;animation:sfBorderPulse 4.2s ease-in-out infinite;}
+  .sfPulseBorder::after{content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;box-shadow:0 0 0 1px rgba(10,28,64,.30);}
+  @keyframes sfBorderPulse{0%,100%{opacity:.18;transform:scale(1);}50%{opacity:.40;transform:scale(1.01);}}
+  .sfRow{transition:transform .28s ease, box-shadow .28s ease, opacity .7s ease;will-change:transform;}
+  .sfRow:hover{transform:translateY(-4px);box-shadow:0 18px 45px rgba(2,6,23,.10), 0 0 0 1px rgba(8,30,68,.10);}
+`;

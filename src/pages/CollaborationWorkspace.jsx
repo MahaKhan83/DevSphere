@@ -2,16 +2,10 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
-import { io } from "socket.io-client";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
-import api from "../services/api"; // ✅ Import axios instance
-
-/* ================= SOCKET (frontend only) =================
-   NOTE: Without backend, socket won't actually deliver.
-   We keep it safe + also keep local UI working.
-=========================================================== */
-const socket = io("http://localhost:5000", { autoConnect: false });
+import api from "../services/api";
+import socket from "../sockets/socket"; // ✅ SINGLE socket instance
 
 /* ================= Dashboard-style Icons (SVG) ================= */
 const DashboardIcon = () => (
@@ -32,11 +26,6 @@ const CollabIcon = () => (
 const ShowcaseIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm4 8 2-2 2 2 4-4 2 2v4H8v-2Z" />
-  </svg>
-);
-const UserRolesIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Zm-8 0c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Zm0 2c-2.67 0-8 1.34-8 4v1h12v-1c0-2.66-5.33-4-8-4Zm8 0c-.33 0-.71.02-1.12.06 1.12.82 1.92 1.94 1.92 3.44v1H24v-1c0-2.66-5.33-4-8-4Z" />
   </svg>
 );
 const BellIcon = () => (
@@ -73,12 +62,6 @@ const TabTasksIcon = () => (
   </svg>
 );
 
-const CopyIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <rect x="2" y="2" width="13" height="13" rx="2" />
-  </svg>
-);
 const SaveIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
@@ -86,6 +69,15 @@ const SaveIcon = () => (
     <path d="M7 3v5h8" />
   </svg>
 );
+
+const DownloadIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="M7 10l5 5 5-5" />
+    <path d="M12 15V3" />
+  </svg>
+);
+
 const TrashIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 6h18" />
@@ -96,15 +88,11 @@ const TrashIcon = () => (
 
 /* ================= UI helpers (Dashboard-style) ================= */
 const IconWrap = ({ children }) => (
-  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
-    {children}
-  </span>
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">{children}</span>
 );
 
 const BadgePill = ({ children }) => (
-  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
-    {children}
-  </span>
+  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">{children}</span>
 );
 
 const NavItem = ({ active, icon, label, onClick, badge }) => (
@@ -142,6 +130,15 @@ const formatElapsed = (ms) => {
   return `${m}m ${String(s).padStart(2, "0")}s`;
 };
 
+/* ================= Soft-lock + cursor helpers ================= */
+const COLOR_PALETTE = ["#22c55e", "#3b82f6", "#a855f7", "#f97316", "#ef4444", "#06b6d4", "#eab308", "#14b8a6", "#8b5cf6", "#f43f5e", "#10b981", "#0ea5e9"];
+
+const hashToIndex = (str = "", mod = COLOR_PALETTE.length) => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h % mod;
+};
+
 export default function CollaborationWorkspace() {
   const { user } = useContext(AuthContext);
   const { roomCode } = useParams();
@@ -165,28 +162,20 @@ export default function CollaborationWorkspace() {
     .slice(0, 2);
 
   const isOnline = true;
-  
-  // ✅ ACTUAL Notification Count - Dashboard aur Settings ki tarah
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  /* =========================
-     ✅ Fetch Real Notification Count
-  ========================= */
+  // ✅ Notification Count
+  const [unreadCount, setUnreadCount] = useState(0);
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
       const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (81 ya jo bhi ho)
+      const totalUnread = notifications.filter((n) => !n.read).length;
+      setUnreadCount(totalUnread);
     } catch (err) {
       console.warn("Could not fetch notification count:", err.message);
       setUnreadCount(0);
     }
   };
-
-  useEffect(() => {
-    fetchRealNotificationCount();
-  }, []);
 
   /* ---------------- Meeting timer ---------------- */
   const [startTime] = useState(Date.now());
@@ -195,7 +184,6 @@ export default function CollaborationWorkspace() {
     const t = setInterval(() => setElapsedMs(Date.now() - startTime), 1000);
     return () => clearInterval(t);
   }, [startTime]);
-
   const meetingTime = useMemo(() => formatElapsed(elapsedMs), [elapsedMs]);
 
   /* ---------------- Leave screen ---------------- */
@@ -205,13 +193,15 @@ export default function CollaborationWorkspace() {
   /* ---------------- Tabs ---------------- */
   const [tab, setTab] = useState("chat"); // chat | editor | files | tasks
   const [hasNewMsg, setHasNewMsg] = useState(false);
+  const [hasNewCode, setHasNewCode] = useState(false);
 
-  /* ---------------- Members (demo) ---------------- */
-  const [members] = useState(() => [
-    { id: "m1", name: displayName, role: "You", online: true },
-    { id: "m2", name: "Maha", role: "Developer", online: true },
-    { id: "m3", name: "Ali", role: "Reviewer", online: true },
-  ]);
+  const tabRef = useRef(tab);
+  useEffect(() => {
+    tabRef.current = tab;
+  }, [tab]);
+
+  /* ---------------- Members ---------------- */
+  const [members, setMembers] = useState([]);
 
   /* ---------------- Chat ---------------- */
   const [messages, setMessages] = useState(() => [
@@ -222,70 +212,891 @@ export default function CollaborationWorkspace() {
   const chatEndRef = useRef(null);
 
   /* ---------------- Editor (Monaco) ---------------- */
-  const storageKey = `devsphere_room_${roomCode}_code`;
+  const jsKey = `devsphere_room_${roomCode}_code_js`;
+  const htmlKey = `devsphere_room_${roomCode}_code_html`;
+  const cssKey = `devsphere_room_${roomCode}_code_css`;
+
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(
+
+  const [jsCode, setJsCode] = useState(
+    () => localStorage.getItem(jsKey) || `// DevSphere Collaboration Workspace\n// Room: ${roomCode}\n\nconsole.log("Hello DevSphere!");\n`
+  );
+  const [htmlCode, setHtmlCode] = useState(
     () =>
-      localStorage.getItem(storageKey) ||
-      `// DevSphere Collaboration Workspace\n// Room: ${roomCode}\n\nconsole.log("Hello DevSphere!");\n`
+      localStorage.getItem(htmlKey) ||
+      `<!doctype html>\n<html>\n  <body>\n    <div class="card">\n      <h1>Hello DevSphere</h1>\n      <p>Live Preview (HTML + CSS)</p>\n    </div>\n  </body>\n</html>\n`
+  );
+  const [cssCode, setCssCode] = useState(
+    () => localStorage.getItem(cssKey) || `body{font-family:Arial;padding:16px;}\n.card{border:1px solid #ddd;border-radius:12px;padding:16px}\n`
   );
 
-  /* ---------------- Files ---------------- */
+  useEffect(() => localStorage.setItem(jsKey, jsCode), [jsKey, jsCode]);
+  useEffect(() => localStorage.setItem(htmlKey, htmlCode), [htmlKey, htmlCode]);
+  useEffect(() => localStorage.setItem(cssKey, cssCode), [cssKey, cssCode]);
+
+  const currentEditorValue = useMemo(() => {
+    if (language === "html") return htmlCode;
+    if (language === "css") return cssCode;
+    return jsCode;
+  }, [language, jsCode, htmlCode, cssCode]);
+
+  const setCurrentEditorValue = (v) => {
+    const next = v ?? "";
+    if (language === "html") setHtmlCode(next);
+    else if (language === "css") setCssCode(next);
+    else setJsCode(next);
+  };
+
+  const previewDoc = useMemo(() => {
+    const styleTag = `<style>${cssCode}</style>`;
+    const raw = htmlCode || "";
+    if (raw.includes("<head>")) return raw.replace("<head>", `<head>${styleTag}`);
+    if (raw.includes("<html")) return `<!doctype html>${raw.replace("<body>", `<body>${styleTag}`)}`;
+    return `<!doctype html><html><head>${styleTag}</head><body>${raw}</body></html>`;
+  }, [htmlCode, cssCode]);
+
+  const [output, setOutput] = useState("");
+
+  /* ✅ Prevent loops + small debounce */
+  const isRemoteUpdateRef = useRef(false);
+  const sendTimerRef = useRef(null);
+
+  // ✅ Load saved code from backend on room open
+  const loadSavedCode = async () => {
+    try {
+      const res = await api.get(`/collaboration/code/${roomCode}`);
+      const data = res?.data || null;
+      if (!data) return;
+
+      const js = data?.code?.jsCode ?? data?.js ?? "";
+      const html = data?.code?.htmlCode ?? data?.html ?? "";
+      const css = data?.code?.cssCode ?? data?.css ?? "";
+
+      isRemoteUpdateRef.current = true;
+      setJsCode(js);
+      setHtmlCode(html);
+      setCssCode(css);
+      setTimeout(() => (isRemoteUpdateRef.current = false), 0);
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Saved code loaded for room ${roomCode}.`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      console.warn("Load saved code failed:", err?.message || err);
+    }
+  };
+
+  const broadcastCode = (nextCode, nextLang = language) => {
+    if (isRemoteUpdateRef.current) return;
+
+    if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
+    sendTimerRef.current = setTimeout(() => {
+      socket.emit("code-change", {
+        roomCode,
+        code: nextCode,
+        language: nextLang,
+        by: displayName,
+        ts: Date.now(),
+      });
+    }, 120);
+  };
+
+  const runCode = () => {
+    if (language !== "javascript" && language !== "typescript") {
+      setOutput("Run only works for JavaScript / TypeScript right now.");
+      return;
+    }
+
+    try {
+      const logs = [];
+      const originalLog = console.log;
+
+      console.log = (...args) => {
+        logs.push(args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" "));
+      };
+
+      new Function(jsCode)();
+
+      console.log = originalLog;
+      setOutput(logs.join("\n") || "No output (try console.log)");
+    } catch (err) {
+      setOutput("Error: " + (err?.message || "Unknown error"));
+    }
+  };
+
+  // ✅ Save to DB
+  const saveCode = async () => {
+    try {
+      await api.post(`/collaboration/code/${roomCode}`, {
+        js: jsCode,
+        html: htmlCode,
+        css: cssCode,
+        jsCode,
+        htmlCode,
+        cssCode,
+        by: displayName,
+      });
+
+      socket.emit("editor-action", {
+        roomCode,
+        action: "save",
+        by: displayName,
+        language,
+        ts: Date.now(),
+      });
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `${displayName} saved the code (stored in DB).`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Save failed: ${err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  // ✅ Download ZIP
+  const downloadZip = async () => {
+    try {
+      const res = await api.get(`/collaboration/code/${roomCode}/download`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: "application/zip" });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `devsphere_${String(roomCode || "").toUpperCase()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      socket.emit("editor-action", {
+        roomCode,
+        action: "download",
+        by: displayName,
+        language,
+        ts: Date.now(),
+      });
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `ZIP downloaded (check Downloads): devsphere_${String(roomCode || "").toUpperCase()}.zip`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Download failed: ${err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  /* ================= Soft Lock state ================= */
+  const [lockState, setLockState] = useState({ lockedBy: null, lockedAt: null });
+  const lockReleaseTimerRef = useRef(null);
+
+  const myColorIndex = useMemo(() => hashToIndex(displayName), [displayName]);
+  const myColor = COLOR_PALETTE[myColorIndex];
+
+  const isLockedByOther = useMemo(() => {
+    return !!lockState.lockedBy && lockState.lockedBy !== displayName;
+  }, [lockState.lockedBy, displayName]);
+
+  const requestLock = (lang) => {
+    socket.emit("lock-request", { roomCode, language: lang });
+
+    setLockState({ lockedBy: displayName, lockedAt: Date.now() });
+
+    if (lockReleaseTimerRef.current) clearTimeout(lockReleaseTimerRef.current);
+    lockReleaseTimerRef.current = setTimeout(() => {
+      releaseLock(lang);
+    }, 3000);
+  };
+
+  const releaseLock = (lang) => {
+    if (lockReleaseTimerRef.current) clearTimeout(lockReleaseTimerRef.current);
+    lockReleaseTimerRef.current = null;
+
+    setLockState((prev) => {
+      if (prev.lockedBy !== displayName) return prev;
+      return { lockedBy: null, lockedAt: null };
+    });
+
+    socket.emit("lock-release", { roomCode, language: lang });
+  };
+
+  /* ================= Remote Cursors ================= */
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+
+  const cursorDecorationsRef = useRef(new Map());
+  const remoteCursorPosRef = useRef(new Map());
+
+  const ensureCursorStyles = () => {
+    const id = "devsphere-remote-cursor-styles";
+    if (document.getElementById(id)) return;
+
+    const style = document.createElement("style");
+    style.id = id;
+
+    const css = COLOR_PALETTE.map((c, i) => {
+      return `
+        .remoteCursor_${i} { border-left: 2px solid ${c}; }
+        .remoteCursor_${i}::after{
+          content: attr(data-name);
+          position: absolute;
+          transform: translateY(-110%);
+          background: ${c};
+          color: white;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 999px;
+          white-space: nowrap;
+          box-shadow: 0 8px 18px rgba(0,0,0,.12);
+        }
+      `;
+    }).join("\n");
+
+    style.innerHTML = css;
+    document.head.appendChild(style);
+  };
+
+  const applyRemoteCursor = (userName, lang, pos) => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+    if (!pos?.lineNumber || !pos?.column) return;
+
+    if (lang !== language) return;
+
+    ensureCursorStyles();
+
+    const idx = hashToIndex(userName);
+    const className = `remoteCursor_${idx}`;
+    const range = new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column);
+
+    const previousIds = cursorDecorationsRef.current.get(userName) || [];
+
+    const newIds = editor.deltaDecorations(previousIds, [
+      {
+        range,
+        options: {
+          className: "",
+          beforeContentClassName: className,
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+          hoverMessage: [{ value: `**${userName}**` }],
+        },
+      },
+    ]);
+
+    cursorDecorationsRef.current.set(userName, newIds);
+
+    setTimeout(() => {
+      const nodes = document.querySelectorAll(`.${className}`);
+      nodes.forEach((n) => n.setAttribute("data-name", userName));
+    }, 0);
+  };
+
+  const sendCursorPosition = (lang) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const pos = editor.getPosition();
+    if (!pos) return;
+
+    socket.emit("cursor-change", {
+      roomCode,
+      language: lang,
+      by: displayName,
+      position: { lineNumber: pos.lineNumber, column: pos.column },
+      ts: Date.now(),
+    });
+  };
+
+  /* ---------------- Files (BACKEND + REALTIME) ---------------- */
   const [files, setFiles] = useState([]);
   const fileRef = useRef(null);
 
-  /* ---------------- Tasks ---------------- */
-  const tasksKey = `devsphere_room_${roomCode}_tasks`;
-  const [tasks, setTasks] = useState(() => {
-    try {
-      const raw = localStorage.getItem(tasksKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  // ✅ STEP 2 helper (ONLY uploader can remove file)
+  const normFile = (v) => String(v || "").trim().toLowerCase();
 
+  const isFileOwner = (f) => {
+    const meId = user?._id ? String(user._id) : "";
+    const uploaderId = f?.uploadedBy ? String(f.uploadedBy) : "";
+
+    if (meId && uploaderId && meId === uploaderId) return true;
+
+    // old files ke liye fallback
+    return normFile(f?.by) === normFile(displayName);
+  };
+
+  const loadRoomFiles = async () => {
+    try {
+      const res = await api.get(`/collaboration/files/${roomCode}`);
+      const list = res?.data?.files || [];
+      setFiles(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.warn("Load files failed:", err?.message || err);
+    }
+  };
+
+  const uploadFiles = async (fileList) => {
+    const arr = Array.from(fileList || []);
+    if (arr.length === 0) return;
+
+    try {
+      const form = new FormData();
+      arr.forEach((f) => form.append("files", f));
+      form.append("by", displayName);
+
+      const res = await api.post(`/collaboration/files/${roomCode}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const uploaded = res?.data?.files || [];
+
+      setFiles((prev) => {
+        const prevIds = new Set(prev.map((x) => String(x.id)));
+        return [...uploaded.filter((x) => !prevIds.has(String(x.id))), ...prev];
+      });
+
+      setTab("files");
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `${displayName} uploaded ${uploaded.length} file(s).`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+
+      if (fileRef.current) fileRef.current.value = "";
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Upload failed: ${err?.response?.data?.message || err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  const removeFile = async (fileId) => {
+    try {
+      await api.delete(`/collaboration/files/${roomCode}/${fileId}`);
+      setFiles((p) => p.filter((x) => String(x.id) !== String(fileId)));
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `${displayName} removed a file.`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Remove failed: ${err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  /* ---------------- Tasks (BACKEND + REALTIME) ---------------- */
+  const [tasks, setTasks] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskAssignee, setTaskAssignee] = useState(displayName);
-  const [taskDue, setTaskDue] = useState("");
 
+  // ✅ UPDATED: use datetime-local (safe, standard)
+  const [taskDue, setTaskDue] = useState(""); // "YYYY-MM-DDTHH:mm"
+
+  // ✅ NEW: loading state to prevent double create
+  const [taskCreating, setTaskCreating] = useState(false);
+
+  const loadRoomTasks = async () => {
+    try {
+      const res = await api.get(`/collaboration/tasks/${roomCode}`);
+      const list = res?.data || [];
+      setTasks(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.warn("Load tasks failed:", err?.message || err);
+      setTasks([]);
+    }
+  };
+
+  // ✅ FIXED: Better identity matching (works with userId OR name/email/displayName)
+  const norm = (v) => String(v || "").trim().toLowerCase();
+
+  // ✅ TASK permission helper (UPDATED to safe prefix match)
+  const samePersonLoose = (a, b) => {
+    const A = norm(a);
+    const B = norm(b);
+    if (!A || !B) return false;
+
+    if (A === B) return true;
+
+    // allow prefix match only at word boundary: "falak" == "falak khan"
+    if (A.startsWith(B + " ")) return true;
+    if (B.startsWith(A + " ")) return true;
+
+    return false;
+  };
+
+  const meTask = {
+    id: user?._id ? String(user._id) : "",
+    name: user?.name || "",
+    email: user?.email || "",
+    display: displayName || "",
+  };
+
+  const isTaskOwner = (t) => {
+    const creatorId = t?.createdBy?.userId ? String(t.createdBy.userId) : "";
+    if (meTask.id && creatorId && meTask.id === creatorId) return true;
+
+    const creatorName = t?.createdBy?.name || t?.createdByName || t?.createdBy || "";
+
+    return (
+      samePersonLoose(creatorName, meTask.name) ||
+      samePersonLoose(creatorName, meTask.email) ||
+      samePersonLoose(creatorName, meTask.display)
+    );
+  };
+
+  const isTaskAssignee = (t) => {
+    const assigneeId = t?.assignedTo?.userId ? String(t.assignedTo.userId) : "";
+    if (meTask.id && assigneeId && meTask.id === assigneeId) return true;
+
+    const assigneeName = t?.assignedTo?.name || t?.assignedTo || "";
+    return (
+      samePersonLoose(assigneeName, meTask.name) ||
+      samePersonLoose(assigneeName, meTask.email) ||
+      samePersonLoose(assigneeName, meTask.display)
+    );
+  };
+
+  const canToggleTask = (t) => isTaskOwner(t) || isTaskAssignee(t);
+
+  // ✅ helper: convert datetime-local to Date ISO safely
+  const toISOFromDatetimeLocal = (v) => {
+    const s = String(v || "").trim();
+    if (!s) return null;
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
+  };
+
+  const addTask = async () => {
+    const title = taskTitle.trim();
+    if (!title) return;
+    if (taskCreating) return;
+
+    setTaskCreating(true);
+    try {
+      const payload = {
+        title,
+        assignedTo: taskAssignee ? { name: taskAssignee, userId: null } : { name: "", userId: null },
+        dueDate: taskDue ? toISOFromDatetimeLocal(taskDue) : null,
+      };
+
+      const res = await api.post(`/collaboration/tasks/${roomCode}`, payload);
+      const created = res?.data;
+
+      if (created?._id) {
+        setTasks((prev) => {
+          const exists = prev.some((x) => String(x._id || x.id) === String(created._id));
+          return exists ? prev : [created, ...prev];
+        });
+      }
+
+      setTaskTitle("");
+      setTaskDue("");
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Task created: "${title}" → ${taskAssignee || "Unassigned"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Task create failed: ${err?.response?.data?.message || err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } finally {
+      setTaskCreating(false);
+    }
+  };
+
+  const toggleTask = async (taskId) => {
+    const target = tasks.find((t) => String(t._id || t.id) === String(taskId));
+    if (!target) return;
+
+    // ✅ HARD GUARD: only creator/assignee can toggle
+    if (!canToggleTask(target)) return;
+
+    const nextStatus = target.status === "done" ? "open" : "done";
+
+    try {
+      const res = await api.put(`/collaboration/tasks/${roomCode}/${taskId}`, {
+        status: nextStatus,
+      });
+
+      const updated = res?.data || null;
+
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (String(t._id || t.id) !== String(taskId)) return t;
+          return updated || { ...t, status: nextStatus };
+        })
+      );
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Task update failed: ${err?.response?.data?.message || err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    const target = tasks.find((t) => String(t._id || t.id) === String(taskId));
+    if (!target) return;
+
+    // ✅ HARD GUARD: creator only
+    if (!isTaskOwner(target)) return;
+
+    try {
+      await api.delete(`/collaboration/tasks/${roomCode}/${taskId}`);
+
+      setTasks((p) => p.filter((t) => String(t._id || t.id) !== String(taskId)));
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Task deleted.`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } catch (err) {
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: `Task delete failed: ${err?.response?.data?.message || err?.message || "Unknown error"}`,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  };
+
+  // ✅ On first mount: notifications + load saved code + load files + load tasks
   useEffect(() => {
-    localStorage.setItem(tasksKey, JSON.stringify(tasks));
-  }, [tasks, tasksKey]);
+    fetchRealNotificationCount();
+    loadSavedCode();
+    loadRoomFiles();
+    loadRoomTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ---------------- Socket lifecycle ---------------- */
   useEffect(() => {
-    try {
-      socket.connect();
-      socket.emit("join-room", { roomCode, user: displayName });
+    const onChatMessage = (data) => {
+      const msgObj = { ...data, id: data?.id || `srv_${Date.now()}` };
+      setMessages((p) => [...p, msgObj]);
+      if (tabRef.current !== "chat") setHasNewMsg(true);
+    };
 
-      socket.on("chat-message", (data) => {
-        setMessages((p) => [...p, { ...data, id: data?.id || `srv_${Date.now()}` }]);
-        if (tab !== "chat") setHasNewMsg(true);
+    const onDeleteMessage = (payload) => {
+      const messageId = payload?.messageId;
+      if (!messageId) return;
+      setMessages((p) => p.filter((m) => m.id !== messageId));
+    };
+
+    const onTyping = (name) => setTypingUser(name);
+    const onStopTyping = () => setTypingUser(null);
+
+    const onRoomMembers = (list) => {
+      const mapped = (list || []).map((m) => ({
+        id: m.socketId,
+        name: m.name,
+        role: (m.name || "").toLowerCase() === (displayName || "").toLowerCase() ? "You" : "Member",
+        online: true,
+      }));
+      setMembers(mapped);
+    };
+
+    const onCodeChange = (payload) => {
+      if (!payload) return;
+      if (payload.roomCode !== roomCode) return;
+
+      const lang = payload.language || "javascript";
+      const incoming = typeof payload.code === "string" ? payload.code : "";
+
+      isRemoteUpdateRef.current = true;
+
+      if (lang === "html") setHtmlCode(incoming);
+      else if (lang === "css") setCssCode(incoming);
+      else setJsCode(incoming);
+
+      setLanguage(lang);
+
+      setTimeout(() => (isRemoteUpdateRef.current = false), 0);
+      if (tabRef.current !== "editor") setHasNewCode(true);
+    };
+
+    const onLockState = (lock) => {
+      if (!lock) {
+        setLockState({ lockedBy: null, lockedAt: null });
+        return;
+      }
+      setLockState({
+        lockedBy: lock.holderName || null,
+        lockedAt: lock.lastActive || Date.now(),
+      });
+    };
+
+    const onCursorChange = (payload) => {
+      if (!payload || payload.roomCode !== roomCode) return;
+
+      const who = payload.name || payload.by;
+      if (!who || who === displayName) return;
+
+      const lang = payload.language || "javascript";
+      const pos = payload.position;
+
+      remoteCursorPosRef.current.set(who, { ...pos, lang });
+      applyRemoteCursor(who, lang, pos);
+    };
+
+    const onEditorAction = (payload) => {
+      if (!payload || payload.roomCode !== roomCode) return;
+      if (payload.by === displayName) return;
+
+      const action = payload.action || "action";
+      const text =
+        action === "save"
+          ? `${payload.by} saved the code (DB).`
+          : action === "download"
+          ? `${payload.by} downloaded the ZIP.`
+          : `${payload.by} did: ${action}`;
+
+      setMessages((p) => [...p, { id: `sys_${Date.now()}`, by: "System", text, time: new Date().toLocaleTimeString() }]);
+    };
+
+    // ✅ Files realtime
+    const onFileUploaded = (payload) => {
+      if (!payload || payload.roomCode !== roomCode) return;
+      const f = payload.file;
+      if (!f?.id) return;
+
+      setFiles((prev) => {
+        const exists = prev.some((x) => String(x.id) === String(f.id));
+        if (exists) return prev;
+        return [f, ...prev];
       });
 
-      socket.on("typing", (name) => setTypingUser(name));
-      socket.on("stop-typing", () => setTypingUser(null));
-    } catch {
-      // ignore
-    }
-
-    return () => {
-      try {
-        socket.off("chat-message");
-        socket.off("typing");
-        socket.off("stop-typing");
-        socket.disconnect();
-      } catch {
-        // ignore
+      if (tabRef.current !== "files") {
+        setMessages((p) => [
+          ...p,
+          {
+            id: `sys_${Date.now()}`,
+            by: "System",
+            text: `${f.by || "Someone"} uploaded: ${f.name}`,
+            time: new Date().toLocaleTimeString(),
+          },
+        ]);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomCode, displayName, tab]);
+
+    const onFileDeleted = (payload) => {
+      if (!payload || payload.roomCode !== roomCode) return;
+      const id = payload.fileId;
+      if (!id) return;
+      setFiles((prev) => prev.filter((x) => String(x.id) !== String(id)));
+    };
+
+    // ✅ Tasks realtime
+    const onTaskCreated = (task) => {
+      if (!task) return;
+      if (String(task.roomCode || "").toUpperCase() !== String(roomCode || "").toUpperCase()) return;
+
+      setTasks((prev) => {
+        const id = String(task._id || task.id || "");
+        if (!id) return prev;
+        const exists = prev.some((t) => String(t._id || t.id) === id);
+        if (exists) return prev;
+        return [task, ...prev];
+      });
+
+      if (tabRef.current !== "tasks") {
+        setMessages((p) => [
+          ...p,
+          {
+            id: `sys_${Date.now()}`,
+            by: "System",
+            text: `A new task was created: "${task.title || "Untitled"}"`,
+            time: new Date().toLocaleTimeString(),
+          },
+        ]);
+      }
+    };
+
+    const onTaskUpdated = (task) => {
+      if (!task) return;
+      if (String(task.roomCode || "").toUpperCase() !== String(roomCode || "").toUpperCase()) return;
+
+      const id = String(task._id || task.id || "");
+      if (!id) return;
+
+      setTasks((prev) => prev.map((t) => (String(t._id || t.id) === id ? task : t)));
+    };
+
+    const onTaskDeleted = (payload) => {
+      const id = payload?.taskId || payload?.id;
+      if (!id) return;
+      setTasks((prev) => prev.filter((t) => String(t._id || t.id) !== String(id)));
+    };
+
+    const joinNow = () => {
+      socket.emit("join-room", { roomCode, user: displayName });
+    };
+
+    if (!socket.connected) socket.connect();
+
+    socket.off("connect", joinNow);
+    socket.on("connect", joinNow);
+
+    if (socket.connected) joinNow();
+
+    socket.off("chat-message", onChatMessage);
+    socket.off("delete-message", onDeleteMessage);
+    socket.off("typing", onTyping);
+    socket.off("stop-typing", onStopTyping);
+    socket.off("room-members", onRoomMembers);
+    socket.off("code-change", onCodeChange);
+
+    socket.off("lock-state", onLockState);
+    socket.off("cursor-change", onCursorChange);
+    socket.off("editor-action", onEditorAction);
+
+    socket.off("file-uploaded", onFileUploaded);
+    socket.off("file-deleted", onFileDeleted);
+
+    socket.off("task:created", onTaskCreated);
+    socket.off("task:updated", onTaskUpdated);
+    socket.off("task:deleted", onTaskDeleted);
+
+    socket.on("chat-message", onChatMessage);
+    socket.on("delete-message", onDeleteMessage);
+    socket.on("typing", onTyping);
+    socket.on("stop-typing", onStopTyping);
+    socket.on("room-members", onRoomMembers);
+    socket.on("code-change", onCodeChange);
+
+    socket.on("lock-state", onLockState);
+    socket.on("cursor-change", onCursorChange);
+    socket.on("editor-action", onEditorAction);
+
+    socket.on("file-uploaded", onFileUploaded);
+    socket.on("file-deleted", onFileDeleted);
+
+    socket.on("task:created", onTaskCreated);
+    socket.on("task:updated", onTaskUpdated);
+    socket.on("task:deleted", onTaskDeleted);
+
+    return () => {
+      socket.off("connect", joinNow);
+
+      socket.off("chat-message", onChatMessage);
+      socket.off("delete-message", onDeleteMessage);
+      socket.off("typing", onTyping);
+      socket.off("stop-typing", onStopTyping);
+      socket.off("room-members", onRoomMembers);
+      socket.off("code-change", onCodeChange);
+
+      socket.off("lock-state", onLockState);
+      socket.off("cursor-change", onCursorChange);
+      socket.off("editor-action", onEditorAction);
+
+      socket.off("file-uploaded", onFileUploaded);
+      socket.off("file-deleted", onFileDeleted);
+
+      socket.off("task:created", onTaskCreated);
+      socket.off("task:updated", onTaskUpdated);
+      socket.off("task:deleted", onTaskDeleted);
+
+      socket.emit("leave-room", { roomCode, user: displayName });
+    };
+  }, [roomCode, displayName, language]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, tab]);
+
+  useEffect(() => {
+    const map = remoteCursorPosRef.current;
+    for (const [name, v] of map.entries()) {
+      if (v?.lang === language) applyRemoteCursor(name, v.lang, { lineNumber: v.lineNumber, column: v.column });
+    }
+  }, [language]);
 
   /* ---------------- Chat actions ---------------- */
   const sendMessage = () => {
@@ -301,125 +1112,15 @@ export default function CollaborationWorkspace() {
     };
 
     setMessages((p) => [...p, payload]);
-
-    try {
-      socket.emit("chat-message", payload);
-      socket.emit("stop-typing", roomCode);
-    } catch {
-      // ignore
-    }
-
+    socket.emit("chat-message", payload);
+    socket.emit("stop-typing", roomCode);
     setMsg("");
   };
 
   const deleteMessage = (id) => {
     setMessages((p) => p.filter((m) => m.id !== id));
+    socket.emit("delete-message", { roomCode, messageId: id });
   };
-
-  /* ---------------- Editor actions ---------------- */
-  const saveCode = () => {
-    localStorage.setItem(storageKey, code);
-    setMessages((p) => [
-      ...p,
-      {
-        id: `sys_${Date.now()}`,
-        by: "System",
-        text: `${displayName} saved the code.`,
-        time: new Date().toLocaleTimeString(),
-      },
-    ]);
-  };
-
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setMessages((p) => [
-        ...p,
-        {
-          id: `sys_${Date.now()}`,
-          by: "System",
-          text: `${displayName} copied the code.`,
-          time: new Date().toLocaleTimeString(),
-        },
-      ]);
-    } catch {
-      // ignore
-    }
-  };
-
-  /* ---------------- File actions ---------------- */
-  const uploadFiles = (list) => {
-    const arr = Array.from(list || []);
-    if (arr.length === 0) return;
-
-    const mapped = arr.map((f) => ({
-      id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      name: f.name,
-      size: (f.size / 1024).toFixed(1),
-      url: URL.createObjectURL(f),
-      by: displayName,
-      time: new Date().toLocaleTimeString(),
-    }));
-
-    setFiles((p) => [...mapped, ...p]);
-    setTab("files");
-
-    setMessages((p) => [
-      ...p,
-      {
-        id: `sys_${Date.now()}`,
-        by: "System",
-        text: `${displayName} uploaded ${mapped.length} file(s).`,
-        time: new Date().toLocaleTimeString(),
-      },
-    ]);
-
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const removeFile = (id) => {
-    setFiles((p) => {
-      const f = p.find((x) => x.id === id);
-      if (f?.url) URL.revokeObjectURL(f.url);
-      return p.filter((x) => x.id !== id);
-    });
-  };
-
-  /* ---------------- Task actions ---------------- */
-  const addTask = () => {
-    const title = taskTitle.trim();
-    if (!title) return;
-
-    const t = {
-      id: `t_${Date.now()}`,
-      title,
-      assignedTo: taskAssignee || "Unassigned",
-      due: taskDue || "No due date",
-      status: "open", // open | done
-      createdBy: displayName,
-      time: new Date().toLocaleTimeString(),
-    };
-
-    setTasks((p) => [t, ...p]);
-    setTaskTitle("");
-    setTaskDue("");
-
-    setMessages((p) => [
-      ...p,
-      {
-        id: `sys_${Date.now()}`,
-        by: "System",
-        text: `Task created: "${title}" → ${t.assignedTo}`,
-        time: new Date().toLocaleTimeString(),
-      },
-    ]);
-  };
-
-  const toggleTask = (id) => {
-    setTasks((p) => p.map((t) => (t.id === id ? { ...t, status: t.status === "done" ? "open" : "done" } : t)));
-  };
-
-  const deleteTask = (id) => setTasks((p) => p.filter((t) => t.id !== id));
 
   /* ---------------- Leave room ---------------- */
   const leaveRoom = () => {
@@ -427,23 +1128,17 @@ export default function CollaborationWorkspace() {
     setEndedDuration(duration);
     setMeetingEnded(true);
 
-    try {
-      socket.emit("leave-room", { roomCode, user: displayName });
-    } catch {
-      // ignore
-    }
+    socket.emit("leave-room", { roomCode, user: displayName });
 
     setTimeout(() => {
       navigate("/collaboration");
     }, 1600);
   };
 
-  // Meeting end screen (also with navy background vibe)
   if (meetingEnded) {
     return (
       <>
         <div className="min-h-screen bg-slate-100 flex items-center justify-center px-6 overflow-hidden">
-          {/* NAVY animated background (same as Notifications) */}
           <div className="pointer-events-none fixed inset-0">
             <div className="sfBlob sfBlob1" />
             <div className="sfBlob sfBlob2" />
@@ -475,14 +1170,12 @@ export default function CollaborationWorkspace() {
   return (
     <>
       <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* NAVY animated background (same as Notifications) */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
           <div className="sfShimmer" />
         </div>
 
-        {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
           <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
@@ -496,12 +1189,11 @@ export default function CollaborationWorkspace() {
             <NavItem active={false} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
             <NavItem active={true} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
             <NavItem active={false} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
-            
             <NavItem
               active={false}
               icon={<BellIcon />}
               label="Notifications"
-              badge={unreadCount > 0 ? unreadCount : null} // ✅ Actual count show hoga
+              badge={unreadCount > 0 ? unreadCount : null}
               onClick={() => navigate("/notifications")}
             />
             <NavItem active={false} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
@@ -531,9 +1223,7 @@ export default function CollaborationWorkspace() {
           </button>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 p-6 md:p-8 relative">
-          {/* Header (Notifications-style entry) */}
           <div className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
@@ -566,12 +1256,14 @@ export default function CollaborationWorkspace() {
                   </span>
                 ) : null}
               </button>
+
               <button
                 onClick={() => navigate("/collaboration")}
                 className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
               >
                 Back to Lobby
               </button>
+
               <button
                 onClick={leaveRoom}
                 className="px-4 py-2 rounded-full bg-rose-500 text-white text-sm font-semibold hover:bg-rose-400 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
@@ -581,7 +1273,6 @@ export default function CollaborationWorkspace() {
             </div>
           </div>
 
-          {/* Tabs (pulse border like Notifications filters) */}
           <div className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-4 md:p-5 mb-6 sfPulseBorder ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
@@ -600,7 +1291,16 @@ export default function CollaborationWorkspace() {
                     setHasNewMsg(false);
                   }}
                 />
-                <TabBtn active={tab === "editor"} icon={<TabCodeIcon />} label="Editor" onClick={() => setTab("editor")} />
+                <TabBtn
+                  active={tab === "editor"}
+                  icon={<TabCodeIcon />}
+                  label="Editor"
+                  dot={hasNewCode}
+                  onClick={() => {
+                    setTab("editor");
+                    setHasNewCode(false);
+                  }}
+                />
                 <TabBtn active={tab === "files"} icon={<TabFilesIcon />} label="Files" onClick={() => setTab("files")} />
                 <TabBtn active={tab === "tasks"} icon={<TabTasksIcon />} label="Tasks" onClick={() => setTab("tasks")} />
               </div>
@@ -617,36 +1317,33 @@ export default function CollaborationWorkspace() {
                 </span>
               </div>
 
-              <div className="space-y-3">
-                {members.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold shadow-sm">
-                          {(m.name || "U").slice(0, 1).toUpperCase()}
+              {members.length === 0 ? (
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">Waiting for members...</div>
+              ) : (
+                <div className="space-y-3">
+                  {members.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold shadow-sm">
+                            {(m.name || "U").slice(0, 1).toUpperCase()}
+                          </div>
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-400" />
                         </div>
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                            m.online ? "bg-emerald-400" : "bg-slate-400"
-                          }`}
-                        />
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
+                          <p className="text-xs text-slate-500">{m.role}</p>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
-                        <p className="text-xs text-slate-500">{m.role}</p>
-                      </div>
+                      <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
+                        Online
+                      </span>
                     </div>
-
-                    <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
-                      {m.online ? "Online" : "Offline"}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Main panel */}
@@ -673,7 +1370,7 @@ export default function CollaborationWorkspace() {
                             <button
                               onClick={() => deleteMessage(m.id)}
                               className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-500"
-                              title="Delete message (local)"
+                              title="Delete for everyone"
                             >
                               <TrashIcon /> Delete
                             </button>
@@ -691,18 +1388,10 @@ export default function CollaborationWorkspace() {
                       value={msg}
                       onChange={(e) => {
                         setMsg(e.target.value);
-                        try {
-                          socket.emit("typing", displayName);
-                        } catch {
-                          // ignore
-                        }
+                        socket.emit("typing", { roomCode, name: displayName });
                       }}
                       onBlur={() => {
-                        try {
-                          socket.emit("stop-typing", roomCode);
-                        } catch {
-                          // ignore
-                        }
+                        socket.emit("stop-typing", roomCode);
                       }}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                       placeholder="Type message and press Enter…"
@@ -721,46 +1410,145 @@ export default function CollaborationWorkspace() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">Monaco editor</h3>
-                      <p className="text-xs text-slate-500 mt-1">Local save/copy — realtime sync later with backend</p>
+                      <p className="text-xs text-slate-500 mt-1">Soft-Lock (3s idle + blur) + colored cursors + Run JS + Live Preview</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <select
                         value={language}
-                        onChange={(e) => setLanguage(e.target.value)}
+                        onChange={(e) => {
+                          const lang = e.target.value;
+                          setLanguage(lang);
+
+                          const codeToSend = lang === "html" ? htmlCode : lang === "css" ? cssCode : jsCode;
+
+                          socket.emit("code-change", {
+                            roomCode,
+                            code: codeToSend,
+                            language: lang,
+                            by: displayName,
+                            ts: Date.now(),
+                          });
+
+                          releaseLock(language);
+                          setTimeout(() => sendCursorPosition(lang), 0);
+                        }}
                         className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
                       >
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
                         <option value="html">HTML</option>
                         <option value="css">CSS</option>
-                        <option value="json">JSON</option>
-                        <option value="python">Python</option>
                       </select>
 
-                      <button onClick={copyCode} className="toolBtn">
-                        <CopyIcon /> Copy
+                      <button onClick={runCode} className="toolBtn" title="Run JS/TS">
+                        ▶ Run
                       </button>
-                      <button onClick={saveCode} className="toolBtn">
+
+                      <button onClick={saveCode} className="toolBtn" title="Save to DB">
                         <SaveIcon /> Save
+                      </button>
+
+                      <button onClick={downloadZip} className="toolBtn" title="Download ZIP (index.html, style.css, script.js)">
+                        <DownloadIcon /> Download
                       </button>
                     </div>
                   </div>
 
-                  <div className="editorWrap">
+                  {/* LOCK banner */}
+                  {lockState.lockedBy ? (
+                    <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-slate-900 truncate">
+                          {isLockedByOther ? "Locked" : "You are editing"} •{" "}
+                          <span className="font-black" style={{ color: isLockedByOther ? "#ef4444" : myColor }}>
+                            {lockState.lockedBy}
+                          </span>
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">Auto unlock: after 3s idle OR when editor loses focus (blur)</p>
+                      </div>
+
+                      {!isLockedByOther ? (
+                        <button
+                          onClick={() => releaseLock(language)}
+                          className="text-xs font-extrabold px-3 py-2 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition"
+                        >
+                          Release
+                        </button>
+                      ) : (
+                        <span className="text-xs font-extrabold px-3 py-2 rounded-full bg-white border border-slate-200 text-slate-700">
+                          Read-only
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mb-3 text-xs text-slate-500">No lock • Multiple users can type, but soft-lock helps avoid clashes.</div>
+                  )}
+
+                  <div className="editorWrap relative">
+                    {isLockedByOther ? (
+                      <div className="absolute inset-0 z-[5] pointer-events-none">
+                        <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px]" />
+                        <div className="absolute top-3 right-3 bg-white border border-slate-200 rounded-2xl px-4 py-2 text-xs font-extrabold text-slate-800 shadow">
+                          Editing locked by {lockState.lockedBy}
+                        </div>
+                      </div>
+                    ) : null}
+
                     <Editor
-                      height="420px"
+                      height="320px"
                       theme="vs-dark"
                       language={language}
-                      value={code}
-                      onChange={(v) => setCode(v ?? "")}
+                      value={currentEditorValue}
+                      onMount={(editor, monaco) => {
+                        editorRef.current = editor;
+                        monacoRef.current = monaco;
+
+                        editor.onDidChangeCursorPosition(() => {
+                          sendCursorPosition(language);
+                        });
+
+                        editor.onDidBlurEditorText(() => {
+                          releaseLock(language);
+                        });
+
+                        setTimeout(() => sendCursorPosition(language), 0);
+                      }}
+                      onChange={(v) => {
+                        if (isLockedByOther) return;
+
+                        requestLock(language);
+
+                        const next = v ?? "";
+                        setCurrentEditorValue(next);
+
+                        broadcastCode(next, language);
+                      }}
                       options={{
                         fontSize: 14,
                         minimap: { enabled: false },
                         wordWrap: "on",
                         automaticLayout: true,
                         smoothScrolling: true,
+                        readOnly: isLockedByOther,
                       }}
+                    />
+                  </div>
+
+                  {/* Output */}
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-black text-green-400 p-3 text-sm font-mono h-32 overflow-auto">
+                    <b>Output:</b>
+                    <pre className="whitespace-pre-wrap">{output}</pre>
+                  </div>
+
+                  {/* Preview */}
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                    <div className="px-4 py-2 border-b border-slate-200 text-xs font-extrabold text-slate-700">Live Preview (HTML + CSS)</div>
+                    <iframe
+                      title="preview"
+                      className="w-full h-[260px]"
+                      sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin"
+                      srcDoc={previewDoc}
                     />
                   </div>
                 </>
@@ -771,12 +1559,21 @@ export default function CollaborationWorkspace() {
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-slate-900">Files</h3>
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      className="px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition text-xs font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
-                    >
-                      Upload
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={loadRoomFiles}
+                        className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50"
+                        title="Refresh list"
+                      >
+                        Refresh
+                      </button>
+                      <button
+                        onClick={() => fileRef.current?.click()}
+                        className="px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition text-xs font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
+                      >
+                        Upload
+                      </button>
+                    </div>
                   </div>
 
                   <input type="file" multiple hidden ref={fileRef} onChange={(e) => uploadFiles(e.target.files)} />
@@ -793,25 +1590,36 @@ export default function CollaborationWorkspace() {
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-slate-900 truncate">{f.name}</p>
                             <p className="text-xs text-slate-500 mt-1">
-                              {f.size} KB · by <b className="text-slate-700">{f.by}</b> · {f.time}
+                              {((Number(f.size || 0) / 1024) || 0).toFixed(1)} KB · by <b className="text-slate-700">{f.by || "Unknown"}</b> ·{" "}
+                              {f.time ? new Date(f.time).toLocaleString() : ""}
                             </p>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <a
-                              href={f.url}
+                              href={`http://localhost:5000${f.url}`}
                               download={f.name}
+                              target="_blank"
+                              rel="noreferrer"
                               className="text-xs px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
                             >
                               Download
                             </a>
-                            <button
-                              onClick={() => removeFile(f.id)}
-                              className="text-xs px-3 py-1.5 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
-                              title="Remove (local)"
-                            >
-                              Remove
-                            </button>
+                            {(() => {
+                              const canRemove = isFileOwner(f);
+                              return (
+                                <button
+                                  onClick={() => removeFile(f.id)}
+                                  disabled={!canRemove}
+                                  className={`text-xs px-3 py-1.5 rounded-full transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
+                                    canRemove ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  }`}
+                                  title={canRemove ? "Remove (uploader only)" : "🔒 Only uploader can remove"}
+                                >
+                                  Remove
+                                </button>
+                              );
+                            })()}
                           </div>
                         </div>
                       ))}
@@ -826,9 +1634,19 @@ export default function CollaborationWorkspace() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">Task assignment</h3>
-                      <p className="text-xs text-slate-500 mt-1">Assign tasks to room members (local demo)</p>
+                      <p className="text-xs text-slate-500 mt-1">Backend + DB + Realtime sync</p>
                     </div>
-                    <span className="text-xs text-slate-400">{tasks.length} task(s)</span>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">{tasks.length} task(s)</span>
+                      <button
+                        onClick={loadRoomTasks}
+                        className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50"
+                        title="Refresh tasks"
+                      >
+                        Refresh
+                      </button>
+                    </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -844,22 +1662,29 @@ export default function CollaborationWorkspace() {
                         onChange={(e) => setTaskAssignee(e.target.value)}
                         className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
                       >
-                        {members.map((m) => (
+                        {(members.length ? members : [{ id: "me", name: displayName }]).map((m) => (
                           <option key={m.id} value={m.name}>
                             {m.name}
                           </option>
                         ))}
                       </select>
+
                       <input
+                        type="datetime-local"
                         value={taskDue}
                         onChange={(e) => setTaskDue(e.target.value)}
-                        placeholder="Due (e.g., Today 6pm)"
                         className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-slate-900/30"
+                        title="Due date & time"
                       />
                     </div>
 
-                    <button onClick={addTask} className="mt-3 sendBtn w-full">
-                      Add task
+                    <button
+                      onClick={addTask}
+                      disabled={taskCreating || !taskTitle.trim()}
+                      className={`mt-3 sendBtn w-full ${taskCreating || !taskTitle.trim() ? "opacity-60 cursor-not-allowed" : ""}`}
+                      title={!taskTitle.trim() ? "Enter task title first" : "Create task"}
+                    >
+                      {taskCreating ? "Adding..." : "Add task"}
                     </button>
                   </div>
 
@@ -870,36 +1695,68 @@ export default function CollaborationWorkspace() {
                         <p className="text-xs text-slate-500 mt-1">Create a task to assign work in the room.</p>
                       </div>
                     ) : (
-                      tasks.map((t) => (
-                        <div key={t.id} className="rounded-2xl border border-slate-200 bg-white p-4 sfRow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">
-                              <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${t.status === "done" ? "bg-emerald-400" : "bg-sky-400"}`} />
-                              {t.title}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Assigned to <b className="text-slate-700">{t.assignedTo}</b> · Due:{" "}
-                              <b className="text-slate-700">{t.due}</b> · Created by <b className="text-slate-700">{t.createdBy}</b>
-                            </p>
-                          </div>
+                      tasks.map((t) => {
+                        const id = t._id || t.id;
+                        const assignedName = t?.assignedTo?.name || t?.assignedTo || "Unassigned";
+                        const createdName = t?.createdBy?.name || t?.createdByName || t?.createdBy || "Unknown";
+                        const due = t?.dueDate ? new Date(t.dueDate).toLocaleString() : "No due date";
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleTask(t.id)}
-                              className="text-xs px-3 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
-                            >
-                              {t.status === "done" ? "Mark open" : "Mark done"}
-                            </button>
-                            <button
-                              onClick={() => deleteTask(t.id)}
-                              className="text-xs px-3 py-1.5 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
-                              title="Delete task (local)"
-                            >
-                              Delete
-                            </button>
+                        const isOverdue = t?.dueDate && t.status !== "done" && new Date(t.dueDate).getTime() < Date.now();
+
+                        const canDelete = isTaskOwner(t);
+
+                        return (
+                          <div
+                            key={String(id)}
+                            className="rounded-2xl border border-slate-200 bg-white p-4 sfRow flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">
+                                <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${t.status === "done" ? "bg-emerald-400" : "bg-sky-400"}`} />
+                                {t.title}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Assigned to <b className="text-slate-700">{assignedName}</b> · Due:{" "}
+                                <b className={isOverdue ? "text-rose-600" : "text-slate-700"}>{isOverdue ? "OVERDUE" : due}</b> · Created by{" "}
+                                <b className="text-slate-700">{createdName}</b>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-[11px] font-extrabold px-3 py-1 rounded-full border ${
+                                  t.status === "done" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-sky-50 text-sky-700 border-sky-200"
+                                }`}
+                                title="Task status"
+                              >
+                                {t.status === "done" ? "DONE" : "OPEN"}
+                              </span>
+
+                              <button
+                                onClick={() => toggleTask(id)}
+                                disabled={!canToggleTask(t)}
+                                className={`text-xs px-3 py-1.5 rounded-full transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
+                                  canToggleTask(t) ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                }`}
+                                title={canToggleTask(t) ? "Change task status" : "🔒 View only: Only creator or assignee can change"}
+                              >
+                                {t.status === "done" ? "Mark open" : "Mark done"}
+                              </button>
+
+                              <button
+                                onClick={() => deleteTask(id)}
+                                disabled={!canDelete}
+                                className={`text-xs px-3 py-1.5 rounded-full transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
+                                  canDelete ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                }`}
+                                title={canDelete ? "Delete task (creator only)" : "🔒 Only creator can delete"}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </>
@@ -914,9 +1771,8 @@ export default function CollaborationWorkspace() {
   );
 }
 
-/* =================== NAVY THEME (same as Notifications) =================== */
+/* =================== NAVY THEME =================== */
 const navyStyles = `
-  /* Sidebar show/hide (same as Dashboard.jsx) */
   .sidebar{
     background: #0f172a;
     color: #f8fafc;
@@ -930,7 +1786,6 @@ const navyStyles = `
   .sidebarOpen{ width: 288px; opacity:1; }
   .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-  /* NAVY BLUE ONLY animated blobs */
   .sfBlob{
     position:absolute;
     width: 560px;
@@ -980,13 +1835,11 @@ const navyStyles = `
     100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
   }
 
-  /* Entry animations */
   .sfPre{ opacity: 0; transform: translateY(12px); }
   .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
   .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
   .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
 
-  /* Navy pulse border */
   .sfPulseBorder{ position: relative; }
   .sfPulseBorder::before{
     content:"";
@@ -1016,7 +1869,6 @@ const navyStyles = `
     50%{ opacity: .40; transform: scale(1.01); }
   }
 
-  /* Row hover (like Notifications list) */
   .sfRow{
     transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
     will-change: transform;
@@ -1028,7 +1880,6 @@ const navyStyles = `
       0 0 0 1px rgba(8, 30, 68, 0.10);
   }
 
-  /* Chat */
   .chatBox{
     height:380px;overflow:auto;border-radius:18px;
     border:1px solid rgba(226,232,240,0.95);
@@ -1054,7 +1905,6 @@ const navyStyles = `
   .chatTime{font-size:11px;font-weight:700;color:rgb(100,116,139);}
   .chatText{font-size:13px;font-weight:600;color:rgb(15,23,42);white-space:pre-wrap;}
 
-  /* Buttons */
   .sendBtn{
     padding:12px 16px;border-radius:999px;background:rgb(15,23,42);
     color:#fff;font-weight:800;font-size:13px;
@@ -1075,7 +1925,6 @@ const navyStyles = `
   .toolBtn:hover{transform:translateY(-2px);filter:brightness(1.02);}
   .toolBtn:active{transform:translateY(0);}
 
-  /* Editor shell */
   .editorWrap{
     border-radius:18px;overflow:hidden;border:1px solid rgba(226,232,240,0.60);
     background:rgba(15,23,42,0.98);
