@@ -129,9 +129,16 @@ const Dashboard = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [roomActivity, setRoomActivity] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [showcaseItems, setShowcaseItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [stats, setStats] = useState({
+  projects: 0,
+  showcasePosts: 0,
+  likesReceived: 0,
+  saved: 0,
+});
 
   const isOnline = true;
 
@@ -153,13 +160,7 @@ const Dashboard = () => {
     []
   );
 
-  const showcaseItems = useMemo(
-    () => [
-      { title: "DevSphere UI Kit", author: "Maha", likes: 32 },
-      { title: "Realtime Collab Demo", author: "Ali", likes: 18 },
-    ],
-    []
-  );
+  
 
   const githubUsername = useMemo(() => {
     return (
@@ -214,6 +215,19 @@ const Dashboard = () => {
 
       try {
         const res = await getDashboardData();
+        if (Array.isArray(res?.showcaseItems)) {
+  setShowcaseItems(res.showcaseItems);
+} else {
+  setShowcaseItems([]);
+}
+        if (res?.stats) {
+  setStats({
+    projects: Number(res.stats.projects || 0),
+    showcasePosts: Number(res.stats.showcasePosts || 0),
+    likesReceived: Number(res.stats.likesReceived || 0),
+    saved: Number(res.stats.saved || 0),
+  });
+}
 
         setAnnouncements(
           res?.announcements ?? [
@@ -542,56 +556,50 @@ const Dashboard = () => {
                 {isModerator && <ModeratorPanel />}
 
                 {/* GitHub Widget */}
-                <section
-                  className="cardShell sfPulseBorder p-5 cursor-pointer"
-                  onClick={() =>
-                    navigate("/settings", { state: { tab: "integrations" } })
-                  }
-                  title="Connect GitHub in Settings"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      GitHub activity
-                    </h2>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/settings", {
-                          state: { tab: "integrations" },
-                        });
-                      }}
-                      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
-                    >
-                      Connect / Manage
-                    </button>
-                  </div>
+                {/* New Activity / Stats */}
+<section className="cardShell sfPulseBorder p-5">
+  <div className="flex items-center justify-between mb-3">
+    <h2 className="text-lg font-semibold text-slate-900">New activity</h2>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.commits}</p>
-                      <p className="statLbl">Commits</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.prs}</p>
-                      <p className="statLbl">Pull Requests</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.issues}</p>
-                      <p className="statLbl">Issues</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.streak}d</p>
-                      <p className="statLbl">Streak</p>
-                    </div>
-                  </div>
+    <button
+      onClick={() => navigate("/showcase")}
+      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
+      title="Open showcase"
+    >
+      View details
+    </button>
+  </div>
 
-                  <p className="text-xs text-slate-700 mt-3">
-                    Username:{" "}
-                    <span className="font-semibold">
-                      {githubActivity.username}
-                    </span>
-                  </p>
-                </section>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="statBox">
+      <p className="statNum">{stats.projects}</p>
+      <p className="statLbl">Total projects</p>
+    </div>
+
+    <div className="statBox">
+      <p className="statNum">{stats.showcasePosts}</p>
+      <p className="statLbl">Requests</p>
+    </div>
+
+    <div className="statBox">
+      <p className="statNum">{stats.likesReceived}</p>
+      <p className="statLbl">Likes received</p>
+    </div>
+
+    <div className="statBox">
+      <p className="statNum">{stats.saved}</p>
+      <p className="statLbl">Bookmarks / Saves</p>
+    </div>
+  </div>
+
+  <p className="text-xs text-slate-700 mt-3">
+    Updated from your account activity.
+  </p>
+</section>
+                
+                     
+
+                  
 
                 {/* Announcements */}
                 <section className="cardShell sfPulseBorder p-5">
@@ -600,7 +608,7 @@ const Dashboard = () => {
                       Announcements
                     </h2>
                     <button
-                      onClick={() => navigate("/notifications")}
+                      onClick={() => navigate("/announcements")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
                     >
                       View all
@@ -638,7 +646,7 @@ const Dashboard = () => {
                       Recent projects
                     </h2>
                     <button
-                      onClick={() => navigate("/portfolio")}
+                      onClick={() => navigate("/showcase")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
                     >
                       View all
@@ -650,7 +658,7 @@ const Dashboard = () => {
                       projects.map((project, idx) => (
                         <button
                           key={`${project.name}-${idx}`}
-                          onClick={() => openProject(project)}
+                          onClick={() => navigate("/showcase")}
                           className="w-full text-left rounded-xl p-4 hover:bg-slate-50 transition border border-slate-200 sfRow bg-white"
                           title="Open in Portfolio Builder"
                         >

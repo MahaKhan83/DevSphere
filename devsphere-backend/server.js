@@ -6,12 +6,14 @@ require("dotenv").config();
 const app = express();
 
 // ✅ CORS FIX - Specific frontend port allow karo
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'], // ✅ dono ports
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000"], // ✅ dono ports
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(express.json());
 
@@ -23,9 +25,17 @@ app.use("/api/auth", authRoutes);
 const notificationRoutes = require("./routes/notifications");
 app.use("/api/notifications", notificationRoutes);
 
-// ✅ NEW 👉 Showcase routes (YE LINE ADD KI)
+// ✅ NEW 👉 Showcase routes
 const showcaseRoutes = require("./routes/showcase.routes");
 app.use("/api/showcase", showcaseRoutes);
+
+// ✅ NEW 👉 Dashboard routes  (✅ YE ADD HUA)
+const dashboardRoutes = require("./routes/dashboard.routes");
+app.use("/api/dashboard", dashboardRoutes);
+
+// ✅ Announcements routes
+const announcementRoutes = require("./routes/announcement.routes");
+app.use("/api/announcements", announcementRoutes);
 
 // ✅ Optional: root route for testing server
 app.get("/", (req, res) => {
@@ -33,7 +43,8 @@ app.get("/", (req, res) => {
 });
 
 // ✅ Mongoose connection (updated)
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected ✅"))
   .catch((err) => console.log("MongoDB connection error:", err.message));
 

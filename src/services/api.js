@@ -99,7 +99,6 @@ export const getDashboardData = async () => {
   } catch (err) {
     console.warn("DASHBOARD ERROR → Using fallback data");
 
-    // Fallback demo data
     return {
       announcements: [
         {
@@ -113,7 +112,7 @@ export const getDashboardData = async () => {
           time: "Yesterday",
         },
       ],
-      meetings: [
+      roomActivity: [
         { title: "Introduction call", time: "08:00 – 08:50" },
         { title: "Sprint planning", time: "14:00 – 15:00" },
       ],
@@ -121,10 +120,19 @@ export const getDashboardData = async () => {
         { name: "Website redesign", progress: 75 },
         { name: "Mobile app", progress: 25 },
       ],
+      unreadNotifications: 0,
+      stats: {
+        projects: 0,
+        showcasePosts: 0,
+        likesReceived: 0,
+        saved: 0,
+      },
     };
   }
 };
 
+    
+      
 // ======================================================
 // 👤 PORTFOLIO BUILDER MODULE
 // ======================================================
