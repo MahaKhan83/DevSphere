@@ -21,6 +21,9 @@ const collaborationFileRoutes = require("./routes/collaborationFileRoutes");
 // ✅ NEW: Tasks routes
 const taskRoutes = require("./routes/taskRoutes");
 
+// ✅ NEW: Portfolio routes (ADDED)
+const portfolioRoutes = require("./routes/portfolioRoutes");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -71,6 +74,12 @@ app.use("/api/collaboration", collaborationFileRoutes);
 // PUT    /api/collaboration/tasks/:roomCode/:taskId
 // DELETE /api/collaboration/tasks/:roomCode/:taskId
 app.use("/api/collaboration", taskRoutes);
+
+// ✅ NEW: Portfolio builder endpoints (ADDED)
+// GET    /api/portfolio/me
+// PUT    /api/portfolio/me
+// DELETE /api/portfolio/me
+app.use("/api/portfolio", portfolioRoutes);
 
 // ✅ Health
 // ✅ NEW 👉 Showcase routes (YE LINE ADD KI)
