@@ -195,51 +195,26 @@ const DEFAULT_THEME = {
 
 /* Font options */
 const FONT_OPTIONS = [
-  {
-    label: "System (default)",
-    value: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
-  },
-  {
-    label: "Serif",
-    value: "ui-serif, Georgia, Cambria, Times New Roman, serif",
-  },
-  {
-    label: "Mono (dev style)",
-    value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-  },
+  { label: "System (default)", value: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial" },
+  { label: "Serif", value: "ui-serif, Georgia, Cambria, Times New Roman, serif" },
+  { label: "Mono (dev style)", value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" },
 ];
 
 /* ---------------- Small UI pieces ---------------- */
 const Field = React.memo(({ value, onChange, placeholder, className = "" }) => {
   const inputRef = useRef(null);
   const handleBlur = useCallback(() => {
-    onChange(inputRef.current.value);
+    onChange(inputRef.current?.value ?? "");
   }, [onChange]);
-  return (
-    <input
-      ref={inputRef}
-      defaultValue={value}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      className={`pfField ${className}`}
-    />
-  );
+  return <input ref={inputRef} defaultValue={value} onBlur={handleBlur} placeholder={placeholder} className={`pfField ${className}`} />;
 });
 
 const TextArea = React.memo(({ value, onChange, placeholder, className = "" }) => {
   const textareaRef = useRef(null);
   const handleBlur = useCallback(() => {
-    onChange(textareaRef.current.value);
+    onChange(textareaRef.current?.value ?? "");
   }, [onChange]);
-  return (
-    <textarea
-      ref={textareaRef}
-      defaultValue={value}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      className={`pfArea ${className}`}
-    />
-  );
+  return <textarea ref={textareaRef} defaultValue={value} onBlur={handleBlur} placeholder={placeholder} className={`pfArea ${className}`} />;
 });
 
 const MiniBtn = ({ children, onClick, tone = "normal", type = "button" }) => (
@@ -261,17 +236,12 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
     }`}
   >
     <span className="flex items-center gap-3">
-      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
-        {icon}
-      </span>
+      <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">{icon}</span>
       <span>{label}</span>
     </span>
-    
-    {/* ✅ Badge for notification count */}
+
     {badge !== null && badge !== undefined && badge > 0 && (
-      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
-        {badge}
-      </span>
+      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">{badge}</span>
     )}
   </button>
 );
@@ -300,28 +270,89 @@ export default function Portfolio() {
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState("");
 
-  // ✅ NEW: Notification count
+  // ✅ Notification count
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // ✅ GitHub repo remove + undo (UI only)
+  const [lastRemovedRepo, setLastRemovedRepo] = useState(null);
+  const undoTimerRef = useRef(null);
+
+  // ✅ printing mode (fix half/clip in PDF)
+  const [printing, setPrinting] = useState(false);
+  const printRestoreRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      if (printRestoreRef.current) printRestoreRef.current();
+    };
+  }, []);
+
+  // =========================
+  // ✅ Apply Portfolio Data from Backend
+  // =========================
+  const applyPortfolioPayload = useCallback((payload) => {
+    if (!payload) return;
+
+    if (Array.isArray(payload.sections) && payload.sections.length) setSections(payload.sections);
+    if (payload.profile && typeof payload.profile === "object") setProfile((p) => ({ ...p, ...payload.profile }));
+    if (payload.theme && typeof payload.theme === "object") setTheme((t) => ({ ...t, ...payload.theme }));
+
+    if (typeof payload.sidebarOpen === "boolean") setSidebarOpen(payload.sidebarOpen);
+    if (typeof payload.editMode === "boolean") setEditMode(payload.editMode);
+    if (payload.palettePosition) setPalettePosition(payload.palettePosition);
+    if (payload.customizationPosition) setCustomizationPosition(payload.customizationPosition);
+  }, []);
+
+  // =========================
+  // ✅ Load Portfolio from Backend
+  // =========================
+  const loadPortfolioFromBackend = useCallback(async () => {
+    try {
+      const res = await api.get("/portfolio/me");
+      const doc = res?.data?.portfolio;
+      if (!doc) return false;
+
+      applyPortfolioPayload(doc);
+      return true;
+    } catch (err) {
+      console.warn("Portfolio load failed:", err?.message || err);
+      return false;
+    }
+  }, [applyPortfolioPayload]);
+
   /* ---------------------------
-     ✅ Fetch Real Notification Count 
+     ✅ Fetch Real Notification Count (AUTO REFRESH)
   --------------------------- */
-  const fetchRealNotificationCount = async () => {
+  const fetchRealNotificationCount = useCallback(async () => {
     try {
       const response = await api.get("/notifications");
       const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
+      const totalUnread = notifications.filter((n) => !n.read).length;
       setUnreadCount(totalUnread);
     } catch (err) {
-      console.warn("Could not fetch notification count:", err.message);
+      console.warn("Could not fetch notification count:", err?.message || err);
       setUnreadCount(0);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchRealNotificationCount();
-  }, []);
 
+    const id = setInterval(() => fetchRealNotificationCount(), 10000);
+
+    const onFocus = () => fetchRealNotificationCount();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [fetchRealNotificationCount]);
+
+  // ✅ fill name/email from user
   useEffect(() => {
     if (!user) return;
     setProfile((p) => ({
@@ -331,38 +362,45 @@ export default function Portfolio() {
     }));
   }, [user]);
 
+  // ✅ LOAD: backend first, fallback localStorage
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed?.sections?.length) setSections(parsed.sections);
-      if (parsed?.profile) setProfile((p) => ({ ...p, ...parsed.profile }));
-      if (parsed?.theme) setTheme((t) => ({ ...t, ...parsed.theme }));
-      if (typeof parsed?.sidebarOpen === "boolean") setSidebarOpen(parsed.sidebarOpen);
-      if (typeof parsed?.editMode === "boolean") setEditMode(parsed.editMode);
-      if (parsed?.palettePosition) setPalettePosition(parsed.palettePosition);
-      if (parsed?.customizationPosition) setCustomizationPosition(parsed.customizationPosition);
-    } catch {}
-  }, []);
+    (async () => {
+      const loadedFromDb = await loadPortfolioFromBackend();
+      if (loadedFromDb) return;
 
-  const save = () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        sections,
-        profile,
-        theme,
-        sidebarOpen,
-        editMode,
-        palettePosition,
-        customizationPosition,
-      })
-    );
-    toast("Saved ✅");
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.sections?.length) setSections(parsed.sections);
+        if (parsed?.profile) setProfile((p) => ({ ...p, ...parsed.profile }));
+        if (parsed?.theme) setTheme((t) => ({ ...t, ...parsed.theme }));
+        if (typeof parsed?.sidebarOpen === "boolean") setSidebarOpen(parsed.sidebarOpen);
+        if (typeof parsed?.editMode === "boolean") setEditMode(parsed.editMode);
+        if (parsed?.palettePosition) setPalettePosition(parsed.palettePosition);
+        if (parsed?.customizationPosition) setCustomizationPosition(parsed.customizationPosition);
+      } catch {}
+    })();
+  }, [loadPortfolioFromBackend]);
+
+  // ✅ SAVE: local backup + DB
+  const save = async () => {
+    const payload = { sections, profile, theme, sidebarOpen, editMode, palettePosition, customizationPosition };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+    try {
+      await api.put("/portfolio/me", payload);
+      toast("Saved ✅");
+    } catch (err) {
+      console.warn("Portfolio save (backend) failed:", err?.message || err);
+      toast("Saved locally ✅ (DB failed)");
+    }
   };
 
-  const reset = () => {
+  // ✅ RESET: UI + local + DB
+  const reset = async () => {
     setSections(["about", "experience", "projects", "skills", "education", "github"].map(cloneTemplate).filter(Boolean));
     setProfile({ ...DEFAULT_PROFILE, name: user?.name || "", email: user?.email || "" });
     setTheme(DEFAULT_THEME);
@@ -372,10 +410,62 @@ export default function Portfolio() {
     setPaletteVisible(false);
     setCustomizationVisible(false);
     localStorage.removeItem(STORAGE_KEY);
-    toast("Reset ✅");
+
+    try {
+      await api.delete("/portfolio/me");
+      toast("Reset ✅");
+    } catch (err) {
+      console.warn("Portfolio reset (backend) failed:", err?.message || err);
+      toast("Reset locally ✅ (DB failed)");
+    }
   };
 
-  const downloadAsPDF = () => window.print();
+  // ✅ Download PDF (Fix: clipping/half page + extra UI)
+  const downloadAsPDF = () => {
+    // save current ui state so we can restore after print
+    const prev = {
+      sidebarOpen,
+      paletteVisible,
+      customizationVisible,
+      editMode,
+      openEditorId,
+      viewMode: theme.viewMode,
+    };
+
+    // store restore fn
+    printRestoreRef.current = () => {
+      setPrinting(false);
+      setSidebarOpen(prev.sidebarOpen);
+      setPaletteVisible(prev.paletteVisible);
+      setCustomizationVisible(prev.customizationVisible);
+      setEditMode(prev.editMode);
+      setOpenEditorId(prev.openEditorId);
+      setTheme((t) => ({ ...t, viewMode: prev.viewMode }));
+      window.onafterprint = null;
+      printRestoreRef.current = null;
+    };
+
+    // set print-friendly UI
+    setPrinting(true);
+    setSidebarOpen(false);
+    setPaletteVisible(false);
+    setCustomizationVisible(false);
+    setEditMode(false);
+    setOpenEditorId(null);
+    setTheme((t) => ({ ...t, viewMode: "A4" }));
+
+    // after print, restore
+    window.onafterprint = () => {
+      if (printRestoreRef.current) printRestoreRef.current();
+    };
+
+    // wait a tick for layout to apply then print
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
+  };
 
   const onPickPhoto = async (file) => {
     if (!file) return;
@@ -432,6 +522,62 @@ export default function Portfolio() {
       setGithubLoading(false);
     }
   };
+
+  // ✅ Remove a repo from UI list (NOT from GitHub) + Undo support
+  // FIX: no side-effects inside setSections (prevents double toast in StrictMode)
+  const removeGithubRepoWithUndo = useCallback((repoIndex) => {
+    let removedRepo = null;
+
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.templateId !== "github") return s;
+
+        const repos = Array.isArray(s.data?.repos) ? [...s.data.repos] : [];
+        if (repoIndex < 0 || repoIndex >= repos.length) return s;
+
+        removedRepo = repos[repoIndex];
+        repos.splice(repoIndex, 1);
+
+        return { ...s, data: { ...s.data, repos } };
+      })
+    );
+
+    // side effects OUTSIDE
+    if (!removedRepo) return;
+
+    setLastRemovedRepo({ repo: removedRepo, index: repoIndex });
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setLastRemovedRepo(null), 8000);
+
+    // ✅ FIX: dedupe toast (StrictMode double render safe)
+    toast.dismiss("repo_removed");
+    toast("Repo removed (Undo available) ✅", { toastId: "repo_removed" });
+  }, []);
+
+  const undoGithubRepoRemoval = useCallback(() => {
+    if (!lastRemovedRepo) return;
+
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.templateId !== "github") return s;
+
+        const repos = Array.isArray(s.data?.repos) ? [...s.data.repos] : [];
+        const idx = Math.max(0, Math.min(repos.length, Number(lastRemovedRepo.index) || 0));
+        repos.splice(idx, 0, lastRemovedRepo.repo);
+
+        return { ...s, data: { ...s.data, repos } };
+      })
+    );
+
+    // side effects OUTSIDE
+    setLastRemovedRepo(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    // ✅ FIX: dedupe toast
+    toast.dismiss("repo_undo");
+    toast("Undo ✅ Repo restored", { toastId: "repo_undo" });
+  }, [lastRemovedRepo]);
 
   const palette = useMemo(() => SECTION_TEMPLATES.map((t) => t.id), []);
   const canAddTemplate = (templateId) => !sections.some((s) => s.templateId === templateId);
@@ -629,17 +775,42 @@ export default function Portfolio() {
             <div className="pfList">
               {repos.map((r, i) => (
                 <div key={i} className="pfRepoRow sfCardGlow">
-                  <div className="pfRepoHead">
-                    <a className="pfLink" href={r.url} target="_blank" rel="noreferrer">
-                      {r.name}
-                    </a>
-                    <div className="pfRepoMeta">
-                      ⭐ {r.stars} {r.language ? ` · ${r.language}` : ""}
+                  <div className="pfRepoHead" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <a className="pfLink" href={r.url} target="_blank" rel="noreferrer">
+                        {r.name}
+                      </a>
+                      <div className="pfRepoMeta">
+                        ⭐ {r.stars} {r.language ? ` · ${r.language}` : ""}
+                      </div>
                     </div>
+
+                    {editMode && (
+                      <button
+                        type="button"
+                        className="pfMiniBtn pfMiniBtnDanger"
+                        onClick={() => removeGithubRepoWithUndo(i)}
+                        title="Remove from list (not from GitHub)"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
+
                   {r.desc ? <div className="pfListDesc">{r.desc}</div> : null}
                 </div>
               ))}
+
+              {editMode && lastRemovedRepo ? (
+                <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div className="pfMuted" style={{ fontSize: 13 }}>
+                    Removed: <span className="pfMono">{lastRemovedRepo.repo?.name || "repo"}</span>
+                  </div>
+                  <button type="button" className="pfMiniBtn pfMiniBtnPrimary" onClick={undoGithubRepoRemoval}>
+                    Undo
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -651,10 +822,10 @@ export default function Portfolio() {
 
   // ========== STABLE ITEM COMPONENTS ==========
   const ExperienceItem = React.memo(({ item, index, instanceId }) => {
-    const handleRoleChange = useCallback((v) => updateSectionItem(instanceId, index, { role: v }), [instanceId, index]);
-    const handleCompanyChange = useCallback((v) => updateSectionItem(instanceId, index, { company: v }), [instanceId, index]);
-    const handlePeriodChange = useCallback((v) => updateSectionItem(instanceId, index, { period: v }), [instanceId, index]);
-    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index]);
+    const handleRoleChange = useCallback((v) => updateSectionItem(instanceId, index, { role: v }), [instanceId, index, updateSectionItem]);
+    const handleCompanyChange = useCallback((v) => updateSectionItem(instanceId, index, { company: v }), [instanceId, index, updateSectionItem]);
+    const handlePeriodChange = useCallback((v) => updateSectionItem(instanceId, index, { period: v }), [instanceId, index, updateSectionItem]);
+    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index, updateSectionItem]);
 
     return (
       <div className="pfItemCard sfCardGlow">
@@ -665,16 +836,18 @@ export default function Portfolio() {
           <TextArea value={item.details || ""} onChange={handleDetailsChange} placeholder="Details..." />
         </div>
         <div className="pfItemActions">
-          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">
+            Remove
+          </MiniBtn>
         </div>
       </div>
     );
   });
 
   const ProjectItem = React.memo(({ item, index, instanceId }) => {
-    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index]);
-    const handleLinkChange = useCallback((v) => updateSectionItem(instanceId, index, { link: v }), [instanceId, index]);
-    const handleDescChange = useCallback((v) => updateSectionItem(instanceId, index, { desc: v }), [instanceId, index]);
+    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index, updateSectionItem]);
+    const handleLinkChange = useCallback((v) => updateSectionItem(instanceId, index, { link: v }), [instanceId, index, updateSectionItem]);
+    const handleDescChange = useCallback((v) => updateSectionItem(instanceId, index, { desc: v }), [instanceId, index, updateSectionItem]);
 
     return (
       <div className="pfItemCard sfCardGlow">
@@ -684,15 +857,20 @@ export default function Portfolio() {
           <TextArea value={item.desc || ""} onChange={handleDescChange} placeholder="Description..." />
         </div>
         <div className="pfItemActions">
-          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">
+            Remove
+          </MiniBtn>
         </div>
       </div>
     );
   });
 
   const SkillItem = React.memo(({ item, index, instanceId }) => {
-    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index]);
-    const handleLevelChange = useCallback((e) => updateSectionItem(instanceId, index, { level: Number(e.target.value) }), [instanceId, index]);
+    const handleNameChange = useCallback((v) => updateSectionItem(instanceId, index, { name: v }), [instanceId, index, updateSectionItem]);
+    const handleLevelChange = useCallback(
+      (e) => updateSectionItem(instanceId, index, { level: Number(e.target.value) }),
+      [instanceId, index, updateSectionItem]
+    );
 
     return (
       <div className="pfItemCard sfCardGlow">
@@ -705,17 +883,19 @@ export default function Portfolio() {
           </div>
         </div>
         <div className="pfItemActions">
-          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">
+            Remove
+          </MiniBtn>
         </div>
       </div>
     );
   });
 
   const EducationItem = React.memo(({ item, index, instanceId }) => {
-    const handleDegreeChange = useCallback((v) => updateSectionItem(instanceId, index, { degree: v }), [instanceId, index]);
-    const handleInstituteChange = useCallback((v) => updateSectionItem(instanceId, index, { institute: v }), [instanceId, index]);
-    const handleYearChange = useCallback((v) => updateSectionItem(instanceId, index, { year: v }), [instanceId, index]);
-    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index]);
+    const handleDegreeChange = useCallback((v) => updateSectionItem(instanceId, index, { degree: v }), [instanceId, index, updateSectionItem]);
+    const handleInstituteChange = useCallback((v) => updateSectionItem(instanceId, index, { institute: v }), [instanceId, index, updateSectionItem]);
+    const handleYearChange = useCallback((v) => updateSectionItem(instanceId, index, { year: v }), [instanceId, index, updateSectionItem]);
+    const handleDetailsChange = useCallback((v) => updateSectionItem(instanceId, index, { details: v }), [instanceId, index, updateSectionItem]);
 
     return (
       <div className="pfItemCard sfCardGlow">
@@ -726,12 +906,13 @@ export default function Portfolio() {
           <TextArea value={item.details || ""} onChange={handleDetailsChange} placeholder="Details..." />
         </div>
         <div className="pfItemActions">
-          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">Remove</MiniBtn>
+          <MiniBtn onClick={() => removeItem(instanceId, index)} tone="danger">
+            Remove
+          </MiniBtn>
         </div>
       </div>
     );
   });
-  // =============================================
 
   const SectionEditor = React.memo(({ sec }) => {
     const t = sec.templateId;
@@ -740,11 +921,7 @@ export default function Portfolio() {
       return (
         <div className="pfEditorGrid">
           <label className="pfLabel">Objective / Summary</label>
-          <TextArea
-            value={sec.data?.text || ""}
-            onChange={(v) => updateSectionData(sec.instanceId, { text: v })}
-            placeholder="Write a short objective/summary..."
-          />
+          <TextArea value={sec.data?.text || ""} onChange={(v) => updateSectionData(sec.instanceId, { text: v })} placeholder="Write a short objective/summary..." />
         </div>
       );
     }
@@ -755,7 +932,9 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Experience items</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "experience")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
           {items.map((it, i) => (
             <ExperienceItem key={i} item={it} index={i} instanceId={sec.instanceId} />
@@ -770,7 +949,9 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Projects</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "projects")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
           {items.map((it, i) => (
             <ProjectItem key={i} item={it} index={i} instanceId={sec.instanceId} />
@@ -785,7 +966,9 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Skills</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "skills")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
           {items.map((it, i) => (
             <SkillItem key={i} item={it} index={i} instanceId={sec.instanceId} />
@@ -800,7 +983,9 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <div className="pfEditorRowTop">
             <div className="pfLabel">Education</div>
-            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">+ Add</MiniBtn>
+            <MiniBtn onClick={() => addItem(sec.instanceId, "education")} tone="primary">
+              + Add
+            </MiniBtn>
           </div>
           {items.map((it, i) => (
             <EducationItem key={i} item={it} index={i} instanceId={sec.instanceId} />
@@ -814,17 +999,8 @@ export default function Portfolio() {
         <div className="pfEditorGrid">
           <label className="pfLabel">GitHub username</label>
           <div className="pfGithubEditRow">
-            <Field
-              value={sec.data?.username || ""}
-              onChange={(v) => updateSectionData(sec.instanceId, { username: v })}
-              placeholder="e.g. octocat"
-            />
-            <button
-              type="button"
-              className="pfBtnPrimary"
-              onClick={() => fetchGithubRepos(sec.data?.username)}
-              disabled={githubLoading}
-            >
+            <Field value={sec.data?.username || ""} onChange={(v) => updateSectionData(sec.instanceId, { username: v })} placeholder="e.g. octocat" />
+            <button type="button" className="pfBtnPrimary" onClick={() => fetchGithubRepos(sec.data?.username)} disabled={githubLoading}>
               {githubLoading ? "Loading..." : "Fetch"}
             </button>
           </div>
@@ -878,14 +1054,14 @@ export default function Portfolio() {
       }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="pfShell">
+        <div
+          className="pfShell"
+          // ✅ printing: overflow visible to prevent clip/half page in PDF
+          style={printing ? { overflow: "visible" } : undefined}
+        >
           {/* LEFT SIDEBAR */}
           <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-3 px-2 mb-8 text-left"
-              title="Go to Dashboard"
-            >
+            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Dashboard">
               <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
               <span className="text-xl font-semibold">
                 Dev<span className="text-cyan-300">Sphere</span>
@@ -895,16 +1071,7 @@ export default function Portfolio() {
             <nav className="flex-1 space-y-2">
               {NAV.map((it) => {
                 const isActive = activePath === it.to;
-                return (
-                  <NavItem
-                    key={it.to}
-                    active={isActive}
-                    icon={it.icon}
-                    label={it.label}
-                    badge={it.badge}
-                    onClick={() => navigate(it.to)}
-                  />
-                );
+                return <NavItem key={it.to} active={isActive} icon={it.icon} label={it.label} badge={it.badge} onClick={() => navigate(it.to)} />;
               })}
             </nav>
 
@@ -913,9 +1080,7 @@ export default function Portfolio() {
               className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
               title="Open Settings"
             >
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold text-white">
-                {initials || "U"}
-              </div>
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold text-white">{initials || "U"}</div>
 
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate max-w-[160px] text-white">{displayName}</p>
@@ -925,7 +1090,7 @@ export default function Portfolio() {
           </aside>
 
           {/* MAIN */}
-          <div className="pfMain">
+          <div className="pfMain" style={printing ? { overflow: "visible" } : undefined}>
             {/* TOPBAR */}
             <div className="pfTopSection">
               <button
@@ -941,17 +1106,12 @@ export default function Portfolio() {
                 <div className="pfTitleSection">
                   <h1 className="pfMainTitle">Portfolio Builder</h1>
                   <p className="pfSubTitle">
-                    Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and
-                    Customize
+                    Welcome back, <span className="font-semibold">{displayName}</span> • Use Sections for drag & drop and Customize
                   </p>
                 </div>
 
                 <div className="pfControlButtons">
-                  <button
-                    type="button"
-                    className={`pfPill ${editMode ? "pfPillOn" : ""}`}
-                    onClick={() => setEditMode(true)}
-                  >
+                  <button type="button" className={`pfPill ${editMode ? "pfPillOn" : ""}`} onClick={() => setEditMode(true)}>
                     Edit mode
                   </button>
 
@@ -967,11 +1127,7 @@ export default function Portfolio() {
                     Preview mode
                   </button>
 
-                  <button
-                    type="button"
-                    className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`}
-                    onClick={() => setPaletteVisible((v) => !v)}
-                  >
+                  <button type="button" className={`pfBtnPrimary ${paletteVisible ? "pfBtnPrimaryOn" : ""}`} onClick={() => setPaletteVisible((v) => !v)}>
                     Sections
                   </button>
 
@@ -998,11 +1154,7 @@ export default function Portfolio() {
 
             {/* Floating Palette */}
             {paletteVisible && (
-              <div
-                className="floatingPalette sfCardGlow"
-                style={{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }}
-                onMouseDown={onPaletteMouseDown}
-              >
+              <div className="floatingPalette sfCardGlow" style={{ left: `${palettePosition.x}px`, top: `${palettePosition.y}px` }} onMouseDown={onPaletteMouseDown}>
                 <div className="floatingHeader">
                   <div className="floatingTitleRow">
                     <span className="floatingIconHead">
@@ -1015,11 +1167,7 @@ export default function Portfolio() {
                   </div>
 
                   <div className="floatingControls">
-                    <button
-                      type="button"
-                      className="floatingClose"
-                      onClick={() => setPaletteVisible(false)}
-                    >
+                    <button type="button" className="floatingClose" onClick={() => setPaletteVisible(false)}>
                       ✕
                     </button>
                   </div>
@@ -1028,33 +1176,18 @@ export default function Portfolio() {
                 <div className="floatingContent">
                   <Droppable droppableId="palette" isDropDisabled={true}>
                     {(provided) => (
-                      <div
-                        className="floatingGrid"
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
+                      <div className="floatingGrid" ref={provided.innerRef} {...provided.droppableProps}>
                         {SECTION_TEMPLATES.map((t, idx) => {
                           const disabled = !canAddTemplate(t.id);
                           return (
-                            <Draggable
-                              draggableId={`tpl-${t.id}`}
-                              index={idx}
-                              key={t.id}
-                              isDragDisabled={disabled || !editMode}
-                            >
+                            <Draggable draggableId={`tpl-${t.id}`} index={idx} key={t.id} isDragDisabled={disabled || !editMode}>
                               {(p) => (
                                 <div
                                   ref={p.innerRef}
                                   {...p.draggableProps}
                                   {...p.dragHandleProps}
                                   className={`floatingCard ${disabled ? "disabled" : ""}`}
-                                  title={
-                                    !editMode
-                                      ? "Enable Edit mode to drag"
-                                      : disabled
-                                      ? "Already added"
-                                      : `Drag to add: ${t.title}`
-                                  }
+                                  title={!editMode ? "Enable Edit mode to drag" : disabled ? "Already added" : `Drag to add: ${t.title}`}
                                 >
                                   <div className="floatingIcon">{SECTION_ICON[t.id]}</div>
                                   <div className="floatingCardTitle">{t.title}</div>
@@ -1076,7 +1209,7 @@ export default function Portfolio() {
               </div>
             )}
 
-            {/* Floating Customization - NEAT LAYOUT */}
+            {/* Floating Customization */}
             {customizationVisible && (
               <div
                 className="floatingCustomization sfCardGlow"
@@ -1095,11 +1228,7 @@ export default function Portfolio() {
                   </div>
 
                   <div className="floatingControls">
-                    <button
-                      type="button"
-                      className="floatingClose"
-                      onClick={() => setCustomizationVisible(false)}
-                    >
+                    <button type="button" className="floatingClose" onClick={() => setCustomizationVisible(false)}>
                       ✕
                     </button>
                   </div>
@@ -1113,23 +1242,15 @@ export default function Portfolio() {
                       <div className="layoutButtons">
                         <button
                           type="button"
-                          className={`layoutBtn ${
-                            theme.viewMode === "A4" ? "active" : ""
-                          }`}
-                          onClick={() =>
-                            setTheme((t) => ({ ...t, viewMode: "A4" }))
-                          }
+                          className={`layoutBtn ${theme.viewMode === "A4" ? "active" : ""}`}
+                          onClick={() => setTheme((t) => ({ ...t, viewMode: "A4" }))}
                         >
                           A4 resume
                         </button>
                         <button
                           type="button"
-                          className={`layoutBtn ${
-                            theme.viewMode === "full" ? "active" : ""
-                          }`}
-                          onClick={() =>
-                            setTheme((t) => ({ ...t, viewMode: "full" }))
-                          }
+                          className={`layoutBtn ${theme.viewMode === "full" ? "active" : ""}`}
+                          onClick={() => setTheme((t) => ({ ...t, viewMode: "full" }))}
                         >
                           Full width
                         </button>
@@ -1154,25 +1275,14 @@ export default function Portfolio() {
                           min="12"
                           max="18"
                           value={theme.fontSize}
-                          onChange={(e) =>
-                            setTheme((t) => ({
-                              ...t,
-                              fontSize: Number(e.target.value),
-                            }))
-                          }
+                          onChange={(e) => setTheme((t) => ({ ...t, fontSize: Number(e.target.value) }))}
                           className="pfRange"
                         />
                       </div>
 
                       <div className="fieldRow">
                         <div className="fieldLabel">Font family</div>
-                        <select
-                          className="fontSelect"
-                          value={theme.font}
-                          onChange={(e) =>
-                            setTheme((t) => ({ ...t, font: e.target.value }))
-                          }
-                        >
+                        <select className="fontSelect" value={theme.font} onChange={(e) => setTheme((t) => ({ ...t, font: e.target.value }))}>
                           {FONT_OPTIONS.map((f) => (
                             <option key={f.value} value={f.value}>
                               {f.label}
@@ -1182,121 +1292,39 @@ export default function Portfolio() {
                       </div>
                     </div>
 
-                    {/* Colors (Accent + text + paper) */}
+                    {/* Colors */}
                     <div className="customizationSection">
                       <div className="customizationTitle">Colors</div>
 
-                      {/* Accent */}
                       <div className="fieldRow">
                         <div className="fieldLabel">Accent color</div>
                         <div className="colorPickerRow">
-                          <input
-                            type="color"
-                            value={theme.accent}
-                            onChange={(e) =>
-                              setTheme((t) => ({ ...t, accent: e.target.value }))
-                            }
-                            className="colorPickerCircle"
-                          />
-                          <input
-                            type="text"
-                            value={theme.accent}
-                            onChange={(e) =>
-                              setTheme((t) => ({ ...t, accent: e.target.value }))
-                            }
-                            className="colorInput"
-                            placeholder="#0ea5e9"
-                          />
+                          <input type="color" value={theme.accent} onChange={(e) => setTheme((t) => ({ ...t, accent: e.target.value }))} className="colorPickerCircle" />
+                          <input type="text" value={theme.accent} onChange={(e) => setTheme((t) => ({ ...t, accent: e.target.value }))} className="colorInput" placeholder="#0ea5e9" />
                         </div>
                       </div>
 
-                      {/* Heading color */}
                       <div className="fieldRow">
                         <div className="fieldLabel">Heading color</div>
                         <div className="colorPickerRow">
-                          <input
-                            type="color"
-                            value={theme.headingColor}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                headingColor: e.target.value,
-                              }))
-                            }
-                            className="colorPickerCircle"
-                          />
-                          <input
-                            type="text"
-                            value={theme.headingColor}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                headingColor: e.target.value,
-                              }))
-                            }
-                            className="colorInput"
-                            placeholder="#0F172A"
-                          />
+                          <input type="color" value={theme.headingColor} onChange={(e) => setTheme((t) => ({ ...t, headingColor: e.target.value }))} className="colorPickerCircle" />
+                          <input type="text" value={theme.headingColor} onChange={(e) => setTheme((t) => ({ ...t, headingColor: e.target.value }))} className="colorInput" placeholder="#0F172A" />
                         </div>
                       </div>
 
-                      {/* Body text color */}
                       <div className="fieldRow">
                         <div className="fieldLabel">Body text color</div>
                         <div className="colorPickerRow">
-                          <input
-                            type="color"
-                            value={theme.bodyColor}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                bodyColor: e.target.value,
-                              }))
-                            }
-                            className="colorPickerCircle"
-                          />
-                          <input
-                            type="text"
-                            value={theme.bodyColor}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                bodyColor: e.target.value,
-                              }))
-                            }
-                            className="colorInput"
-                            placeholder="#334155"
-                          />
+                          <input type="color" value={theme.bodyColor} onChange={(e) => setTheme((t) => ({ ...t, bodyColor: e.target.value }))} className="colorPickerCircle" />
+                          <input type="text" value={theme.bodyColor} onChange={(e) => setTheme((t) => ({ ...t, bodyColor: e.target.value }))} className="colorInput" placeholder="#334155" />
                         </div>
                       </div>
 
-                      {/* Paper background only (app background removed) */}
                       <div className="fieldRow">
                         <div className="fieldLabel">Paper background</div>
                         <div className="colorPickerRow">
-                          <input
-                            type="color"
-                            value={theme.paperBg}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                paperBg: e.target.value,
-                              }))
-                            }
-                            className="colorPickerCircle"
-                          />
-                          <input
-                            type="text"
-                            value={theme.paperBg}
-                            onChange={(e) =>
-                              setTheme((t) => ({
-                                ...t,
-                                paperBg: e.target.value,
-                              }))
-                            }
-                            className="colorInput"
-                            placeholder="#FFFFFF"
-                          />
+                          <input type="color" value={theme.paperBg} onChange={(e) => setTheme((t) => ({ ...t, paperBg: e.target.value }))} className="colorPickerCircle" />
+                          <input type="text" value={theme.paperBg} onChange={(e) => setTheme((t) => ({ ...t, paperBg: e.target.value }))} className="colorInput" placeholder="#FFFFFF" />
                         </div>
                       </div>
 
@@ -1311,16 +1339,14 @@ export default function Portfolio() {
             )}
 
             {/* CONTENT */}
-            <div className="pfContentArea">
+            <div className="pfContentArea" style={printing ? { overflow: "visible", marginTop: 0 } : undefined}>
               <div
                 className="pfPaper"
                 style={{
                   background: theme.paperBg,
                   borderRadius: theme.radius,
                   border: `1px solid ${theme.line}`,
-                  boxShadow: `0 ${theme.cardShadow}px ${
-                    theme.cardShadow * 2.2
-                  }px rgba(2,6,23,0.08)`,
+                  boxShadow: `0 ${theme.cardShadow}px ${theme.cardShadow * 2.2}px rgba(2,6,23,0.08)`,
                   width: theme.viewMode === "A4" ? "210mm" : "100%",
                   maxWidth: "100%",
                   minHeight: "297mm",
@@ -1339,33 +1365,23 @@ export default function Portfolio() {
                           className="stNameInpV2"
                           style={{ color: theme.headingColor }}
                           value={profile.name}
-                          onChange={(e) =>
-                            setProfile((p) => ({ ...p, name: e.target.value }))
-                          }
+                          onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
                           placeholder="Your Name"
                         />
                         <input
                           className="stRoleInpV2"
                           style={{ color: theme.bodyColor }}
                           value={profile.role}
-                          onChange={(e) =>
-                            setProfile((p) => ({ ...p, role: e.target.value }))
-                          }
+                          onChange={(e) => setProfile((p) => ({ ...p, role: e.target.value }))}
                           placeholder="Full-Stack Developer"
                         />
                       </>
                     ) : (
                       <>
-                        <div
-                          className="stNameTextV2"
-                          style={{ color: theme.headingColor }}
-                        >
+                        <div className="stNameTextV2" style={{ color: theme.headingColor }}>
                           {profile.name || "Your Name"}
                         </div>
-                          <div
-                          className="stRoleTextV2"
-                          style={{ color: theme.bodyColor }}
-                        >
+                        <div className="stRoleTextV2" style={{ color: theme.bodyColor }}>
                           {profile.role || "Full-Stack Developer"}
                         </div>
                       </>
@@ -1380,36 +1396,21 @@ export default function Portfolio() {
                             className="stInpV2"
                             style={{ color: theme.bodyColor }}
                             value={profile.email}
-                            onChange={(e) =>
-                              setProfile((p) => ({
-                                ...p,
-                                email: e.target.value,
-                              }))
-                            }
+                            onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
                             placeholder="Email"
                           />
                           <input
                             className="stInpV2"
                             style={{ color: theme.bodyColor }}
                             value={profile.phone}
-                            onChange={(e) =>
-                              setProfile((p) => ({
-                                ...p,
-                                phone: e.target.value,
-                              }))
-                            }
+                            onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
                             placeholder="Phone"
                           />
                           <input
                             className="stInpV2"
                             style={{ color: theme.bodyColor }}
                             value={profile.location}
-                            onChange={(e) =>
-                              setProfile((p) => ({
-                                ...p,
-                                location: e.target.value,
-                              }))
-                            }
+                            onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
                             placeholder="Location"
                           />
                         </>
@@ -1440,23 +1441,11 @@ export default function Portfolio() {
 
                     {editMode && (
                       <div className="stPhotoBtns no-print">
-                        <label
-                          className="stMiniBtn"
-                          style={{ background: theme.accent, color: "#fff" }}
-                        >
+                        <label className="stMiniBtn" style={{ background: theme.accent, color: "#fff" }}>
                           Upload
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="pfHidden"
-                            onChange={(e) => onPickPhoto(e.target.files?.[0])}
-                          />
+                          <input type="file" accept="image/*" className="pfHidden" onChange={(e) => onPickPhoto(e.target.files?.[0])} />
                         </label>
-                        <button
-                          type="button"
-                          className="stMiniBtnAlt"
-                          onClick={clearPhoto}
-                        >
+                        <button type="button" className="stMiniBtnAlt" onClick={clearPhoto}>
                           Remove
                         </button>
                       </div>
@@ -1467,69 +1456,32 @@ export default function Portfolio() {
                 {/* SECTIONS */}
                 <Droppable droppableId="portfolio">
                   {(provided) => (
-                    <div
-                      className="pfSections"
-                      style={{
-                        gap: theme.sectionGap,
-                        padding: theme.sectionPad,
-                      }}
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                    >
+                    <div className="pfSections" style={{ gap: theme.sectionGap, padding: theme.sectionPad }} ref={provided.innerRef} {...provided.droppableProps}>
                       {sections.map((sec, index) => {
                         const isOpen = openEditorId === sec.instanceId;
                         return (
-                          <Draggable
-                            draggableId={sec.instanceId}
-                            index={index}
-                            key={sec.instanceId}
-                            isDragDisabled={!editMode}
-                          >
+                          <Draggable draggableId={sec.instanceId} index={index} key={sec.instanceId} isDragDisabled={!editMode}>
                             {(p) => (
-                              <div
-                                ref={p.innerRef}
-                                {...p.draggableProps}
-                                className="pfSectionCard sfCardGlow"
-                              >
+                              <div ref={p.innerRef} {...p.draggableProps} className="pfSectionCard sfCardGlow">
                                 <div className="pfSectionTop">
                                   <div className="pfSecLeft">
-                                    <div className="pfSecBadge">
-                                      {SECTION_ICON[sec.templateId] || <SecProjectsIcon />}
-                                    </div>
-                                    <div
-                                      className="pfSecTitle"
-                                      style={{ color: theme.headingColor }}
-                                    >
+                                    <div className="pfSecBadge">{SECTION_ICON[sec.templateId] || <SecProjectsIcon />}</div>
+                                    <div className="pfSecTitle" style={{ color: theme.headingColor }}>
                                       {sec.title}
                                     </div>
                                   </div>
 
                                   {editMode && (
                                     <div className="pfSecActions">
-                                      <MiniBtn
-                                        onClick={() =>
-                                          setOpenEditorId((v) =>
-                                            v === sec.instanceId ? null : sec.instanceId
-                                          )
-                                        }
-                                        tone="primary"
-                                      >
+                                      <MiniBtn onClick={() => setOpenEditorId((v) => (v === sec.instanceId ? null : sec.instanceId))} tone="primary">
                                         {isOpen ? "Close" : "Edit"}
                                       </MiniBtn>
 
-                                      <MiniBtn
-                                        onClick={() => removeSection(sec.instanceId)}
-                                        tone="danger"
-                                      >
+                                      <MiniBtn onClick={() => removeSection(sec.instanceId)} tone="danger">
                                         Remove
                                       </MiniBtn>
 
-                                      <button
-                                        type="button"
-                                        className="pfDragHandle"
-                                        {...p.dragHandleProps}
-                                        title="Drag to reorder"
-                                      >
+                                      <button type="button" className="pfDragHandle" {...p.dragHandleProps} title="Drag to reorder">
                                         ⋮⋮
                                       </button>
                                     </div>

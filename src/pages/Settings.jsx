@@ -33,8 +33,6 @@ const ShowcaseIcon = () => (
   </svg>
 );
 
-
-
 const BellIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2Z" />
@@ -44,12 +42,6 @@ const BellIcon = () => (
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
-  </svg>
-);
-
-const PlugIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 2h2v6h4V2h2v6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6h-1v4H9v-4H8a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2h2V2Z" />
   </svg>
 );
 
@@ -300,7 +292,7 @@ export default function Settings() {
     try {
       const response = await api.get("/notifications");
       const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
+      const totalUnread = notifications.filter((n) => !n.read).length;
       setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
     } catch (err) {
       console.warn("Could not fetch notification count:", err.message);
@@ -326,7 +318,6 @@ export default function Settings() {
     { id: "security", label: "Security" },
     { id: "notifications", label: "Notifications" },
     { id: "appearance", label: "Appearance" },
-    { id: "integrations", label: "Integrations" },
   ];
 
   const [activeTab, setActiveTab] = useState("profile");
@@ -428,39 +419,6 @@ export default function Settings() {
     };
   }, [appearance.density, isDark]);
 
-  /* =========================
-     Integrations: GitHub
-  ========================= */
-  const [githubUsername, setGithubUsername] = useState(() => {
-    const fromUser = user?.githubUsername || "";
-    const fromLocal = localStorage.getItem("devsphere_github_username") || "";
-    const fromProfileField = (profile.github || "")
-      .replace("https://github.com/", "")
-      .replace("github.com/", "");
-    return fromUser || fromLocal || fromProfileField || "";
-  });
-
-  const githubConnected = !!localStorage.getItem("devsphere_github_username");
-
-  const connectGitHub = () => {
-    const u = (githubUsername || "")
-      .trim()
-      .replace("https://github.com/", "")
-      .replace("github.com/", "");
-    if (!u) {
-      toast.error("Please enter a GitHub username.");
-      return;
-    }
-    localStorage.setItem("devsphere_github_username", u);
-    toast.success("GitHub connected. Username saved ✅");
-  };
-
-  const disconnectGitHub = () => {
-    localStorage.removeItem("devsphere_github_username");
-    setGithubUsername("");
-    toast.info("GitHub disconnected");
-  };
-
   const handleSave = () => {
     if (activeTab === "security") {
       if (
@@ -497,7 +455,9 @@ export default function Settings() {
         </div>
 
         {/* ✅ SIDEBAR (EXACT Dashboard style) */}
-        <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
+        <aside
+          className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}
+        >
           {/* Brand */}
           <button
             onClick={() => navigate("/")}
@@ -539,7 +499,7 @@ export default function Settings() {
               label="Showcase feed"
               onClick={() => navigate("/showcase")}
             />
-            
+
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellIcon />}
@@ -606,7 +566,9 @@ export default function Settings() {
                 onClick={() => toast.info("Tip: Use tabs to switch sections")}
                 title="Click for tip"
               >
-                <h1 className={`text-2xl md:text-3xl font-semibold ${ui.textStrong}`}>
+                <h1
+                  className={`text-2xl md:text-3xl font-semibold ${ui.textStrong}`}
+                >
                   Settings
                 </h1>
                 <p className={`text-sm ${ui.textMuted} mt-1`}>
@@ -675,9 +637,11 @@ export default function Settings() {
           <div
             className={`border rounded-2xl shadow-sm mb-6 sfPulseBorder ${
               mounted ? "sfIn2" : "sfPre"
-            } ${isDark ? "bg-slate-900/75 border-slate-800" : "bg-white border-slate-100"} ${
-              ui.density === "Compact" ? "p-3" : "p-4 md:p-5"
-            }`}
+            } ${
+              isDark
+                ? "bg-slate-900/75 border-slate-800"
+                : "bg-white border-slate-100"
+            } ${ui.density === "Compact" ? "p-3" : "p-4 md:p-5"}`}
             onClick={() => toast.info("Tip: Tabs are clickable")}
             title="Click for tip"
             role="button"
@@ -702,7 +666,9 @@ export default function Settings() {
                         ? "bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900"
                         : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100",
                     ].join(" ")}
-                    style={active ? { backgroundColor: "var(--sf-accent)" } : undefined}
+                    style={
+                      active ? { backgroundColor: "var(--sf-accent)" } : undefined
+                    }
                     title={`Open ${t.label}`}
                   >
                     {t.label}
@@ -713,7 +679,11 @@ export default function Settings() {
           </div>
 
           {/* Content grid */}
-          <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${mounted ? "sfIn3" : "sfPre"}`}>
+          <div
+            className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${
+              mounted ? "sfIn3" : "sfPre"
+            }`}
+          >
             {/* LEFT */}
             <div className="lg:col-span-2 space-y-6">
               {activeTab === "profile" && (
@@ -721,7 +691,9 @@ export default function Settings() {
                   ui={ui}
                   title="Profile"
                   desc="Update your public profile details."
-                  onClick={() => toast.info("Tip: Edit fields and click Save changes ✅")}
+                  onClick={() =>
+                    toast.info("Tip: Edit fields and click Save changes ✅")
+                  }
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
@@ -799,7 +771,9 @@ export default function Settings() {
                   ui={ui}
                   title="Security"
                   desc="Change your password settings."
-                  onClick={() => toast.info("Tip: Use the eye icon to show/hide password")}
+                  onClick={() =>
+                    toast.info("Tip: Use the eye icon to show/hide password")
+                  }
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <PasswordInput
@@ -807,7 +781,10 @@ export default function Settings() {
                       label="Current password"
                       value={security.currentPassword}
                       onChange={(e) =>
-                        setSecurity((s) => ({ ...s, currentPassword: e.target.value }))
+                        setSecurity((s) => ({
+                          ...s,
+                          currentPassword: e.target.value,
+                        }))
                       }
                       placeholder="••••••••"
                       show={showCurrent}
@@ -831,7 +808,10 @@ export default function Settings() {
                       label="Confirm new password"
                       value={security.confirmPassword}
                       onChange={(e) =>
-                        setSecurity((s) => ({ ...s, confirmPassword: e.target.value }))
+                        setSecurity((s) => ({
+                          ...s,
+                          confirmPassword: e.target.value,
+                        }))
                       }
                       placeholder="Repeat new password"
                       show={showConfirm}
@@ -855,7 +835,9 @@ export default function Settings() {
                   ui={ui}
                   title="Notifications"
                   desc="Choose what updates you want to receive."
-                  onClick={() => toast.info("Tip: Toggle any option — it is clickable")}
+                  onClick={() =>
+                    toast.info("Tip: Toggle any option — it is clickable")
+                  }
                 >
                   <div className="space-y-3">
                     <Toggle
@@ -864,7 +846,10 @@ export default function Settings() {
                       desc="Platform updates and DevSphere news."
                       checked={noti.emailAnnouncements}
                       onChange={() =>
-                        setNoti((n) => ({ ...n, emailAnnouncements: !n.emailAnnouncements }))
+                        setNoti((n) => ({
+                          ...n,
+                          emailAnnouncements: !n.emailAnnouncements,
+                        }))
                       }
                     />
                     <Toggle
@@ -873,7 +858,10 @@ export default function Settings() {
                       desc="Emails for new collaboration invites."
                       checked={noti.emailProjectInvites}
                       onChange={() =>
-                        setNoti((n) => ({ ...n, emailProjectInvites: !n.emailProjectInvites }))
+                        setNoti((n) => ({
+                          ...n,
+                          emailProjectInvites: !n.emailProjectInvites,
+                        }))
                       }
                     />
                     <Toggle
@@ -918,7 +906,11 @@ export default function Settings() {
                     >
                       Refresh Count
                     </button>
-                    <div className={`px-3 py-2 rounded-full ${isDark ? "bg-slate-800" : "bg-slate-100"} text-sm font-semibold`}>
+                    <div
+                      className={`px-3 py-2 rounded-full ${
+                        isDark ? "bg-slate-800" : "bg-slate-100"
+                      } text-sm font-semibold`}
+                    >
                       Current: {unreadCount} unread
                     </div>
                   </div>
@@ -931,56 +923,84 @@ export default function Settings() {
                   title="Appearance"
                   desc="Theme, spacing, and accent (these now apply instantly)."
                   onClick={() =>
-                    toast.info("Tip: Theme, Density & Accent are all clickable and apply instantly")
+                    toast.info(
+                      "Tip: Theme, Density & Accent are all clickable and apply instantly"
+                    )
                   }
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className={`text-sm font-medium ${ui.textLabel}`}>Theme</label>
+                      <label className={`text-sm font-medium ${ui.textLabel}`}>
+                        Theme
+                      </label>
                       <select
                         value={appearance.theme}
-                        onChange={(e) => setAppearance((a) => ({ ...a, theme: e.target.value }))}
+                        onChange={(e) =>
+                          setAppearance((a) => ({
+                            ...a,
+                            theme: e.target.value,
+                          }))
+                        }
                         className={[
                           "w-full rounded-xl border transition focus:outline-none focus:ring-2",
                           ui.input,
-                          ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+                          ui.density === "Compact"
+                            ? "px-3 py-1.5 text-sm"
+                            : "px-3 py-2 text-sm",
                         ].join(" ")}
                         title="Switch Light/Dark"
                       >
                         <option>Light</option>
                         <option>Dark</option>
                       </select>
-                      <p className={`text-xs ${ui.textMuted}`}>Changes page background + card styles.</p>
+                      <p className={`text-xs ${ui.textMuted}`}>
+                        Changes page background + card styles.
+                      </p>
                     </div>
 
                     <div className="space-y-1">
-                      <label className={`text-sm font-medium ${ui.textLabel}`}>Density</label>
+                      <label className={`text-sm font-medium ${ui.textLabel}`}>
+                        Density
+                      </label>
                       <select
                         value={appearance.density}
-                        onChange={(e) => setAppearance((a) => ({ ...a, density: e.target.value }))}
+                        onChange={(e) =>
+                          setAppearance((a) => ({
+                            ...a,
+                            density: e.target.value,
+                          }))
+                        }
                         className={[
                           "w-full rounded-xl border transition focus:outline-none focus:ring-2",
                           ui.input,
-                          ui.density === "Compact" ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm",
+                          ui.density === "Compact"
+                            ? "px-3 py-1.5 text-sm"
+                            : "px-3 py-2 text-sm",
                         ].join(" ")}
                         title="Switch Comfortable/Compact"
                       >
                         <option>Comfortable</option>
                         <option>Compact</option>
                       </select>
-                      <p className={`text-xs ${ui.textMuted}`}>Compact reduces padding and spacing.</p>
+                      <p className={`text-xs ${ui.textMuted}`}>
+                        Compact reduces padding and spacing.
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-4">
-                    <label className={`text-sm font-medium ${ui.textLabel}`}>Accent</label>
+                    <label className={`text-sm font-medium ${ui.textLabel}`}>
+                      Accent
+                    </label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {["Navy", "Sky", "Violet"].map((c) => (
                         <Chip
                           key={c}
                           ui={ui}
                           active={appearance.accent === c}
-                          onClick={() => setAppearance((a) => ({ ...a, accent: c }))}
+                          onClick={() =>
+                            setAppearance((a) => ({ ...a, accent: c }))
+                          }
                         >
                           {c}
                         </Chip>
@@ -1001,7 +1021,13 @@ export default function Settings() {
                       Save appearance
                     </button>
                     <button
-                      onClick={() => setAppearance({ theme: "Light", density: "Comfortable", accent: "Navy" })}
+                      onClick={() =>
+                        setAppearance({
+                          theme: "Light",
+                          density: "Comfortable",
+                          accent: "Navy",
+                        })
+                      }
                       className={[
                         "px-4 py-2 rounded-full text-sm font-semibold transition border",
                         isDark
@@ -1012,106 +1038,6 @@ export default function Settings() {
                     >
                       Restore defaults
                     </button>
-                  </div>
-                </SectionShell>
-              )}
-
-              {activeTab === "integrations" && (
-                <SectionShell
-                  ui={ui}
-                  title="Integrations"
-                  desc="Connect external tools like GitHub."
-                  onClick={() => toast.info("Tip: Save GitHub username — dashboard widget uses it")}
-                >
-                  <div
-                    className={[
-                      "rounded-2xl border p-4 md:p-5 sfCardHover",
-                      isDark ? "border-slate-800 bg-slate-950/50" : "border-slate-100 bg-slate-50",
-                    ].join(" ")}
-                    onClick={() => toast.info("This integration card is clickable too")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) =>
-                      (e.key === "Enter" || e.key === " ") &&
-                      toast.info("This integration card is clickable too")
-                    }
-                    title="Clickable card"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-10 h-10 rounded-2xl text-white flex items-center justify-center"
-                          style={{ backgroundColor: "var(--sf-accent)" }}
-                          title="Integration icon"
-                        >
-                          <PlugIcon />
-                        </div>
-                        <div>
-                          <p className={`text-sm font-semibold ${ui.textStrong}`}>GitHub</p>
-                          <p className={`text-xs ${ui.textMuted} mt-1`}>
-                            Connect your GitHub username. The Dashboard GitHub card uses this value.
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                          githubConnected
-                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                            : isDark
-                            ? "bg-slate-950 text-slate-200 border-slate-800"
-                            : "bg-white text-slate-700 border-slate-200"
-                        }`}
-                        title="Connection status"
-                      >
-                        {githubConnected ? "Connected" : "Not connected"}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="md:col-span-2">
-                        <Input
-                          ui={ui}
-                          label="GitHub username"
-                          value={githubUsername}
-                          onChange={(e) => setGithubUsername(e.target.value)}
-                          placeholder="e.g. octocat"
-                        />
-                        <p className={`text-xs ${ui.textMuted} mt-2`}>Tip: Enter only the username (not the full URL).</p>
-                      </div>
-
-                      <div className="flex md:flex-col gap-2">
-                        <button
-                          onClick={connectGitHub}
-                          className="w-full px-4 py-2.5 rounded-xl text-white text-sm font-extrabold transition"
-                          style={{ backgroundColor: "var(--sf-accent)" }}
-                          title="Connect GitHub"
-                        >
-                          Connect
-                        </button>
-                        <button
-                          onClick={disconnectGitHub}
-                          className={[
-                            "w-full px-4 py-2.5 rounded-xl text-white text-sm font-extrabold transition",
-                            "bg-slate-900 hover:bg-slate-800",
-                          ].join(" ")}
-                          title="Disconnect GitHub"
-                        >
-                          Disconnect
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`mt-4 text-xs ${ui.textMuted}`}>
-                    Saved locally as:{" "}
-                    <code
-                      className={`px-2 py-1 rounded border ${
-                        isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
-                      }`}
-                    >
-                      devsphere_github_username
-                    </code>
                   </div>
                 </SectionShell>
               )}
@@ -1129,7 +1055,9 @@ export default function Settings() {
                 title="Open Profile tab"
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openTab("profile")}
+                onKeyDown={(e) =>
+                  (e.key === "Enter" || e.key === " ") && openTab("profile")
+                }
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -1140,7 +1068,9 @@ export default function Settings() {
                     {initials || "U"}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${ui.textStrong}`}>{displayName}</p>
+                    <p className={`text-sm font-semibold ${ui.textStrong}`}>
+                      {displayName}
+                    </p>
                     <p className={`text-xs ${ui.textMuted}`}>DevSphere account</p>
                   </div>
                 </div>
@@ -1152,33 +1082,11 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className={ui.textMuted}>Quick</span>
-                    <span className={`${ui.textStrong} font-semibold`}>Edit profile </span>
+                    <span className={`${ui.textStrong} font-semibold`}>
+                      Edit profile{" "}
+                    </span>
                   </div>
                 </div>
-              </div>
-
-              <div
-                className="bg-slate-900 rounded-2xl shadow-md p-5 text-white sfPulseBorder sfCardHover cursor-pointer"
-                onClick={() => openTab("integrations")}
-                title="Open Integrations tab"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openTab("integrations")}
-              >
-                <h3 className="text-sm font-semibold">Tip</h3>
-                <p className="text-xs text-slate-200 mt-1">
-                  Connect GitHub in Integrations so your Dashboard widget can show your GitHub username.
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openTab("integrations");
-                  }}
-                  className="mt-3 px-4 py-2 rounded-full bg-white/90 text-slate-900 text-xs font-semibold hover:bg-white transition"
-                  title="Open integrations"
-                >
-                  Open integrations
-                </button>
               </div>
 
               <div
@@ -1192,10 +1100,13 @@ export default function Settings() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && toast.info("Shortcuts are clickable")
+                  (e.key === "Enter" || e.key === " ") &&
+                  toast.info("Shortcuts are clickable")
                 }
               >
-                <h3 className={`text-sm font-semibold ${ui.textStrong}`}>Quick shortcuts</h3>
+                <h3 className={`text-sm font-semibold ${ui.textStrong}`}>
+                  Quick shortcuts
+                </h3>
                 <p className={`text-xs ${ui.textMuted} mt-1`}>One tap switching</p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -1204,7 +1115,6 @@ export default function Settings() {
                     { id: "security", label: "Security" },
                     { id: "notifications", label: "Notifications" },
                     { id: "appearance", label: "Appearance" },
-                    { id: "integrations", label: "Integrations" },
                   ].map((x) => {
                     const active = activeTab === x.id;
                     return (
@@ -1222,7 +1132,9 @@ export default function Settings() {
                             ? "bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900"
                             : "bg-slate-100 border-slate-200 text-slate-900 hover:bg-slate-200",
                         ].join(" ")}
-                        style={active ? { backgroundColor: "var(--sf-accent)" } : undefined}
+                        style={
+                          active ? { backgroundColor: "var(--sf-accent)" } : undefined
+                        }
                         title={`Open ${x.label}`}
                       >
                         {x.label}
