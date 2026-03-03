@@ -2,8 +2,9 @@
 import React, { useMemo, useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import api from "../services/api"; // ✅ Import axios instance
+import api from "../services/api"; // ✅ axios instance
 import logo from "../assets/logo.png";
+import socket from "../sockets/socket"; // ✅ ADD: for realtime badge refresh
 
 /* ---------------- Demo data ---------------- */
 const DEMO_PROJECTS = [
@@ -204,8 +205,8 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
       <IconWrap>{icon}</IconWrap>
       <span>{label}</span>
     </span>
-    
-    {/* ✅ Badge for notification count */}
+
+    {/* ✅ Sidebar badge */}
     {badge !== null && badge !== undefined && badge > 0 && (
       <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
         {badge}
@@ -244,9 +245,10 @@ export default function ShowcaseFeed() {
   const [likedIds, setLikedIds] = useState(() => new Set());
   const [savedIds, setSavedIds] = useState(() => new Set());
 
-  // ✅ NEW: Notification count (Settings ki tarah)
+  // ✅ Notification count
   const [unreadCount, setUnreadCount] = useState(0);
-    /* ---------------------------
+
+  /* ---------------------------
      ✅ Fetch Showcase Feed (Backend)
   --------------------------- */
   const fetchFeed = async () => {
@@ -255,40 +257,84 @@ export default function ShowcaseFeed() {
         params: { q: query, tech: techFilter, sort: sortBy },
       });
       const list = res.data.projects || [];
-setProjects(list);
+      setProjects(list);
 
-// ✅ liked/saved state backend se set
-setLikedIds(new Set(list.filter(p => p.isLiked).map(p => p.id)));
-setSavedIds(new Set(list.filter(p => p.isSaved).map(p => p.id)));
+      // ✅ liked/saved state backend se set
+      setLikedIds(new Set(list.filter((p) => p.isLiked).map((p) => p.id)));
+      setSavedIds(new Set(list.filter((p) => p.isSaved).map((p) => p.id)));
     } catch (e) {
       console.warn("feed error", e?.message);
     }
   };
 
   /* ---------------------------
-     ✅ Fetch Real Notification Count 
+     ✅ Fetch Real Notification Count
   --------------------------- */
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
       const notifications = response.data.notifications || [];
-      const totalUnread = notifications.filter(n => !n.read).length;
-      setUnreadCount(totalUnread); // ✅ Actual count (67 ya jo bhi ho)
+      const totalUnread = notifications.filter((n) => !n.read).length;
+      setUnreadCount(totalUnread);
     } catch (err) {
-      console.warn("Could not fetch notification count:", err.message);
+      console.warn("Could not fetch notification count:", err?.message);
       setUnreadCount(0);
     }
   };
 
+  // ✅ Initial fetch
   useEffect(() => {
     fetchRealNotificationCount();
+    // eslint-disable-next-line
   }, []);
-    // ✅ Load feed on page open
+
+  // ✅ Auto refresh every 10 seconds (NOT 5 sec)
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchRealNotificationCount();
+    }, 10000); // 10s
+    return () => clearInterval(id);
+    // eslint-disable-next-line
+  }, []);
+
+  // ✅ Socket realtime refresh (instant badge update)
+  useEffect(() => {
+    const myId = user?._id || user?.id;
+    if (!myId) return;
+
+    const join = () => {
+      try {
+        socket.emit("auth:join", { userId: myId });
+      } catch {}
+    };
+
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
+
+    socket.on("connect", join);
+    join();
+
+    const onNew = () => {
+      // new notification arrives -> refresh count instantly
+      fetchRealNotificationCount();
+    };
+    socket.on("notification:new", onNew);
+
+    return () => {
+      socket.off("connect", join);
+      socket.off("notification:new", onNew);
+    };
+    // eslint-disable-next-line
+  }, [user]);
+
+  // ✅ Load feed on page open
   useEffect(() => {
     fetchFeed();
     // eslint-disable-next-line
   }, []);
-    // ✅ Reload feed when filters/search change
+
+  // ✅ Reload feed when filters/search change
   useEffect(() => {
     fetchFeed();
     // eslint-disable-next-line
@@ -299,11 +345,11 @@ setSavedIds(new Set(list.filter(p => p.isSaved).map(p => p.id)));
     { label: "Build portfolio", icon: <PortfolioIcon />, to: "/portfolio" },
     { label: "Collab rooms", icon: <CollabIcon />, to: "/collaboration" },
     { label: "Showcase feed", icon: <ShowcaseIcon />, to: "/showcase" },
-    { 
-      label: "Notifications", 
-      icon: <BellIcon />, 
+    {
+      label: "Notifications",
+      icon: <BellIcon />,
       to: "/notifications",
-      badge: unreadCount > 0 ? unreadCount : null // ✅ Yeh add karein
+      badge: unreadCount > 0 ? unreadCount : null,
     },
     { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
   ];
@@ -325,7 +371,9 @@ setSavedIds(new Set(list.filter(p => p.isSaved).map(p => p.id)));
   const [inviteMsg, setInviteMsg] = useState("Hey! Check this DevSphere project 🔥");
 
   // Request
-  const [requestMsg, setRequestMsg] = useState("Hi! I want to work on this project. Please add me as a collaborator.");
+  const [requestMsg, setRequestMsg] = useState(
+    "Hi! I want to work on this project. Please add me as a collaborator."
+  );
 
   // Upload form
   const [upTitle, setUpTitle] = useState("");
@@ -368,136 +416,129 @@ setSavedIds(new Set(list.filter(p => p.isSaved).map(p => p.id)));
     return list;
   }, [query, techFilter, sortBy, showSavedOnly, savedIds, projects]);
 
-  const savedProjectsList = useMemo(() => projects.filter((p) => savedIds.has(p.id)), [projects, savedIds]);
+  const savedProjectsList = useMemo(
+    () => projects.filter((p) => savedIds.has(p.id)),
+    [projects, savedIds]
+  );
 
   const toggleLike = async (id) => {
-  // UI instant feel
-  setLikedIds((prev) => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
-
-  try {
-    await api.post(`/showcase/${id}/like`);
-    fetchFeed();
-  } catch (e) {
-    // rollback if login issue
     setLikedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-    alert("Login required for like 😭");
-  }
-};
 
- const toggleSave = async (id) => {
-  // UI instant feel
-  setSavedIds((prev) => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
+    try {
+      await api.post(`/showcase/${id}/like`);
+      fetchFeed();
+    } catch (e) {
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+      });
+      alert("Login required for like 😭");
+    }
+  };
 
-  try {
-    await api.post(`/showcase/${id}/save`);
-    fetchFeed();
-  } catch (e) {
-    // rollback
+  const toggleSave = async (id) => {
     setSavedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-    alert("Login required for save 😭");
-  }
-};
+
+    try {
+      await api.post(`/showcase/${id}/save`);
+      fetchFeed();
+    } catch (e) {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+      });
+      alert("Login required for save 😭");
+    }
+  };
 
   const openComments = async (project) => {
-  setOpenCommentsFor(project);
-  setNewComment("");
-
-  try {
-    const res = await api.get(`/showcase/${project.id}/comments`);
-    const list = (res.data.comments || []).map((c) => ({
-      ...c,
-      likedBy: new Set(), // UI compatibility
-    }));
-
-    setCommentsByProject((prev) => ({
-      ...prev,
-      [project.id]: list,
-    }));
-  } catch (e) {
-    setCommentsByProject((prev) => ({
-      ...prev,
-      [project.id]: [],
-    }));
-  }
-};
-
-const submitComment = async () => {
-  if (!openCommentsFor) return;
-  const text = newComment.trim();
-  if (!text) return;
-
-  try {
-    await api.post(`/showcase/${openCommentsFor.id}/comments`, { text });
-
+    setOpenCommentsFor(project);
     setNewComment("");
 
-    const res = await api.get(`/showcase/${openCommentsFor.id}/comments`);
-    const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
+    try {
+      const res = await api.get(`/showcase/${project.id}/comments`);
+      const list = (res.data.comments || []).map((c) => ({
+        ...c,
+        likedBy: new Set(),
+      }));
 
-    setCommentsByProject((prev) => ({
-      ...prev,
-      [openCommentsFor.id]: list,
-    }));
+      setCommentsByProject((prev) => ({
+        ...prev,
+        [project.id]: list,
+      }));
+    } catch (e) {
+      setCommentsByProject((prev) => ({
+        ...prev,
+        [project.id]: [],
+      }));
+    }
+  };
 
-    fetchFeed();
-  } catch (e) {
-    alert("Login required to comment 😭");
-  }
-};
-  
-      
-   
+  const submitComment = async () => {
+    if (!openCommentsFor) return;
+    const text = newComment.trim();
+    if (!text) return;
 
-  // ✅ delete only in UI; button will appear only for own comment (below)
+    try {
+      await api.post(`/showcase/${openCommentsFor.id}/comments`, { text });
+
+      setNewComment("");
+
+      const res = await api.get(`/showcase/${openCommentsFor.id}/comments`);
+      const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
+
+      setCommentsByProject((prev) => ({
+        ...prev,
+        [openCommentsFor.id]: list,
+      }));
+
+      fetchFeed();
+    } catch (e) {
+      alert("Login required to comment 😭");
+    }
+  };
+
   const deleteComment = async (projectId, commentId) => {
-  try {
-    await api.delete(`/showcase/${projectId}/comments/${commentId}`);
+    try {
+      await api.delete(`/showcase/${projectId}/comments/${commentId}`);
 
-    const res = await api.get(`/showcase/${projectId}/comments`);
-    const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
+      const res = await api.get(`/showcase/${projectId}/comments`);
+      const list = (res.data.comments || []).map((c) => ({ ...c, likedBy: new Set() }));
 
-    setCommentsByProject((prev) => ({
-      ...prev,
-      [projectId]: list,
-    }));
+      setCommentsByProject((prev) => ({
+        ...prev,
+        [projectId]: list,
+      }));
 
-    fetchFeed();
-  } catch (e) {
-    alert("Only your comment can be deleted 😭");
-  }
-};
+      fetchFeed();
+    } catch (e) {
+      alert("Only your comment can be deleted 😭");
+    }
+  };
 
   const likeComment = async (projectId, commentId) => {
-  try {
-    // ✅ backend call (likes DB me save)
-    await api.post(`/showcase/${projectId}/comments/${commentId}/like`);
+    try {
+      await api.post(`/showcase/${projectId}/comments/${commentId}/like`);
 
-    // ✅ reload comments from backend
-    const res = await api.get(`/showcase/${projectId}/comments`);
-    setCommentsByProject((prev) => ({
-      ...prev,
-      [projectId]: res.data.comments || [],
-    }));
-  } catch (e) {
-    alert("Login required to like comment 😭");
-  }
-};
+      const res = await api.get(`/showcase/${projectId}/comments`);
+      setCommentsByProject((prev) => ({
+        ...prev,
+        [projectId]: res.data.comments || [],
+      }));
+    } catch (e) {
+      alert("Login required to like comment 😭");
+    }
+  };
 
   const shareProject = async (project) => {
     const shareText = `${project.title} — DevSphere Showcase\n${project.github}`;
@@ -518,23 +559,23 @@ const submitComment = async () => {
   };
 
   const sendInvite = async () => {
-  if (!inviteProject) return;
+    if (!inviteProject) return;
 
-  const target = inviteTo.trim();
-  if (!target) return alert("Invite target likho (email/username).");
+    const target = inviteTo.trim();
+    if (!target) return alert("Invite target likho (email/username).");
 
-  try {
-    await api.post(`/showcase/${inviteProject.id}/invite`, {
-      inviteTo: target,
-      message: inviteMsg,
-    });
+    try {
+      await api.post(`/showcase/${inviteProject.id}/invite`, {
+        inviteTo: target,
+        message: inviteMsg,
+      });
 
-    alert("Invite sent ✅");
-    setInviteProject(null);
-  } catch (e) {
-    alert(e?.response?.data?.message || "Invite failed 😭");
-  }
-};
+      alert("Invite sent ✅");
+      setInviteProject(null);
+    } catch (e) {
+      alert(e?.response?.data?.message || "Invite failed 😭");
+    }
+  };
 
   const openRequest = (project) => {
     setRequestProject(project);
@@ -542,19 +583,19 @@ const submitComment = async () => {
   };
 
   const sendRequest = async () => {
-  if (!requestProject) return;
+    if (!requestProject) return;
 
-  try {
-    await api.post(`/showcase/${requestProject.id}/request`, {
-      message: requestMsg,
-    });
+    try {
+      await api.post(`/showcase/${requestProject.id}/request`, {
+        message: requestMsg,
+      });
 
-    alert("Request sent ✅");
-    setRequestProject(null);
-  } catch (e) {
-    alert(e?.response?.data?.message || "Request failed 😭");
-  }
-};
+      alert("Request sent ✅");
+      setRequestProject(null);
+    } catch (e) {
+      alert(e?.response?.data?.message || "Request failed 😭");
+    }
+  };
 
   const openUpload = () => {
     setUploadOpen(true);
@@ -562,69 +603,79 @@ const submitComment = async () => {
     setUpDesc("");
     setUpGithub("");
     setUpTech("React");
-    setUpThumb("https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=60");
+    setUpThumb(
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=60"
+    );
   };
 
- const handleUpload = async () => {
-  const title = upTitle.trim();
-  const desc = upDesc.trim();
-  const github = upGithub.trim() || "https://github.com/";
-  const thumb = upThumb.trim();
+  const handleUpload = async () => {
+    const title = upTitle.trim();
+    const desc = upDesc.trim();
+    const github = upGithub.trim() || "https://github.com/";
+    const thumb = upThumb.trim();
 
-  if (!title || !desc || !thumb) return alert("Title + Description + Thumbnail required.");
+    if (!title || !desc || !thumb) return alert("Title + Description + Thumbnail required.");
 
-  try {
-    await api.post("/showcase", {
-      title,
-      desc,
-      github,
-      thumb,
-      tech: [upTech],
-    });
+    try {
+      await api.post("/showcase", {
+        title,
+        desc,
+        github,
+        thumb,
+        tech: [upTech],
+      });
 
-    setUploadOpen(false);
-    fetchFeed();
-    alert("Project uploaded ✅");
-  } catch (e) {
-    alert("Upload failed (login required?) 😭");
-  }
-};
-    const deleteProject = async (projectId) => {
-  if (!window.confirm("Delete this project?")) return;
+      setUploadOpen(false);
+      fetchFeed();
+      alert("Project uploaded ✅");
+    } catch (e) {
+      alert("Upload failed (login required?) 😭");
+    }
+  };
 
-  try {
-    await api.delete(`/showcase/${projectId}`);
+  const deleteProject = async (projectId) => {
+    if (!window.confirm("Delete this project?")) return;
 
-    // local UI cleanup
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(projectId);
-      return next;
-    });
+    try {
+      await api.delete(`/showcase/${projectId}`);
 
-    setLikedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(projectId);
-      return next;
-    });
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(projectId);
+        return next;
+      });
 
-    setCommentsByProject((prev) => {
-      const next = { ...prev };
-      delete next[projectId];
-      return next;
-    });
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(projectId);
+        return next;
+      });
 
-    fetchFeed();
-    alert("Project deleted ✅");
-  } catch (e) {
-    alert("Delete failed (only owner can delete) 😭");
-  }
-};
-      
+      setCommentsByProject((prev) => {
+        const next = { ...prev };
+        delete next[projectId];
+        return next;
+      });
 
- 
-      
-      
+      fetchFeed();
+      alert("Project deleted ✅");
+    } catch (e) {
+      alert("Delete failed (only owner can delete) 😭");
+    }
+  };
+
+  // ✅ TOPBAR bell button like your image
+  const TopBellButton = () => (
+    <button
+      className="sfBellBtn"
+      title="Notifications"
+      onClick={() => navigate("/notifications")}
+    >
+      <BellIcon />
+      {unreadCount > 0 && <span className="sfBellBadge">{unreadCount}</span>}
+    </button>
+  );
+
   return (
     <>
       <div className="min-h-screen bg-[#eef3f7] flex overflow-hidden relative">
@@ -653,7 +704,7 @@ const submitComment = async () => {
                 active={location.pathname === item.to}
                 icon={item.icon}
                 label={item.label}
-                badge={item.badge} // ✅ Yeh pass karein
+                badge={item.badge}
                 onClick={() => navigate(item.to)}
               />
             ))}
@@ -673,7 +724,11 @@ const submitComment = async () => {
         {/* MAIN */}
         <main className="flex-1 p-6 md:p-8 relative z-10">
           {/* TOPBAR */}
-          <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
+          <div
+            className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 ${
+              mounted ? "sfIn" : "sfPre"
+            }`}
+          >
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -684,12 +739,16 @@ const submitComment = async () => {
               </button>
 
               <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Showcase Feed</h1>
-                <p className="text-sm text-slate-600">Discover projects, connect with developers, and get inspired.</p>
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                  Showcase Feed
+                </h1>
+                <p className="text-sm text-slate-600">
+                  Discover projects, connect with developers, and get inspired.
+                </p>
               </div>
             </div>
 
-            {/* ✅ Search + buttons always visible */}
+            {/* ✅ Search + bell + buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex items-center gap-2 bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
                 <span className="text-slate-400">
@@ -703,7 +762,14 @@ const submitComment = async () => {
                 />
               </div>
 
-              <button className="sfTopBtn sfTopBtnDark" onClick={() => setSavedDrawerOpen(true)} title="View saved">
+              {/* ✅ TOP bell icon like your image */}
+              <TopBellButton />
+
+              <button
+                className="sfTopBtn sfTopBtnDark"
+                onClick={() => setSavedDrawerOpen(true)}
+                title="View saved"
+              >
                 <BookmarkIcon filled={true} />
                 <span>Saved</span>
                 <span className="sfBadge">{savedProjectsList.length}</span>
@@ -720,7 +786,11 @@ const submitComment = async () => {
           <div className={`flex flex-wrap items-center gap-3 mb-6 ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
               <span className="text-xs text-slate-500 font-semibold">Tech</span>
-              <select className="text-sm outline-none bg-transparent" value={techFilter} onChange={(e) => setTechFilter(e.target.value)}>
+              <select
+                className="text-sm outline-none bg-transparent"
+                value={techFilter}
+                onChange={(e) => setTechFilter(e.target.value)}
+              >
                 {techOptions.map((t) => (
                   <option key={t} value={t}>
                     {t}
@@ -731,7 +801,11 @@ const submitComment = async () => {
 
             <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
               <span className="text-xs text-slate-500 font-semibold">Sort</span>
-              <select className="text-sm outline-none bg-transparent" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <select
+                className="text-sm outline-none bg-transparent"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
                 <option value="Trending">Trending</option>
                 <option value="Newest">Newest</option>
                 <option value="MostLiked">Most liked</option>
@@ -740,7 +814,9 @@ const submitComment = async () => {
 
             <button
               className={`px-3 py-2 rounded-xl border text-sm font-semibold transition ${
-                showSavedOnly ? "bg-slate-900 text-white border-slate-900" : "bg-white/95 text-slate-700 border-slate-200 hover:bg-white"
+                showSavedOnly
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white/95 text-slate-700 border-slate-200 hover:bg-white"
               }`}
               onClick={() => setShowSavedOnly((v) => !v)}
               title="Show only saved projects"
@@ -776,7 +852,10 @@ const submitComment = async () => {
 
                     <div className="absolute left-3 bottom-3 flex flex-wrap gap-2">
                       {p.tech.slice(0, 2).map((t) => (
-                        <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/90 text-slate-800 font-semibold">
+                        <span
+                          key={t}
+                          className="text-xs px-2 py-1 rounded-full bg-white/90 text-slate-800 font-semibold"
+                        >
                           {t}
                         </span>
                       ))}
@@ -819,7 +898,9 @@ const submitComment = async () => {
                       <div className="flex items-center gap-2 text-sm flex-wrap">
                         <button
                           className={`px-3 py-2 rounded-xl border transition inline-flex items-center gap-2 ${
-                            liked ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                            liked
+                              ? "bg-rose-50 border-rose-200 text-rose-600"
+                              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                           }`}
                           onClick={() => toggleLike(p.id)}
                           title="Like"
@@ -847,7 +928,10 @@ const submitComment = async () => {
                         </button>
                       </div>
 
-                      <button className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition" onClick={() => setOpenProject(p)}>
+                      <button
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition"
+                        onClick={() => setOpenProject(p)}
+                      >
                         View
                       </button>
                     </div>
@@ -863,7 +947,10 @@ const submitComment = async () => {
               <div className="w-full max-w-md h-full bg-white shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-slate-900">Saved Projects</h3>
-                  <button className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center" onClick={() => setSavedDrawerOpen(false)}>
+                  <button
+                    className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center"
+                    onClick={() => setSavedDrawerOpen(false)}
+                  >
                     ✕
                   </button>
                 </div>
@@ -872,7 +959,9 @@ const submitComment = async () => {
 
                 <div className="mt-4 space-y-3 overflow-auto h-[calc(100vh-140px)] pr-1">
                   {savedProjectsList.length === 0 ? (
-                    <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">No saved projects yet.</div>
+                    <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      No saved projects yet.
+                    </div>
                   ) : (
                     savedProjectsList.map((p) => (
                       <button
@@ -884,7 +973,11 @@ const submitComment = async () => {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <img src={p.thumb} alt={p.title} className="w-14 h-14 rounded-xl object-cover border border-slate-200" />
+                          <img
+                            src={p.thumb}
+                            alt={p.title}
+                            className="w-14 h-14 rounded-xl object-cover border border-slate-200"
+                          />
                           <div>
                             <p className="text-sm font-semibold text-slate-900">{p.title}</p>
                             <p className="text-xs text-slate-500">
@@ -900,7 +993,7 @@ const submitComment = async () => {
             </div>
           )}
 
-          {/* ---------------- Upload Modal (✅ fixed) ---------------- */}
+          {/* ---------------- Upload Modal ---------------- */}
           {uploadOpen && (
             <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setUploadOpen(false)}>
               <div className="w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-xl sfModal" onClick={(e) => e.stopPropagation()}>
@@ -914,7 +1007,6 @@ const submitComment = async () => {
                   </button>
                 </div>
 
-                {/* ✅ scroll area so buttons never disappear */}
                 <div className="sfModalBody">
                   <div className="sfField">
                     <label className="sfLabel">Title</label>
@@ -950,7 +1042,6 @@ const submitComment = async () => {
                   </div>
                 </div>
 
-                {/* ✅ footer always visible */}
                 <div className="sfModalFooter">
                   <button className="sfBtnGhost" onClick={() => setUploadOpen(false)}>
                     Cancel
@@ -999,8 +1090,6 @@ const submitComment = async () => {
                     ) : (
                       (commentsByProject[openCommentsFor.id] || []).map((c) => {
                         const liked = !!c.likedByMe;
-
-                        // ✅ only own comment can be deleted
                         const isMyComment = (c.name || "").trim().toLowerCase() === displayName.trim().toLowerCase();
 
                         return (
@@ -1179,7 +1268,6 @@ const submitComment = async () => {
         .sidebarOpen{ width:288px; opacity:1; }
         .sidebarClosed{ width:0px; padding:0px; opacity:0; pointer-events:none; }
 
-        /* ✅ make ALL bg layers non-click-blocking */
         .sfBg, .sfBlob, .sfShimmer, .sfGrid, .sfGrain{ pointer-events:none; }
 
         .sfBlob{
@@ -1264,6 +1352,34 @@ const submitComment = async () => {
           font-size:12px; font-weight:900;
         }
 
+        /* ✅ TOP bell button like your image */
+        .sfBellBtn{
+          width:44px; height:44px;
+          border-radius:999px;
+          display:grid; place-items:center;
+          background:rgba(255,255,255,.92);
+          border:1px solid rgba(148,163,184,.35);
+          box-shadow:0 12px 30px rgba(2,6,23,.14);
+          color:#0f172a;
+          position:relative;
+          transition:transform .18s ease, background .18s ease;
+        }
+        .sfBellBtn:hover{ transform:translateY(-1px) scale(1.02); background:#fff; }
+        .sfBellBadge{
+          position:absolute;
+          top:-6px; right:-6px;
+          min-width:22px; height:22px;
+          padding:0 6px;
+          border-radius:999px;
+          background:#0ea5e9;
+          color:#fff;
+          display:flex; align-items:center; justify-content:center;
+          font-size:11px;
+          font-weight:900;
+          border:3px solid #fff;
+          box-shadow:0 10px 18px rgba(2,6,23,.18);
+        }
+
         .sfActionBtn{
           width:38px; height:38px; border-radius:999px;
           display:grid; place-items:center;
@@ -1291,7 +1407,6 @@ const submitComment = async () => {
 
         .lineClamp2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
-        /* ✅ Upload modal layout fix (no table look) */
         .sfModalBody{
           padding: 18px;
           max-height: calc(100vh - 210px);

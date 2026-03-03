@@ -1,9 +1,8 @@
 const ShowcasePost = require("../models/ShowcasePost");
-
-// ✅ imports for Invite/Request/Comments Notifications
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
+/* ================= FORMAT FOR UI ================= */
 const formatPostForUI = (post, userId = null) => {
   const uid = userId ? String(userId) : null;
 
@@ -11,67 +10,48 @@ const formatPostForUI = (post, userId = null) => {
     id: String(post._id),
     title: post.title,
     tech: post.tech || [],
-
     likes: post.likes?.length || 0,
     comments: post.comments?.length || 0,
     saves: post.saves?.length || 0,
-
     author: post.authorName,
     time: post.createdAt,
     desc: post.desc,
     github: post.github,
     thumb: post.thumb,
-
-    // ✅ refresh ke baad bhi heart/bookmark filled rahe
     isLiked: uid ? (post.likes || []).some((x) => String(x) === uid) : false,
     isSaved: uid ? (post.saves || []).some((x) => String(x) === uid) : false,
   };
 };
 
-/* =========================
-   1) GET FEED
-   ========================= */
+/* ================= SOCKET EMIT HELPER ================= */
+const emitToUser = (req, userId, payload) => {
+  try {
+    const io = req.app.get("io");
+    if (!io) return;
+    const uid = String(userId || "").trim();
+    if (!uid) return;
+
+    io.to(`user:${uid}`).emit("notification:new", payload);
+  } catch (e) {
+    // silent
+  }
+};
+
+/* ================= GET FEED ================= */
 exports.getFeed = async (req, res) => {
   try {
     const userId = req.user?._id || null;
-    const { q, tech, sort } = req.query;
-
-    const filter = {};
-    if (tech && tech !== "All") filter.tech = tech;
-
-    if (q) {
-      filter.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { desc: { $regex: q, $options: "i" } },
-        { authorName: { $regex: q, $options: "i" } },
-        { tech: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    let query = ShowcasePost.find(filter);
-
-    // simple: newest
-    if (sort === "Newest") query = query.sort({ createdAt: -1 });
-    else query = query.sort({ createdAt: -1 });
-
-    const posts = await query.limit(60);
-
+    const posts = await ShowcasePost.find().sort({ createdAt: -1 }).limit(60);
     res.json({ projects: posts.map((p) => formatPostForUI(p, userId)) });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 };
 
-/* =========================
-   2) CREATE POST
-   ========================= */
+/* ================= CREATE POST ================= */
 exports.createPost = async (req, res) => {
   try {
     const { title, desc, github, thumb, tech } = req.body;
-
-    if (!title || !desc || !github || !thumb) {
-      return res.status(400).json({ message: "title, desc, github, thumb required" });
-    }
 
     const newPost = await ShowcasePost.create({
       author: req.user._id,
@@ -80,26 +60,25 @@ exports.createPost = async (req, res) => {
       desc,
       github,
       thumb,
-      tech: Array.isArray(tech) ? tech : [tech].filter(Boolean),
+      tech: Array.isArray(tech) ? tech : [tech],
     });
 
-    res.status(201).json({ project: formatPostForUI(newPost, req.user?._id || null) });
+    res.status(201).json({
+      project: formatPostForUI(newPost, req.user._id),
+    });
   } catch (e) {
     res.status(400).json({ message: e.message });
   }
 };
 
-/* =========================
-   3) DELETE POST
-   ========================= */
+/* ================= DELETE POST ================= */
 exports.deletePost = async (req, res) => {
   try {
     const post = await ShowcasePost.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    if (String(post.author) !== String(req.user._id)) {
+    if (String(post.author) !== String(req.user._id))
       return res.status(403).json({ message: "Not allowed" });
-    }
 
     await post.deleteOne();
     res.json({ message: "Deleted" });
@@ -108,9 +87,7 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-/* =========================
-   4) TOGGLE LIKE (post)
-   ========================= */
+/* ================= LIKE ================= */
 exports.toggleLike = async (req, res) => {
   try {
     const post = await ShowcasePost.findById(req.params.id);
@@ -129,9 +106,7 @@ exports.toggleLike = async (req, res) => {
   }
 };
 
-/* =========================
-   5) TOGGLE SAVE (post)
-   ========================= */
+/* ================= SAVE ================= */
 exports.toggleSave = async (req, res) => {
   try {
     const post = await ShowcasePost.findById(req.params.id);
@@ -150,49 +125,17 @@ exports.toggleSave = async (req, res) => {
   }
 };
 
-/* =========================
-   6) GET COMMENTS (✅ likes persist + likedByMe)
-   ========================= */
-exports.getComments = async (req, res) => {
-  try {
-    const post = await ShowcasePost.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: "Post not found" });
-
-    const uid = req.user?._id ? String(req.user._id) : null;
-
-    const comments = (post.comments || []).map((c) => ({
-      id: String(c._id),
-      name: c.name,
-      text: c.text,
-      time: c.createdAt,
-
-      // ✅ Real likes
-      likes: (c.likes || []).length,
-
-      // ✅ For filled heart after refresh
-      likedByMe: uid ? (c.likes || []).some((x) => String(x) === uid) : false,
-    }));
-
-    res.json({ comments });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-/* =========================
-   7) ADD COMMENT (✅ with notification)
-   ========================= */
+/* ================= ADD COMMENT ================= */
 exports.addComment = async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text || !String(text).trim()) {
+    if (!text || !String(text).trim())
       return res.status(400).json({ message: "text required" });
-    }
 
     const post = await ShowcasePost.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    const commenterName = req.user.name || req.user.email;
+    const commenterName = req.user.name || req.user.email || "Someone";
 
     post.comments.unshift({
       user: req.user._id,
@@ -200,86 +143,49 @@ exports.addComment = async (req, res) => {
       text: String(text).trim(),
     });
 
+    await post.save();
+
     // ✅ notify owner (owner khud comment na kar raha ho)
     if (String(post.author) !== String(req.user._id)) {
-      await Notification.create({
+      const n = await Notification.create({
         user: post.author,
-        type: "comment",
+        type: "SHOWCASE_COMMENT",
+        entityType: "post",
+        postId: String(post._id),
         title: "New Comment",
         message: `${commenterName} commented on your project`,
-        action: { label: "Open project", path: `/showcase/${post._id}` },
+        action: {
+          label: "Open post",
+          path: "/showcase",
+          state: { postId: String(post._id) },
+        },
         read: false,
+      });
+
+      // ✅ REALTIME PUSH (instant badge update)
+      emitToUser(req, post.author, {
+        _id: String(n._id),
+        type: n.type,
+        entityType: n.entityType,
+        postId: n.postId,
+        title: n.title,
+        message: n.message,
+        action: n.action,
+        read: n.read,
+        createdAt: n.createdAt,
       });
     }
 
-    await post.save();
-    res.status(201).json({ commentsCount: post.comments.length });
+    res.json({ commentsCount: post.comments.length });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 };
 
-/* =========================
-   8) DELETE COMMENT
-   ========================= */
-exports.deleteComment = async (req, res) => {
-  try {
-    const post = await ShowcasePost.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: "Post not found" });
-
-    const comment = post.comments.id(req.params.commentId);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-    if (String(comment.user) !== String(req.user._id)) {
-      return res.status(403).json({ message: "Not allowed" });
-    }
-
-    comment.deleteOne();
-    await post.save();
-    res.json({ message: "Comment deleted" });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-/* =========================================================
-   ✅ COMMENT LIKE (persist after refresh)
-   POST /api/showcase/:id/comments/:commentId/like
-   ========================================================= */
-exports.toggleCommentLike = async (req, res) => {
-  try {
-    const post = await ShowcasePost.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: "Post not found" });
-
-    const comment = post.comments.id(req.params.commentId);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-    const uid = String(req.user._id);
-    const already = (comment.likes || []).some((x) => String(x) === uid);
-
-    if (already) comment.likes = comment.likes.filter((x) => String(x) !== uid);
-    else comment.likes.push(req.user._id);
-
-    await post.save();
-
-    return res.json({
-      likes: (comment.likes || []).length,
-      liked: !already,
-    });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
-};
-
-/* =========================================================
-   ✅ INVITE + REQUEST
-   ========================================================= */
-
-// POST /api/showcase/:id/invite
+/* ================= PROJECT INVITE ================= */
 exports.sendInvite = async (req, res) => {
   try {
     const { inviteTo, message } = req.body;
-    if (!inviteTo) return res.status(400).json({ message: "inviteTo required" });
 
     const post = await ShowcasePost.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
@@ -289,23 +195,42 @@ exports.sendInvite = async (req, res) => {
     });
 
     if (targetUser) {
-      await Notification.create({
+      const n = await Notification.create({
         user: targetUser._id,
-        type: "invite",
+        type: "PROJECT_INVITE",
+        entityType: "project",
+        postId: String(post._id),
         title: "Project Invite",
         message: message || "You are invited to collaborate",
-        action: { label: "Open project", path: `/showcase/${post._id}` },
+        action: {
+          label: "Open project",
+          path: "/showcase",
+          state: { postId: String(post._id) },
+        },
         read: false,
+      });
+
+      // ✅ realtime
+      emitToUser(req, targetUser._id, {
+        _id: String(n._id),
+        type: n.type,
+        entityType: n.entityType,
+        postId: n.postId,
+        title: n.title,
+        message: n.message,
+        action: n.action,
+        read: n.read,
+        createdAt: n.createdAt,
       });
     }
 
-    return res.json({ ok: true, invited: !!targetUser });
+    res.json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    res.status(500).json({ message: e.message });
   }
 };
 
-// POST /api/showcase/:id/request
+/* ================= PROJECT WORK REQUEST ================= */
 exports.sendRequest = async (req, res) => {
   try {
     const { message } = req.body;
@@ -313,17 +238,41 @@ exports.sendRequest = async (req, res) => {
     const post = await ShowcasePost.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    await Notification.create({
+    if (String(post.author) === String(req.user._id))
+      return res.status(400).json({ message: "Cannot request your own project" });
+
+    const requesterName = req.user?.name || req.user?.email || "Someone";
+
+    const n = await Notification.create({
       user: post.author,
-      type: "update", // ✅ FIX: your Notification enum does NOT include "request"
-      title: "Collaboration Request",
-      message: message || "Someone requested to work on your project",
-      action: { label: "Open project", path: `/showcase/${post._id}` },
+      type: "PROJECT_WORK_REQUEST",
+      entityType: "project",
+      postId: String(post._id),
+      title: "Request to work",
+      message: message || `${requesterName} wants to work on your project`,
+      action: {
+        label: "Open project",
+        path: "/showcase",
+        state: { postId: String(post._id) },
+      },
       read: false,
     });
 
-    return res.json({ ok: true });
+    // ✅ realtime
+    emitToUser(req, post.author, {
+      _id: String(n._id),
+      type: n.type,
+      entityType: n.entityType,
+      postId: n.postId,
+      title: n.title,
+      message: n.message,
+      action: n.action,
+      read: n.read,
+      createdAt: n.createdAt,
+    });
+
+    res.json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    res.status(500).json({ message: e.message });
   }
 };

@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
-import api from "../services/api";
+import { NotificationContext } from "../context/NotificationContext";
 import socket from "../sockets/socket";
 
 /* ================= Icons ================= */
@@ -79,6 +79,8 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
 
 export default function CollaborationRoom() {
   const { user } = useContext(AuthContext);
+  const { unreadCount } = useContext(NotificationContext);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -90,21 +92,12 @@ export default function CollaborationRoom() {
   }, []);
 
   const displayName = user?.name || user?.email || "Guest";
-  const initials = displayName.split(" ").map((p) => p[0]?.toUpperCase()).join("").slice(0, 2);
+  const initials = displayName
+    .split(" ")
+    .map((p) => p[0]?.toUpperCase())
+    .join("")
+    .slice(0, 2);
   const isOnline = true;
-
-  const [unreadCount, setUnreadCount] = useState(0);
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await api.get("/notifications");
-        const notifications = response.data.notifications || [];
-        setUnreadCount(notifications.filter((n) => !n.read).length);
-      } catch {
-        setUnreadCount(0);
-      }
-    })();
-  }, []);
 
   // ✅ Lobby state from backend
   const [rooms, setRooms] = useState([]);
@@ -128,31 +121,22 @@ export default function CollaborationRoom() {
   const [createName, setCreateName] = useState("");
   const [maxMembers, setMaxMembers] = useState(6);
 
-  /* ================== NEW: helpers for approval/pending ================== */
+  /* ================== helpers for approval/pending ================== */
   const norm = (v) => String(v || "").trim().toLowerCase();
 
   const getMyRequestStatusForRoom = (roomCode) => {
     const list = pendingByRoom?.[roomCode] || [];
     const me = norm(joinName || displayName);
-
-    // newest first (backend unshift), so find first match
     const found = list.find((r) => norm(r.user) === me);
     return found?.status || null; // "pending" | "approved" | "rejected" | null
   };
 
   const canEnterRoom = (room) => {
     if (!room?.code) return false;
-
     const isOwner = norm(room.owner) === norm(displayName);
     if (isOwner) return true;
-
     const st = getMyRequestStatusForRoom(room.code);
     return st === "approved";
-  };
-
-  const isPendingRoom = (room) => {
-    const st = getMyRequestStatusForRoom(room.code);
-    return st === "pending";
   };
 
   /* ✅ Socket lobby listeners */
@@ -187,16 +171,12 @@ export default function CollaborationRoom() {
       navigate(`/workspace/${room.code}`);
     };
 
-    /* ================== NEW: request sent popup + approved popup ================== */
     const onRequested = (req) => {
-      // requester ko popup
       alert(`Request sent ✅\nRoom: ${req?.roomCode}\nWaiting for owner approval...`);
-      // refresh state
       socket.emit("lobby:sync");
     };
 
     const onApproved = ({ roomCode, user: approvedUser }) => {
-      // sabko aata hai; sirf apni approval pe popup
       if (norm(approvedUser) === norm(joinName || displayName)) {
         alert(`Approved ✅\nYou can enter workspace now.\nRoom: ${roomCode}`);
         socket.emit("lobby:sync");
@@ -247,43 +227,38 @@ export default function CollaborationRoom() {
     try {
       if (!socket.connected) socket.connect();
     } catch {}
-   socket.emit("lobby:create-room", {
-  name,
-  maxMembers,
-  owner: user?.name || user?.email || "Owner",
-  ownerId: user?._id || user?.id,
-});
+
+    socket.emit("lobby:create-room", {
+      name,
+      maxMembers,
+      owner: user?.name || user?.email || "Owner",
+      ownerId: user?._id || user?.id,
+    });
 
     setCreateName("");
     setMaxMembers(6);
   };
 
- const requestToJoin = (forcedCode) => {
-  const code = (forcedCode || joinCode).trim().toUpperCase();
-  const nm = (joinName || "").trim() || "Guest";
+  const requestToJoin = (forcedCode) => {
+    const code = (forcedCode || joinCode).trim().toUpperCase();
+    const nm = (joinName || "").trim() || "Guest";
 
-  if (!code) return alert("Enter a room code.");
-  if (!(user?._id || user?.id)) return alert("UserId missing! Please login again.");
+    if (!code) return alert("Enter a room code.");
+    if (!(user?._id || user?.id)) return alert("UserId missing! Please login again.");
 
-  try {
-    if (!socket.connected) socket.connect();
-  } catch {}
+    try {
+      if (!socket.connected) socket.connect();
+    } catch {}
 
-  console.log("CLICK REQUEST JOIN ✅", {
-    code,
-    user: user?.name || user?.email || nm,
-    userId: user?._id || user?.id,
-  });
+    socket.emit("lobby:request-join", {
+      code,
+      user: user?.name || user?.email || nm,
+      userId: user?._id || user?.id,
+      force: true,
+    });
 
-  socket.emit("lobby:request-join", {
-    code,
-    user: user?.name || user?.email || nm,
-    userId: user?._id || user?.id,
-    force: true, // ✅ IMPORTANT: yahan force variable nahi, fixed true
-  });
-
-  setJoinCode("");
-};
+    setJoinCode("");
+  };
 
   const approveRequest = (req) => {
     socket.emit("lobby:approve", { roomCode: req.roomCode, reqId: req.id, owner: displayName });
@@ -307,7 +282,6 @@ export default function CollaborationRoom() {
     const who = (joinName || displayName || "Guest").trim();
     if (!code) return alert("Enter room code first.");
 
-    // ✅ DISABLE RULE: if not approved (and not owner), stop here
     const room = rooms.find((r) => String(r.code || "").toUpperCase() === code);
     if (room && !canEnterRoom(room)) {
       return alert("Approval required. Owner has not approved yet.");
@@ -323,7 +297,6 @@ export default function CollaborationRoom() {
     const roomCode = String(code || "").trim().toUpperCase();
     const room = rooms.find((r) => String(r.code || "").toUpperCase() === roomCode);
 
-    // ✅ DISABLE RULE
     if (room && !canEnterRoom(room)) {
       return alert("Approval required. Owner has not approved yet.");
     }
@@ -378,9 +351,7 @@ export default function CollaborationRoom() {
             title="Open Settings"
           >
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
-                {initials || "U"}
-              </div>
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">{initials || "U"}</div>
               <span
                 className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
                   isOnline ? "bg-emerald-400" : "bg-slate-400"
@@ -438,10 +409,9 @@ export default function CollaborationRoom() {
                     const full = r.members >= r.maxMembers;
                     const isOwner = norm(r.owner) === norm(displayName);
 
-                    const st = getMyRequestStatusForRoom(r.code); // pending/approved/rejected/null
+                    const st = getMyRequestStatusForRoom(r.code);
                     const pendingMe = st === "pending";
                     const approvedMe = st === "approved";
-
                     const enterAllowed = isOwner || approvedMe;
 
                     return (
@@ -458,7 +428,6 @@ export default function CollaborationRoom() {
                               <span className="font-semibold">{r.owner}</span>
                             </p>
 
-                            {/* ✅ tiny status line */}
                             {!isOwner ? (
                               <p className="text-[11px] mt-1 font-semibold">
                                 {pendingMe ? (
@@ -515,16 +484,13 @@ export default function CollaborationRoom() {
                             onClick={() => goToWorkspace(r.code)}
                             disabled={!enterAllowed}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px] ${
-                              enterAllowed
-                                ? "bg-slate-900 text-white hover:bg-slate-800"
-                                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                              enterAllowed ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-slate-200 text-slate-400 cursor-not-allowed"
                             }`}
                             title={enterAllowed ? "Enter workspace" : "Disabled until owner approves"}
                           >
                             Enter workspace
                           </button>
 
-                          {/* ✅ Delete button for owner only */}
                           {isOwner ? (
                             <button
                               onClick={() => deleteRoom(r.code)}
@@ -567,23 +533,18 @@ export default function CollaborationRoom() {
                     Send join request
                   </button>
 
-                  {/* ✅ Disabled until approved */}
                   <button
-  onClick={enterWorkspaceByCode}
-  disabled={
-    (() => {
-      const code = (joinCode || "").trim().toUpperCase();
-      const room = rooms.find(
-        (r) => String(r.code || "").toUpperCase() === code
-      );
-      if (!room) return false;
-      return !canEnterRoom(room);
-    })()
-  }
-  className="w-full px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50"
->
-  Enter workspace (by code)
-</button>
+                    onClick={enterWorkspaceByCode}
+                    disabled={(() => {
+                      const code = (joinCode || "").trim().toUpperCase();
+                      const room = rooms.find((r) => String(r.code || "").toUpperCase() === code);
+                      if (!room) return false;
+                      return !canEnterRoom(room);
+                    })()}
+                    className="w-full px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50"
+                  >
+                    Enter workspace (by code)
+                  </button>
                 </div>
               </section>
 

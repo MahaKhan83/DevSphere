@@ -48,62 +48,35 @@ const SettingsIcon = () => (
   </svg>
 );
 
-/* ---------- Tiny SVG Icons (Notifications UI) ---------- */
+/* ---------- Tiny SVG Icons ---------- */
 const BellLineIcon = ({ className = "w-5 h-5" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
     <path d="M9 17a3 3 0 0 0 6 0" />
   </svg>
 );
 
 const CheckIcon = ({ className = "w-4 h-4" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M20 6 9 17l-5-5" />
   </svg>
 );
 
 const FilterIcon = ({ className = "w-4 h-4" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <path d="M4 6h16M7 12h10M10 18h4" />
   </svg>
 );
 
-/* ✅ Refresh icon */
 const RefreshIcon = ({ className = "w-4 h-4" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 12a9 9 0 1 1-2.64-6.36" />
     <path d="M21 3v6h-6" />
   </svg>
 );
 
 /* =========================
-   Dashboard Sidebar UI Helpers (SAME AS Dashboard.jsx)
+   Sidebar Helpers
 ========================= */
 const IconWrap = ({ children }) => (
   <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
@@ -134,50 +107,90 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
   </button>
 );
 
-/* ---------- Notification helpers ---------- */
-const typeMeta = (type) => {
-  switch (type) {
-    case "follow":
-      return {
-        label: "New follower",
-        badge: "bg-emerald-100 text-emerald-700",
-        dot: "bg-emerald-400",
-      };
-    case "invite":
-      return {
-        label: "Project invite",
-        badge: "bg-sky-100 text-sky-700",
-        dot: "bg-sky-400",
-      };
-    case "comment":
-      return {
-        label: "New comment",
-        badge: "bg-violet-100 text-violet-700",
-        dot: "bg-violet-400",
-      };
-    default:
-      return {
-        label: "Update",
-        badge: "bg-slate-100 text-slate-700",
-        dot: "bg-slate-400",
-      };
+/* =========================
+   Notification grouping + badges
+========================= */
+const safe = (v) => (v || "").toString();
+const upper = (v) => safe(v).toUpperCase();
+
+// ✅ GUARANTEED grouping based on your current notification text
+const getGroup = (n) => {
+  const t = upper(n?.type);
+  const title = upper(n?.title);
+  const msg = upper(n?.message);
+
+  // Prefer entityType if backend sends it
+  if (n?.entityType === "room") return "rooms";
+  if (n?.entityType === "project") return "projects";
+  if (n?.entityType === "post") return "comments";
+
+  // ✅ ROOMS (covers your screenshots)
+  if (
+    title.includes("ROOM") ||
+    title.includes("REQUEST APPROVED") ||
+    title.includes("REQUEST REJECT") ||
+    title.includes("COLLABORATION REQUEST") ||
+    msg.includes("REQUESTED TO JOIN") ||
+    msg.includes("REQUEST TO JOIN") ||
+    t.includes("ROOM") ||
+    t.includes("JOIN")
+  ) {
+    return "rooms";
   }
+
+  // ✅ PROJECTS (work request / invite)
+  if (title.includes("PROJECT") || t.includes("PROJECT") || t.includes("WORK") || t.includes("INVITE")) {
+    return "projects";
+  }
+
+  // ✅ COMMENTS (showcase)
+  if (title.includes("COMMENT") || msg.includes("COMMENT") || t.includes("COMMENT")) {
+    return "comments";
+  }
+
+  return "other";
 };
 
-/* ✅ FIXED: Proper time formatter function */
+const typeMeta = (n) => {
+  const title = upper(n?.title);
+  const msg = upper(n?.message);
+  const group = getGroup(n);
+
+  if (group === "rooms") {
+    if (title.includes("APPROV") || msg.includes("WAS APPROVED")) {
+      return { label: "Room Approved", badge: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-400" };
+    }
+    if (title.includes("REJECT") || msg.includes("WAS REJECTED")) {
+      return { label: "Room Rejected", badge: "bg-rose-100 text-rose-700", dot: "bg-rose-400" };
+    }
+    if (title.includes("ROOM CREATED") || msg.includes("YOU CREATED")) {
+      return { label: "Room Created", badge: "bg-sky-100 text-sky-700", dot: "bg-sky-400" };
+    }
+    if (title.includes("COLLABORATION REQUEST") || msg.includes("REQUESTED TO JOIN")) {
+      return { label: "Room Join Request", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-400" };
+    }
+    return { label: "Room Update", badge: "bg-slate-100 text-slate-700", dot: "bg-slate-400" };
+  }
+
+  if (group === "projects") {
+    return { label: "Project", badge: "bg-sky-100 text-sky-700", dot: "bg-sky-400" };
+  }
+
+  if (group === "comments") {
+    return { label: "Comment", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-400" };
+  }
+
+  return { label: "Update", badge: "bg-slate-100 text-slate-700", dot: "bg-slate-400" };
+};
+
+/* ✅ time formatter */
 const formatTime = (timestamp) => {
   if (!timestamp) return "Just now";
-  
-  // If it's already a formatted string like "2 hours ago"
-  if (typeof timestamp === 'string' && 
-      (timestamp.includes('ago') || 
-       timestamp.includes('hour') || 
-       timestamp.includes('day') || 
-       timestamp.includes('minute') ||
-       timestamp.includes('second'))) {
-    return timestamp;
-  }
-  
+  if (
+    typeof timestamp === "string" &&
+    (timestamp.includes("ago") || timestamp.includes("hour") || timestamp.includes("day") || timestamp.includes("minute") || timestamp.includes("second"))
+  ) return timestamp;
+
   try {
     const date = new Date(timestamp);
     const now = new Date();
@@ -186,17 +199,14 @@ const formatTime = (timestamp) => {
     const diffMinutes = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffSeconds < 30) return "Just now";
     if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
-    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-    
-    return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-  } catch (error) {
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    return `${diffDays} days ago`;
+  } catch {
     return "Just now";
   }
 };
@@ -206,104 +216,38 @@ export default function Notifications() {
   const location = useLocation();
   const { user } = useContext(AuthContext);
 
-  // Sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // mount animations
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
 
-  const [tab, setTab] = useState("all"); // all | unread | follow | invite | comment
+  // ✅ NEW tabs
+  const [tab, setTab] = useState("all"); // all | unread | rooms | projects | comments
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // ✅ Refresh loading state
   const [refreshing, setRefreshing] = useState(false);
 
-  // Online status (demo like dashboard)
   const isOnline = true;
 
-  // ✅ Shared loader (used on mount + refresh button)
   const loadNotifications = async (opts = { showSpinner: true }) => {
     if (opts.showSpinner) setLoading(true);
     setRefreshing(true);
-
     try {
       const res = await getNotifications();
-
-      if (res?.notifications) {
-        setItems(res.notifications);
-      } else {
-        // ✅ Better demo routes (NOT all dashboard)
-        const demoTime = new Date();
-        demoTime.setHours(demoTime.getHours() - 2); // 2 hours ago
-        
-        setItems([
-          {
-            _id: "n1",
-            type: "follow",
-            title: "New follower",
-            message: "Ava Robinson started following you.",
-            createdAt: demoTime.toISOString(),
-            read: false,
-            action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
-            entityType: "user",
-            entityId: "u1",
-            username: "ava",
-          },
-          {
-            _id: "n2",
-            type: "invite",
-            title: "Project invite",
-            message: "James invited you to join \"DevSphere UI Kit\".",
-            createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-            read: false,
-            action: { label: "Open project", path: "/portfolio", state: { focus: "DevSphere UI Kit" } },
-            entityType: "project",
-            projectName: "DevSphere UI Kit",
-          },
-          {
-            _id: "n3",
-            type: "comment",
-            title: "New comment",
-            message: "Sarah commented on your showcase post: \"Nice work!\".",
-            createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-            read: true,
-            action: { label: "Open post", path: "/showcase", state: { focus: "Nice work!" } },
-            entityType: "post",
-            postId: "p1",
-          },
-        ]);
-      }
+      setItems(res?.notifications || []);
     } catch (e) {
       console.error(e);
-      const errorTime = new Date();
-      errorTime.setHours(errorTime.getHours() - 2);
-      
-      setItems([
-        {
-          _id: "n1",
-          type: "follow",
-          title: "New follower",
-          message: "Ava Robinson started following you.",
-          createdAt: errorTime.toISOString(),
-          read: false,
-          action: { label: "View profile", path: "/showcase", state: { focus: "followers" } },
-          entityType: "user",
-          entityId: "u1",
-        },
-      ]);
+      setItems([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Load notifications on mount
   useEffect(() => {
     loadNotifications({ showSpinner: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -313,8 +257,9 @@ export default function Notifications() {
     let list = [...items];
 
     if (tab === "unread") list = list.filter((n) => !n.read);
-    if (["follow", "invite", "comment"].includes(tab))
-      list = list.filter((n) => n.type === tab);
+    if (["rooms", "projects", "comments"].includes(tab)) {
+      list = list.filter((n) => getGroup(n) === tab);
+    }
 
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -324,13 +269,11 @@ export default function Notifications() {
           (n.message || "").toLowerCase().includes(q)
       );
     }
+
     return list;
   }, [items, tab, query]);
 
-  const unreadCount = useMemo(
-    () => items.filter((n) => !n.read).length,
-    [items]
-  );
+  const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items]);
 
   const displayName = user?.name || user?.email || "Guest";
   const initials = displayName
@@ -339,49 +282,25 @@ export default function Notifications() {
     .join("")
     .slice(0, 2);
 
-  /* =========================
-     Navigation resolver (FIX)
-     ✅ prevents everything going to dashboard
-  ========================= */
   const resolveTarget = (n) => {
-    // If backend sends direct path/state, use it
     if (n?.action?.path && n.action.path !== "/dashboard") {
       return { to: n.action.path, state: n.action.state || {} };
     }
+    if (n?.entityType === "room") return { to: "/collaboration", state: {} };
+    if (n?.entityType === "project") return { to: "/showcase", state: {} };
+    if (n?.entityType === "post") return { to: "/showcase", state: { postId: n?.postId } };
 
-    // If backend sends entityType info
-    if (n?.entityType) {
-      switch (n.entityType) {
-        case "project":
-          return { to: "/portfolio", state: { focus: n?.projectName || n?.title } };
-        case "room":
-          return { to: "/collaboration", state: { focus: n?.roomName || n?.title } };
-        case "post":
-          return { to: "/showcase", state: { focus: n?.title, postId: n?.postId } };
-        case "user":
-          return { to: "/showcase", state: { focus: n?.username || n?.title } };
-        default:
-          break;
-      }
-    }
+    const group = getGroup(n);
+    if (group === "rooms") return { to: "/collaboration", state: {} };
+    if (group === "projects") return { to: "/showcase", state: {} };
+    if (group === "comments") return { to: "/showcase", state: {} };
 
-    // Fallback by type
-    switch (n?.type) {
-      case "follow":
-        return { to: "/showcase", state: { focus: "followers" } };
-      case "invite":
-        return { to: "/portfolio", state: { focus: "invites" } };
-      case "comment":
-        return { to: "/showcase", state: { focus: "comments" } };
-      default:
-        return { to: "/notifications", state: {} };
-    }
+    return { to: "/notifications", state: {} };
   };
 
   const openAction = async (n) => {
     if (!n) return;
 
-    // mark read + navigate
     if (!n.read) {
       setItems((prev) => prev.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
       try {
@@ -413,29 +332,22 @@ export default function Notifications() {
     }
   };
 
-  // ✅ Refresh click
   const handleRefresh = async () => {
     if (refreshing) return;
-    await loadNotifications({ showSpinner: false }); // keep page stable, only button animates
+    await loadNotifications({ showSpinner: false });
   };
 
   return (
     <>
       <div className="min-h-screen bg-slate-100 flex overflow-hidden">
-        {/* NAVY animated background */}
         <div className="pointer-events-none fixed inset-0">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
           <div className="sfShimmer" />
         </div>
 
-        {/* SIDEBAR (same as Dashboard) */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-3 px-2 mb-8 text-left"
-            title="Go to Landing"
-          >
+          <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
@@ -443,31 +355,10 @@ export default function Notifications() {
           </button>
 
           <nav className="flex-1 space-y-2">
-            <NavItem
-              active={location.pathname === "/dashboard"}
-              icon={<DashboardIcon />}
-              label="Dashboard"
-              onClick={() => navigate("/dashboard")}
-            />
-            <NavItem
-              active={location.pathname === "/portfolio"}
-              icon={<PortfolioIcon />}
-              label="Build portfolio"
-              onClick={() => navigate("/portfolio")}
-            />
-            <NavItem
-              active={location.pathname === "/collaboration"}
-              icon={<CollabIcon />}
-              label="Collab rooms"
-              onClick={() => navigate("/collaboration")}
-            />
-            <NavItem
-              active={location.pathname === "/showcase"}
-              icon={<ShowcaseIcon />}
-              label="Showcase feed"
-              onClick={() => navigate("/showcase")}
-            />
-           
+            <NavItem active={location.pathname === "/dashboard"} icon={<DashboardIcon />} label="Dashboard" onClick={() => navigate("/dashboard")} />
+            <NavItem active={location.pathname === "/portfolio"} icon={<PortfolioIcon />} label="Build portfolio" onClick={() => navigate("/portfolio")} />
+            <NavItem active={location.pathname === "/collaboration"} icon={<CollabIcon />} label="Collab rooms" onClick={() => navigate("/collaboration")} />
+            <NavItem active={location.pathname === "/showcase"} icon={<ShowcaseIcon />} label="Showcase feed" onClick={() => navigate("/showcase")} />
             <NavItem
               active={location.pathname === "/notifications"}
               icon={<BellSolidIcon />}
@@ -475,12 +366,7 @@ export default function Notifications() {
               badge={unreadCount > 0 ? unreadCount : null}
               onClick={() => navigate("/notifications")}
             />
-            <NavItem
-              active={location.pathname === "/settings"}
-              icon={<SettingsIcon />}
-              label="Settings"
-              onClick={() => navigate("/settings")}
-            />
+            <NavItem active={location.pathname === "/settings"} icon={<SettingsIcon />} label="Settings" onClick={() => navigate("/settings")} />
           </nav>
 
           <button
@@ -493,31 +379,23 @@ export default function Notifications() {
                 {initials || "U"}
               </div>
               <span
-                className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
-                  isOnline ? "bg-emerald-400" : "bg-slate-400"
-                }`}
-                title={isOnline ? "Online" : "Offline"}
+                className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${isOnline ? "bg-emerald-400" : "bg-slate-400"}`}
               />
             </div>
 
             <div className="min-w-0">
               <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300 truncate max-w-[160px]">
-                {isOnline ? "Online" : "Offline"} · Signed in
-              </p>
+              <p className="text-xs text-slate-300 truncate max-w-[160px]">{isOnline ? "Online" : "Offline"} · Signed in</p>
             </div>
           </button>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 p-6 md:p-8 relative">
-          {/* Top Bar */}
           <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
                 className="mt-1 w-10 h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center"
-                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
               >
                 {sidebarOpen ? "⟨⟨" : "⟩⟩"}
               </button>
@@ -536,7 +414,6 @@ export default function Notifications() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* ✅ Refresh button */}
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -544,7 +421,6 @@ export default function Notifications() {
                   "px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-medium transition inline-flex items-center gap-2",
                   refreshing ? "opacity-70 cursor-not-allowed" : "hover:bg-slate-50",
                 ].join(" ")}
-                title="Refresh notifications"
               >
                 <span className={refreshing ? "sfSpin" : ""}>
                   <RefreshIcon />
@@ -561,14 +437,13 @@ export default function Notifications() {
 
               <button
                 onClick={() => setTab("unread")}
-                className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow hover:-translate-y-[1px] active:translate-y-[1px]"
+                className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow"
               >
                 View unread
               </button>
             </div>
           </div>
 
-          {/* Filters */}
           <div className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-4 md:p-5 mb-6 sfPulseBorder ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
               <div className="flex items-center gap-2 text-slate-600">
@@ -580,9 +455,9 @@ export default function Notifications() {
                 {[
                   { key: "all", label: "All" },
                   { key: "unread", label: "Unread" },
-                  { key: "follow", label: "Followers" },
-                  { key: "invite", label: "Invites" },
-                  { key: "comment", label: "Comments" },
+                  { key: "rooms", label: "Rooms" },
+                  { key: "projects", label: "Projects" },
+                  { key: "comments", label: "Comments" },
                 ].map((t) => {
                   const active = tab === t.key;
                   return (
@@ -612,7 +487,6 @@ export default function Notifications() {
             </div>
           </div>
 
-          {/* List */}
           <div className={`bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
             {loading ? (
               <div className="p-6 text-sm text-slate-500">Loading notifications…</div>
@@ -627,9 +501,8 @@ export default function Notifications() {
             ) : (
               <ul className="divide-y divide-slate-100">
                 {filtered.map((n, idx) => {
-                  const meta = typeMeta(n.type);
+                  const meta = typeMeta(n);
                   return (
-                    // ✅ FULL ROW CLICKABLE (FIX)
                     <li
                       key={n._id}
                       onClick={() => openAction(n)}
@@ -642,11 +515,7 @@ export default function Notifications() {
                       style={{ transitionDelay: `${Math.min(idx, 10) * 70}ms` }}
                     >
                       <div className="pt-2">
-                        <span
-                          className={`block w-2.5 h-2.5 rounded-full ${meta.dot} ${
-                            n.read ? "opacity-30" : "opacity-100"
-                          }`}
-                        />
+                        <span className={`block w-2.5 h-2.5 rounded-full ${meta.dot} ${n.read ? "opacity-30" : "opacity-100"}`} />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -654,14 +523,9 @@ export default function Notifications() {
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${meta.badge}`}>
                             {meta.label}
                           </span>
-                          <p className="text-sm font-semibold text-slate-900 truncate">
-                            {n.title || meta.label}
-                          </p>
+                          <p className="text-sm font-semibold text-slate-900 truncate">{n.title || meta.label}</p>
                           <span className="text-xs text-slate-400">•</span>
-                          {/* ✅ FIXED: Using createdAt field for time display */}
-                          <span className="text-xs text-slate-400">
-                            {formatTime(n.time || n.createdAt)}
-                          </span>
+                          <span className="text-xs text-slate-400">{formatTime(n.time || n.createdAt)}</span>
                         </div>
 
                         <p className="text-sm text-slate-600 mt-1">{n.message}</p>
@@ -673,7 +537,7 @@ export default function Notifications() {
                                 e.stopPropagation();
                                 openAction(n);
                               }}
-                              className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
+                              className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition shadow-sm"
                             >
                               {n.action.label}
                             </button>
@@ -709,9 +573,7 @@ export default function Notifications() {
         </main>
       </div>
 
-      {/* Styles */}
       <style>{`
-        /* Sidebar show/hide (same as Dashboard.jsx) */
         .sidebar{
           background: #0f172a;
           color: #f8fafc;
@@ -725,7 +587,6 @@ export default function Notifications() {
         .sidebarOpen{ width: 288px; opacity:1; }
         .sidebarClosed{ width: 0px; padding: 24px 0px; opacity:0; }
 
-        /* NAVY BLUE ONLY animated blobs */
         .sfBlob{
           position:absolute;
           width: 560px;
@@ -775,13 +636,11 @@ export default function Notifications() {
           100%{ transform: translateX(-35%) skewX(-8deg); opacity:.25; }
         }
 
-        /* Entry animations */
         .sfPre{ opacity: 0; transform: translateY(12px); }
         .sfIn{ opacity: 1; transform: translateY(0); transition: all .6s cubic-bezier(.2,.8,.2,1); }
         .sfIn2{ opacity: 1; transform: translateY(0); transition: all .65s cubic-bezier(.2,.8,.2,1); transition-delay: .08s; }
         .sfIn3{ opacity: 1; transform: translateY(0); transition: all .7s cubic-bezier(.2,.8,.2,1); transition-delay: .12s; }
 
-        /* Navy pulse border */
         .sfPulseBorder{ position: relative; }
         .sfPulseBorder::before{
           content:"";
@@ -811,7 +670,6 @@ export default function Notifications() {
           50%{ opacity: .40; transform: scale(1.01); }
         }
 
-        /* List row animation */
         .sfRow{
           transition: transform .28s ease, box-shadow .28s ease, opacity .7s ease;
           will-change: transform;
@@ -825,7 +683,6 @@ export default function Notifications() {
         .sfRowPre{ opacity: 0; transform: translateY(18px); }
         .sfRowIn{ opacity: 1; transform: translateY(0); }
 
-        /* ✅ Refresh spinning */
         .sfSpin{
           display:inline-flex;
           animation: sfSpin 0.85s linear infinite;
