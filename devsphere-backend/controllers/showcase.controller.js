@@ -125,6 +125,29 @@ exports.toggleSave = async (req, res) => {
   }
 };
 
+/* ================= GET COMMENTS ✅ (MISSING FIX) ================= */
+exports.getComments = async (req, res) => {
+  try {
+    const post = await ShowcasePost.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const uid = req.user?._id ? String(req.user._id) : null;
+
+    const comments = (post.comments || []).map((c) => ({
+      id: String(c._id),
+      name: c.name,
+      text: c.text,
+      time: c.createdAt,
+      likes: (c.likes || []).length,
+      likedByMe: uid ? (c.likes || []).some((x) => String(x) === uid) : false,
+    }));
+
+    return res.json({ comments });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
 /* ================= ADD COMMENT ================= */
 exports.addComment = async (req, res) => {
   try {
@@ -179,6 +202,54 @@ exports.addComment = async (req, res) => {
     res.json({ commentsCount: post.comments.length });
   } catch (e) {
     res.status(500).json({ message: e.message });
+  }
+};
+
+/* ================= DELETE COMMENT ✅ (ROUTE NEEDS IT) ================= */
+exports.deleteComment = async (req, res) => {
+  try {
+    const post = await ShowcasePost.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    if (String(comment.user) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    comment.deleteOne();
+    await post.save();
+
+    return res.json({ message: "Comment deleted" });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/* ================= LIKE COMMENT ✅ (MISSING FIX) ================= */
+exports.toggleCommentLike = async (req, res) => {
+  try {
+    const post = await ShowcasePost.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    const uid = String(req.user._id);
+    const already = (comment.likes || []).some((x) => String(x) === uid);
+
+    if (already) comment.likes = comment.likes.filter((x) => String(x) !== uid);
+    else comment.likes.push(req.user._id);
+
+    await post.save();
+
+    return res.json({
+      likes: (comment.likes || []).length,
+      liked: !already,
+    });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
   }
 };
 
