@@ -18,11 +18,18 @@ const notificationRoutes = require("./routes/notifications");
 const collaborationCodeRoutes = require("./routes/collaborationCodeRoutes");
 const collaborationFileRoutes = require("./routes/collaborationFileRoutes");
 
-// ✅ NEW: Tasks routes
+// ✅ Tasks routes
 const taskRoutes = require("./routes/taskRoutes");
 
-// ✅ NEW: Portfolio routes (ADDED)
+// ✅ Portfolio routes
 const portfolioRoutes = require("./routes/portfolioRoutes");
+
+// ✅ Showcase routes
+const showcaseRoutes = require("./routes/showcase.routes");
+
+// ✅ Dashboard + Announcements routes
+const dashboardRoutes = require("./routes/dashboard.routes");
+const announcementRoutes = require("./routes/announcement.routes");
 
 const app = express();
 const server = http.createServer(app);
@@ -41,8 +48,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ IMPORTANT: serve uploads publicly (fixes Cannot GET /uploads/...)
-// URLs: http://localhost:5000/uploads/collaboration/ROOMCODE/filename.ext
+// ✅ IMPORTANT: serve uploads publicly
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Socket.IO attach
@@ -67,24 +73,20 @@ app.use("/api/collaboration", collaborationCodeRoutes);
 // ✅ Collaboration files upload/list/delete endpoints
 app.use("/api/collaboration", collaborationFileRoutes);
 
-// ✅ NEW: Collaboration tasks (assignment) endpoints
-// Endpoints become:
-// GET    /api/collaboration/tasks/:roomCode
-// POST   /api/collaboration/tasks/:roomCode
-// PUT    /api/collaboration/tasks/:roomCode/:taskId
-// DELETE /api/collaboration/tasks/:roomCode/:taskId
+// ✅ Collaboration tasks endpoints
 app.use("/api/collaboration", taskRoutes);
 
-// ✅ NEW: Portfolio builder endpoints (ADDED)
-// GET    /api/portfolio/me
-// PUT    /api/portfolio/me
-// DELETE /api/portfolio/me
+// ✅ Portfolio builder endpoints
 app.use("/api/portfolio", portfolioRoutes);
 
-// ✅ Health
-// ✅ NEW 👉 Showcase routes (YE LINE ADD KI)
-const showcaseRoutes = require("./routes/showcase.routes");
+// ✅ Showcase
 app.use("/api/showcase", showcaseRoutes);
+
+// ✅ Dashboard
+app.use("/api/dashboard", dashboardRoutes);
+
+// ✅ Announcements
+app.use("/api/announcements", announcementRoutes);
 
 // ✅ Optional: root route for testing server
 app.get("/", (req, res) => {

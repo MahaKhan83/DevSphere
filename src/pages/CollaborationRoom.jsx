@@ -247,26 +247,43 @@ export default function CollaborationRoom() {
     try {
       if (!socket.connected) socket.connect();
     } catch {}
-    socket.emit("lobby:create-room", { name, maxMembers, owner: displayName });
+   socket.emit("lobby:create-room", {
+  name,
+  maxMembers,
+  owner: user?.name || user?.email || "Owner",
+  ownerId: user?._id || user?.id,
+});
 
     setCreateName("");
     setMaxMembers(6);
   };
 
-  const requestToJoin = (forcedCode) => {
-    const code = (forcedCode || joinCode).trim().toUpperCase();
-    const nm = (joinName || "").trim() || "Guest";
-    if (!code) return alert("Enter a room code.");
+ const requestToJoin = (forcedCode) => {
+  const code = (forcedCode || joinCode).trim().toUpperCase();
+  const nm = (joinName || "").trim() || "Guest";
 
-    try {
-      if (!socket.connected) socket.connect();
-    } catch {}
+  if (!code) return alert("Enter a room code.");
+  if (!(user?._id || user?.id)) return alert("UserId missing! Please login again.");
 
-    // ✅ allow retry after leaving / re-request
-    socket.emit("lobby:request-join", { code, user: nm, force: true });
+  try {
+    if (!socket.connected) socket.connect();
+  } catch {}
 
-    setJoinCode("");
-  };
+  console.log("CLICK REQUEST JOIN ✅", {
+    code,
+    user: user?.name || user?.email || nm,
+    userId: user?._id || user?.id,
+  });
+
+  socket.emit("lobby:request-join", {
+    code,
+    user: user?.name || user?.email || nm,
+    userId: user?._id || user?.id,
+    force: true, // ✅ IMPORTANT: yahan force variable nahi, fixed true
+  });
+
+  setJoinCode("");
+};
 
   const approveRequest = (req) => {
     socket.emit("lobby:approve", { roomCode: req.roomCode, reqId: req.id, owner: displayName });

@@ -1,4 +1,5 @@
 // src/pages/Dashboard.jsx
+
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
@@ -7,6 +8,8 @@ import { getDashboardData } from "../services/api";
 import api from "../services/api"; // axios instance
 import AdminPanel from "./AdminPanel"; // 🟢 Admin panel
 import ModeratorPanel from "./ModeratorPanel"; // 🟣 Moderator panel
+import socket from "../sockets/socket";
+
 
 /* =========================
    Professional SVG Icons
@@ -126,12 +129,21 @@ const Dashboard = () => {
 
   const [query, setQuery] = useState("");
 
-  const [announcements, setAnnouncements] = useState([]);
+  
   const [roomActivity, setRoomActivity] = useState([]);
+  const [liveRooms, setLiveRooms] = useState([]);
+  
   const [projects, setProjects] = useState([]);
+  const [showcaseItems, setShowcaseItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [stats, setStats] = useState({
+  projects: 0,
+  showcasePosts: 0,
+  likesReceived: 0,
+  saved: 0,
+});
 
   const isOnline = true;
 
@@ -145,21 +157,9 @@ const Dashboard = () => {
     });
   }, []);
 
-  const activeRooms = useMemo(
-    () => [
-      { name: "Frontend Live Review", members: 4, status: "Active" },
-      { name: "API Integration Room", members: 3, status: "Active" },
-    ],
-    []
-  );
+ 
 
-  const showcaseItems = useMemo(
-    () => [
-      { title: "DevSphere UI Kit", author: "Maha", likes: 32 },
-      { title: "Realtime Collab Demo", author: "Ali", likes: 18 },
-    ],
-    []
-  );
+  
 
   const githubUsername = useMemo(() => {
     return (
@@ -214,39 +214,54 @@ const Dashboard = () => {
 
       try {
         const res = await getDashboardData();
+        if (Array.isArray(res?.showcaseItems)) {
+  setShowcaseItems(res.showcaseItems);
+} else {
+  setShowcaseItems([]);
+}
+        if (res?.stats) {
+  setStats({
+    projects: Number(res.stats.projects || 0),
+    showcasePosts: Number(res.stats.showcasePosts || 0),
+    likesReceived: Number(res.stats.likesReceived || 0),
+    saved: Number(res.stats.saved || 0),
+  });
+}
 
-        setAnnouncements(
-          res?.announcements ?? [
-            {
-              title: "DevSphere update shipped",
-              desc: "Showcase feed improvements and faster dashboard insights.",
-              time: "2 hours ago",
-            },
-            {
-              title: "Collaboration room improvements",
-              desc: "Better room navigation and smoother join experience.",
-              time: "Yesterday",
-            },
-            {
-              title: "Planned maintenance",
-              desc: "Minor backend updates scheduled this weekend.",
-              time: "3 days ago",
-            },
-          ]
-        );
 
-        setRoomActivity(
-          res?.roomActivity ?? [
-            {
-              title: "Collab Room Discussion (Frontend Sprint)",
-              time: "14:00 – 14:30",
-            },
-            {
-              title: "Code Review Thread (Portfolio Builder)",
-              time: "16:00 – 16:20",
-            },
-          ]
-        );
+        
+           
+        // ✅ ROOM ACTIVITY (REAL) - notifications se
+try {
+  const r = await api.get("/notifications");
+  const list = Array.isArray(r.data) ? r.data : (r.data?.notifications || []);
+
+  const roomRelated = list.filter((n) => {
+    const t = (n.title || n.message || n.text || "").toLowerCase();
+    return (
+      t.includes("room") ||
+      t.includes("collab") ||
+      t.includes("join") ||
+      t.includes("approved") ||
+      t.includes("rejected") ||
+      t.includes("workspace") ||
+      t.includes("code") ||
+      t.includes("file")
+    );
+  });
+
+  const top5 = roomRelated.slice(0, 5).map((n) => ({
+    title: n.title || n.message || n.text || "Room update",
+    time: new Date(n.createdAt || n.ts || Date.now()).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  }));
+
+  setRoomActivity(top5.length ? top5 : []);
+} catch (e) {
+  setRoomActivity([]);
+}
 
         if (res?.projects && Array.isArray(res.projects) && res.projects.length > 0) {
           setProjects(res.projects);
@@ -263,15 +278,10 @@ const Dashboard = () => {
         console.error(e);
         setProjects(defaultProjects);
         setRoomActivity([
-          {
-            title: "Collab Room Discussion (Frontend Sprint)",
-            time: "14:00 – 14:30",
-          },
-          {
-            title: "Code Review Thread (Portfolio Builder)",
-            time: "16:00 – 16:20",
-          },
-        ]);
+  { title: "Falak joined room HV", time: "2 min ago" },
+  { title: "Join request approved (API Room)", time: "5 min ago" },
+  { title: "Code saved in Frontend Room", time: "10 min ago" },
+]);
         await fetchRealNotificationCount();
       } finally {
         setLoading(false);
@@ -281,6 +291,28 @@ const Dashboard = () => {
     fetchDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+  const onRooms = (rooms) => {
+    console.log("🏠 ROOMS FROM BACKEND:", rooms);
+    setLiveRooms(Array.isArray(rooms) ? rooms : []);
+  };
+
+  const onConnect = () => {
+    console.log("✅ socket connected", socket.id);
+    socket.emit("lobby:sync");   // ⭐ rooms mangwa lo
+  };
+
+  socket.on("connect", onConnect);
+  socket.on("lobby:rooms", onRooms);
+
+  // agar page refresh ho aur already connected ho
+  if (socket.connected) socket.emit("lobby:sync");
+
+  return () => {
+    socket.off("connect", onConnect);
+    socket.off("lobby:rooms", onRooms);
+  };
+}, []);
 
   const displayName = user?.name || user?.email || "Guest";
   const initials = displayName
@@ -542,94 +574,54 @@ const Dashboard = () => {
                 {isModerator && <ModeratorPanel />}
 
                 {/* GitHub Widget */}
-                <section
-                  className="cardShell sfPulseBorder p-5 cursor-pointer"
-                  onClick={() =>
-                    navigate("/settings", { state: { tab: "integrations" } })
-                  }
-                  title="Connect GitHub in Settings"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      GitHub activity
-                    </h2>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/settings", {
-                          state: { tab: "integrations" },
-                        });
-                      }}
-                      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
-                    >
-                      Connect / Manage
-                    </button>
-                  </div>
+                {/* New Activity / Stats */}
+<section className="cardShell sfPulseBorder p-5">
+  <div className="flex items-center justify-between mb-3">
+    <h2 className="text-lg font-semibold text-slate-900">New activity</h2>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.commits}</p>
-                      <p className="statLbl">Commits</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.prs}</p>
-                      <p className="statLbl">Pull Requests</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.issues}</p>
-                      <p className="statLbl">Issues</p>
-                    </div>
-                    <div className="statBox">
-                      <p className="statNum">{githubActivity.streak}d</p>
-                      <p className="statLbl">Streak</p>
-                    </div>
-                  </div>
+    <button
+      onClick={() => navigate("/showcase")}
+      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
+      title="Open showcase"
+    >
+      View details
+    </button>
+  </div>
 
-                  <p className="text-xs text-slate-700 mt-3">
-                    Username:{" "}
-                    <span className="font-semibold">
-                      {githubActivity.username}
-                    </span>
-                  </p>
-                </section>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="statBox">
+      <p className="statNum">{stats.projects}</p>
+      <p className="statLbl">Total projects</p>
+    </div>
 
-                {/* Announcements */}
-                <section className="cardShell sfPulseBorder p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      Announcements
-                    </h2>
-                    <button
-                      onClick={() => navigate("/notifications")}
-                      className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
-                    >
-                      View all
-                    </button>
-                  </div>
+    <div className="statBox">
+      <p className="statNum">{stats.showcasePosts}</p>
+      <p className="statLbl">Requests</p>
+    </div>
 
-                  <div className="space-y-3">
-                    {announcements.map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => openAnnouncement(item)}
-                        className="w-full text-left flex items-start justify-between gap-3 rounded-xl px-3 py-2 hover:bg-slate-50 transition sfRow"
-                        title="Open in Notifications"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {item.title}
-                          </p>
-                          <p className="text-xs text-slate-800 mt-0.5">
-                            {item.desc}
-                          </p>
-                        </div>
-                        <span className="text-xs text-slate-800 font-semibold whitespace-nowrap">
-                          {item.time}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+    <div className="statBox">
+      <p className="statNum">{stats.likesReceived}</p>
+      <p className="statLbl">Likes received</p>
+    </div>
+
+    <div className="statBox">
+      <p className="statNum">{stats.saved}</p>
+      <p className="statLbl">Bookmarks / Saves</p>
+    </div>
+  </div>
+
+  <p className="text-xs text-slate-700 mt-3">
+    Updated from your account activity.
+  </p>
+</section>
+                
+                     
+
+                  
+
+               
+                    
+                        
 
                 {/* Recent Projects */}
                 <section className="cardShell sfPulseBorder p-5 min-h-[420px]">
@@ -638,7 +630,7 @@ const Dashboard = () => {
                       Recent projects
                     </h2>
                     <button
-                      onClick={() => navigate("/portfolio")}
+                      onClick={() => navigate("/showcase")}
                       className="text-xs text-sky-700 hover:text-sky-600 font-semibold"
                     >
                       View all
@@ -650,7 +642,7 @@ const Dashboard = () => {
                       projects.map((project, idx) => (
                         <button
                           key={`${project.name}-${idx}`}
-                          onClick={() => openProject(project)}
+                          onClick={() => navigate("/showcase")}
                           className="w-full text-left rounded-xl p-4 hover:bg-slate-50 transition border border-slate-200 sfRow bg-white"
                           title="Open in Portfolio Builder"
                         >
@@ -722,30 +714,36 @@ const Dashboard = () => {
                       New room
                     </button>
                   </div>
+<div className="space-y-3 flex-1">
+  {liveRooms.length === 0 ? (
+    <p className="text-xs text-slate-600">No live rooms yet</p>
+  ) : (
+    liveRooms.map((room, idx) => (
+      <button
+        key={room.code || room.id || idx}
+        onClick={openRoom}
+        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition sfRow"
+        title="Open Collaboration Rooms"
+      >
+        <div>
+          <p className="text-sm font-semibold text-slate-900">
+            {room.name || room.roomName || room.code || "Untitled room"}
+          </p>
+          <p className="text-xs text-slate-800">
+            {typeof room.members === "number" ? room.members : (room.members?.length || 0)} members · Active
+          </p>
+        </div>
 
-                  <div className="space-y-3 flex-1">
-                    {activeRooms.map((room, idx) => (
-                      <button
-                        key={idx}
-                        onClick={openRoom}
-                        className="w-full text-left flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 hover:bg-slate-100 transition sfRow"
-                        title="Open Collaboration Rooms"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {room.name}
-                          </p>
-                          <p className="text-xs text-slate-800">
-                            {room.members} members · {room.status}
-                          </p>
-                        </div>
+        <span className="text-xs px-3 py-1 rounded-full bg-slate-900 text-white">
+          Join
+        </span>
+      </button>
+    ))
+  )}
+</div>
+                 
 
-                        <span className="text-xs px-3 py-1 rounded-full bg-slate-900 text-white">
-                          Join
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                       
                 </section>
 
                 {/* Room Activity */}
@@ -763,24 +761,27 @@ const Dashboard = () => {
                   </div>
 
                   <div className="space-y-3 flex-1">
-                    {roomActivity.map((m, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => navigate("/collaboration")}
-                        className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 bg-slate-50 hover:bg-slate-100 transition sfRow"
-                        title="Open collaboration rooms"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600">
-                          {idx === 0 ? <ChatIcon /> : <TaskIcon />}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {m.title}
-                          </p>
-                          <p className="text-xs text-slate-800">{m.time}</p>
-                        </div>
-                      </button>
-                    ))}
+{roomActivity.length === 0 ? (
+  <p className="text-xs text-slate-600">No activity yet</p>
+) : (
+  roomActivity.map((m, idx) => (
+    <button
+      key={idx}
+      onClick={() => navigate("/collaboration")}
+      className="w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 bg-slate-50 hover:bg-slate-100 transition sfRow"
+      title="Open collaboration rooms"
+    >
+      <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600">
+        {idx === 0 ? <ChatIcon /> : <TaskIcon />}
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-slate-900">{m.title}</p>
+        <p className="text-xs text-slate-800">{m.time}</p>
+      </div>
+    </button>
+  ))
+)}
                   </div>
                 </section>
 

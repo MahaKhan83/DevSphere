@@ -1,10 +1,30 @@
+// sockets/lobbySocket.js
+const Notification = require("../models/Notification"); // ✅ ADD
+
 module.exports = function lobbySocket(io) {
   const rooms = new Map();
   const approvals = new Map(); // roomCode -> Set(lower(username))
-  const pending = new Map();   // roomCode -> [{id, roomCode, user, status, ts}]
+  const pending = new Map();   // roomCode -> [{id, roomCode, user, userId, status, ts}]
 
   const safe = (v) => (v || "").toString().trim();
   const lower = (v) => safe(v).toLowerCase();
+
+  // ✅ ADD: create notification helper
+  const notify = async ({ userId, type = "update", title, message, action }) => {
+    if (!userId) return;
+    try {
+      await Notification.create({
+        user: userId,
+        type,
+        title,
+        message,
+        action: action || undefined,
+        read: false,
+      });
+    } catch (e) {
+      console.log("Notification create failed:", e.message);
+    }
+  };
 
   const genCode = () => {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -37,8 +57,8 @@ module.exports = function lobbySocket(io) {
       }
     });
 
-    // ✅ CREATE ROOM
-    socket.on("lobby:create-room", ({ name, maxMembers, owner }) => {
+    // ✅ CREATE ROOM  (ADDED ownerId + notification)
+    socket.on("lobby:create-room", async ({ name, maxMembers, owner, ownerId }) => {
       const room = {
         id: `r_${Date.now()}`,
         name: safe(name) || "Untitled Room",
@@ -46,19 +66,29 @@ module.exports = function lobbySocket(io) {
         members: 1, // owner
         maxMembers: Number(maxMembers) || 6,
         owner: safe(owner) || "Owner",
+        ownerId: ownerId || null, // ✅ ADD
       };
 
       rooms.set(room.code, room);
       approvals.set(room.code, new Set([lower(room.owner)])); // owner approved by default
       pending.set(room.code, []);
 
+      // ✅ ADD: notify owner
+      await notify({
+        userId: room.ownerId,
+        type: "success",
+        title: "Room Created",
+        message: `You created "${room.name}" (${room.code})`,
+        action: { label: "Open room", path: "/collaboration" },
+      });
+
       emitRooms();
       socket.emit("lobby:room-created", room);
       emitPendingForRoom(room.code);
     });
 
-    // ✅ REQUEST JOIN (force allows re-request)
-    socket.on("lobby:request-join", ({ code, user, force }) => {
+    // ✅ REQUEST JOIN (force allows re-request)  (ADDED userId + owner notification)
+    socket.on("lobby:request-join", async ({ code, user, userId, force }) => {
       const roomCode = safe(code).toUpperCase();
       const room = rooms.get(roomCode);
       if (!room) return socket.emit("lobby:error", "Room not found.");
@@ -86,16 +116,33 @@ module.exports = function lobbySocket(io) {
         }
       }
 
-      const req = { id: `p_${Date.now()}`, roomCode, user: userName, status: "pending", ts: Date.now() };
+      const req = {
+        id: `p_${Date.now()}`,
+        roomCode,
+        user: userName,
+        userId: userId || null, // ✅ ADD
+        status: "pending",
+        ts: Date.now(),
+      };
+
       list.unshift(req);
       pending.set(roomCode, list);
+
+      // ✅ ADD: notify owner about request
+      await notify({
+        userId: room.ownerId,
+        type: "request",
+        title: "Collaboration Request",
+        message: `${userName} requested to join "${room.name}" (${roomCode})`,
+        action: { label: "Review", path: "/collaboration" },
+      });
 
       emitPendingForRoom(roomCode);
       socket.emit("lobby:requested", req);
     });
 
-    // ✅ APPROVE
-    socket.on("lobby:approve", ({ roomCode, reqId, owner }) => {
+    // ✅ APPROVE (ADDED requester notification)
+    socket.on("lobby:approve", async ({ roomCode, reqId, owner }) => {
       const code = safe(roomCode).toUpperCase();
       const room = rooms.get(code);
       if (!room) return;
@@ -122,13 +169,22 @@ module.exports = function lobbySocket(io) {
 
       rooms.set(code, { ...room, members: Number(room.members || 1) + 1 });
 
+      // ✅ ADD: notify requester
+      await notify({
+        userId: req.userId,
+        type: "success",
+        title: "Request Approved",
+        message: `Your request to join "${room.name}" (${code}) was approved.`,
+        action: { label: "Join", path: "/collaboration" },
+      });
+
       emitRooms();
       emitPendingForRoom(code);
       io.emit("lobby:approved", { roomCode: code, user: req.user });
     });
 
-    // ✅ REJECT
-    socket.on("lobby:reject", ({ roomCode, reqId, owner }) => {
+    // ✅ REJECT (ADDED requester notification)
+    socket.on("lobby:reject", async ({ roomCode, reqId, owner }) => {
       const code = safe(roomCode).toUpperCase();
       const room = rooms.get(code);
       if (!room) return;
@@ -141,6 +197,16 @@ module.exports = function lobbySocket(io) {
 
       req.status = "rejected";
       pending.set(code, list);
+
+      // ✅ ADD: notify requester
+      await notify({
+        userId: req.userId,
+        type: "error",
+        title: "Request Rejected",
+        message: `Your request to join "${room.name}" (${code}) was rejected.`,
+        action: { label: "View rooms", path: "/collaboration" },
+      });
+
       emitPendingForRoom(code);
     });
 
