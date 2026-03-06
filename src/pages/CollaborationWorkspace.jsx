@@ -203,6 +203,17 @@ export default function CollaborationWorkspace() {
   /* ---------------- Members ---------------- */
   const [members, setMembers] = useState([]);
 
+  const myMember = useMemo(() => {
+    const myId = String(user?._id || user?.id || "");
+    return (
+      members.find((m) => myId && String(m.userId || "") === myId) ||
+      members.find((m) => String(m.name || "").trim().toLowerCase() === String(displayName || "").trim().toLowerCase()) ||
+      null
+    );
+  }, [members, user, displayName]);
+
+  const isOwner = !!myMember?.isOwner;
+
   /* ---------------- Chat ---------------- */
   const [messages, setMessages] = useState(() => [
     { id: `sys_${Date.now()}`, by: "System", text: `You joined room ${roomCode}`, time: new Date().toLocaleTimeString() },
@@ -498,7 +509,6 @@ export default function CollaborationWorkspace() {
     const monaco = monacoRef.current;
     if (!editor || !monaco) return;
     if (!pos?.lineNumber || !pos?.column) return;
-
     if (lang !== language) return;
 
     ensureCursorStyles();
@@ -549,7 +559,6 @@ export default function CollaborationWorkspace() {
   const [files, setFiles] = useState([]);
   const fileRef = useRef(null);
 
-  // ✅ STEP 2 helper (ONLY uploader can remove file)
   const normFile = (v) => String(v || "").trim().toLowerCase();
 
   const isFileOwner = (f) => {
@@ -557,8 +566,6 @@ export default function CollaborationWorkspace() {
     const uploaderId = f?.uploadedBy ? String(f.uploadedBy) : "";
 
     if (meId && uploaderId && meId === uploaderId) return true;
-
-    // old files ke liye fallback
     return normFile(f?.by) === normFile(displayName);
   };
 
@@ -649,11 +656,7 @@ export default function CollaborationWorkspace() {
   const [tasks, setTasks] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskAssignee, setTaskAssignee] = useState(displayName);
-
-  // ✅ UPDATED: use datetime-local (safe, standard)
-  const [taskDue, setTaskDue] = useState(""); // "YYYY-MM-DDTHH:mm"
-
-  // ✅ NEW: loading state to prevent double create
+  const [taskDue, setTaskDue] = useState("");
   const [taskCreating, setTaskCreating] = useState(false);
 
   const loadRoomTasks = async () => {
@@ -667,18 +670,14 @@ export default function CollaborationWorkspace() {
     }
   };
 
-  // ✅ FIXED: Better identity matching (works with userId OR name/email/displayName)
   const norm = (v) => String(v || "").trim().toLowerCase();
 
-  // ✅ TASK permission helper (UPDATED to safe prefix match)
   const samePersonLoose = (a, b) => {
     const A = norm(a);
     const B = norm(b);
     if (!A || !B) return false;
 
     if (A === B) return true;
-
-    // allow prefix match only at word boundary: "falak" == "falak khan"
     if (A.startsWith(B + " ")) return true;
     if (B.startsWith(A + " ")) return true;
 
@@ -719,7 +718,6 @@ export default function CollaborationWorkspace() {
 
   const canToggleTask = (t) => isTaskOwner(t) || isTaskAssignee(t);
 
-  // ✅ helper: convert datetime-local to Date ISO safely
   const toISOFromDatetimeLocal = (v) => {
     const s = String(v || "").trim();
     if (!s) return null;
@@ -781,8 +779,6 @@ export default function CollaborationWorkspace() {
   const toggleTask = async (taskId) => {
     const target = tasks.find((t) => String(t._id || t.id) === String(taskId));
     if (!target) return;
-
-    // ✅ HARD GUARD: only creator/assignee can toggle
     if (!canToggleTask(target)) return;
 
     const nextStatus = target.status === "done" ? "open" : "done";
@@ -816,8 +812,6 @@ export default function CollaborationWorkspace() {
   const deleteTask = async (taskId) => {
     const target = tasks.find((t) => String(t._id || t.id) === String(taskId));
     if (!target) return;
-
-    // ✅ HARD GUARD: creator only
     if (!isTaskOwner(target)) return;
 
     try {
@@ -847,7 +841,6 @@ export default function CollaborationWorkspace() {
     }
   };
 
-  // ✅ On first mount: notifications + load saved code + load files + load tasks
   useEffect(() => {
     fetchRealNotificationCount();
     loadSavedCode();
@@ -855,6 +848,20 @@ export default function CollaborationWorkspace() {
     loadRoomTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const removeMember = (member) => {
+    if (!member?.id) return;
+    if (!isOwner) return;
+    if (member.isOwner) return;
+
+    const ok = window.confirm(`Remove ${member.name} from this room?`);
+    if (!ok) return;
+
+    socket.emit("remove-member", {
+      roomCode,
+      targetSocketId: member.id,
+    });
+  };
 
   /* ---------------- Socket lifecycle ---------------- */
   useEffect(() => {
@@ -874,12 +881,27 @@ export default function CollaborationWorkspace() {
     const onStopTyping = () => setTypingUser(null);
 
     const onRoomMembers = (list) => {
-      const mapped = (list || []).map((m) => ({
-        id: m.socketId,
-        name: m.name,
-        role: (m.name || "").toLowerCase() === (displayName || "").toLowerCase() ? "You" : "Member",
-        online: true,
-      }));
+      const myId = String(user?._id || user?.id || "");
+
+      const mapped = (list || []).map((m) => {
+        const sameMe =
+          (myId && String(m.userId || "") === myId) ||
+          String(m.name || "").trim().toLowerCase() === String(displayName || "").trim().toLowerCase();
+
+        let roleLabel = m.isOwner ? "Owner" : "Member";
+        if (sameMe && m.isOwner) roleLabel = "Owner (You)";
+        else if (sameMe) roleLabel = "You";
+
+        return {
+          id: m.socketId,
+          userId: m.userId || "",
+          name: m.name,
+          role: roleLabel,
+          online: true,
+          isOwner: !!m.isOwner,
+        };
+      });
+
       setMembers(mapped);
     };
 
@@ -939,6 +961,32 @@ export default function CollaborationWorkspace() {
           : `${payload.by} did: ${action}`;
 
       setMessages((p) => [...p, { id: `sys_${Date.now()}`, by: "System", text, time: new Date().toLocaleTimeString() }]);
+    };
+
+    const onRemovedFromRoom = (payload) => {
+      if (String(payload?.roomCode || "").toUpperCase() !== String(roomCode || "").toUpperCase()) return;
+
+      setMessages((p) => [
+        ...p,
+        {
+          id: `sys_${Date.now()}`,
+          by: "System",
+          text: payload?.message || "You were removed from the room.",
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+
+      alert(payload?.message || "You were removed from the room.");
+      navigate("/collaboration");
+    };
+
+    const onRemoveMemberError = (payload) => {
+      if (String(payload?.roomCode || "").toUpperCase() !== String(roomCode || "").toUpperCase()) return;
+      alert(payload?.message || "Could not remove member.");
+    };
+
+    const onRemoveMemberSuccess = (payload) => {
+      if (String(payload?.roomCode || "").toUpperCase() !== String(roomCode || "").toUpperCase()) return;
     };
 
     // ✅ Files realtime
@@ -1016,7 +1064,11 @@ export default function CollaborationWorkspace() {
     };
 
     const joinNow = () => {
-      socket.emit("join-room", { roomCode, user: displayName });
+      socket.emit("join-room", {
+        roomCode,
+        user: displayName,
+        userId: user?._id || user?.id || "",
+      });
     };
 
     if (!socket.connected) socket.connect();
@@ -1037,6 +1089,10 @@ export default function CollaborationWorkspace() {
     socket.off("cursor-change", onCursorChange);
     socket.off("editor-action", onEditorAction);
 
+    socket.off("removed-from-room", onRemovedFromRoom);
+    socket.off("remove-member:error", onRemoveMemberError);
+    socket.off("remove-member:success", onRemoveMemberSuccess);
+
     socket.off("file-uploaded", onFileUploaded);
     socket.off("file-deleted", onFileDeleted);
 
@@ -1054,6 +1110,10 @@ export default function CollaborationWorkspace() {
     socket.on("lock-state", onLockState);
     socket.on("cursor-change", onCursorChange);
     socket.on("editor-action", onEditorAction);
+
+    socket.on("removed-from-room", onRemovedFromRoom);
+    socket.on("remove-member:error", onRemoveMemberError);
+    socket.on("remove-member:success", onRemoveMemberSuccess);
 
     socket.on("file-uploaded", onFileUploaded);
     socket.on("file-deleted", onFileDeleted);
@@ -1076,6 +1136,10 @@ export default function CollaborationWorkspace() {
       socket.off("cursor-change", onCursorChange);
       socket.off("editor-action", onEditorAction);
 
+      socket.off("removed-from-room", onRemovedFromRoom);
+      socket.off("remove-member:error", onRemoveMemberError);
+      socket.off("remove-member:success", onRemoveMemberSuccess);
+
       socket.off("file-uploaded", onFileUploaded);
       socket.off("file-deleted", onFileDeleted);
 
@@ -1085,7 +1149,7 @@ export default function CollaborationWorkspace() {
 
       socket.emit("leave-room", { roomCode, user: displayName });
     };
-  }, [roomCode, displayName, language]);
+  }, [roomCode, displayName, language, navigate, user]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1321,27 +1385,43 @@ export default function CollaborationWorkspace() {
                 <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">Waiting for members...</div>
               ) : (
                 <div className="space-y-3">
-                  {members.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold shadow-sm">
-                            {(m.name || "U").slice(0, 1).toUpperCase()}
+                  {members.map((m) => {
+                    const canRemove = isOwner && !m.isOwner;
+
+                    return (
+                      <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 sfRow">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold shadow-sm">
+                              {(m.name || "U").slice(0, 1).toUpperCase()}
+                            </div>
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-400" />
                           </div>
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-400" />
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
+                            <p className="text-xs text-slate-500">{m.role}</p>
+                          </div>
                         </div>
 
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
-                          <p className="text-xs text-slate-500">{m.role}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
+                            Online
+                          </span>
+
+                          {canRemove ? (
+                            <button
+                              onClick={() => removeMember(m)}
+                              className="text-xs px-3 py-1.5 rounded-full bg-rose-500 text-white hover:bg-rose-400 transition font-semibold shadow-sm hover:-translate-y-[1px] active:translate-y-[1px]"
+                              title={`Remove ${m.name}`}
+                            >
+                              Remove
+                            </button>
+                          ) : null}
                         </div>
                       </div>
-
-                      <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
-                        Online
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

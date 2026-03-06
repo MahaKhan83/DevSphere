@@ -91,11 +91,14 @@ module.exports = function lobbySocket(io) {
         members: 1,
         maxMembers: Number(maxMembers) || 6,
         owner: safe(owner) || "Owner",
-        ownerId: ownerId || null,
+        ownerId: safe(ownerId) || null,
       };
 
       rooms.set(room.code, room);
-      approvals.set(room.code, new Set([lower(room.owner)]));
+
+      const ownerApprovalKey = room.ownerId ? `id:${room.ownerId}` : `name:${lower(room.owner)}`;
+      approvals.set(room.code, new Set([ownerApprovalKey]));
+
       pending.set(room.code, []);
 
       await notify({
@@ -120,19 +123,28 @@ module.exports = function lobbySocket(io) {
       if (room.members >= room.maxMembers) return socket.emit("lobby:error", "Room is full.");
 
       const userName = safe(user) || "Guest";
-      const userL = lower(userName);
+      const uid = safe(userId);
+      const approvalKey = uid ? `id:${uid}` : `name:${lower(userName)}`;
 
       const appr = approvals.get(roomCode) || new Set();
-      if (appr.has(userL)) return socket.emit("lobby:already-approved", { roomCode });
+      if (appr.has(approvalKey)) {
+        return socket.emit("lobby:already-approved", { roomCode });
+      }
 
       const list = pending.get(roomCode) || [];
-      const hasPending = list.some((r) => lower(r.user) === userL && r.status === "pending");
+      const hasPending = list.some((r) => {
+        const reqUid = safe(r.userId);
+        if (uid && reqUid) return reqUid === uid && r.status === "pending";
+        return lower(r.user) === lower(userName) && r.status === "pending";
+      });
 
       if (hasPending && !force) return socket.emit("lobby:error", "Request already pending.");
 
       if (hasPending && force) {
         for (const r of list) {
-          if (lower(r.user) === userL && r.status === "pending") r.status = "rejected";
+          const reqUid = safe(r.userId);
+          const sameUser = uid && reqUid ? reqUid === uid : lower(r.user) === lower(userName);
+          if (sameUser && r.status === "pending") r.status = "rejected";
         }
       }
 
@@ -140,7 +152,7 @@ module.exports = function lobbySocket(io) {
         id: `p_${Date.now()}`,
         roomCode,
         user: userName,
-        userId: userId || null,
+        userId: uid || null,
         status: "pending",
         ts: Date.now(),
       };
@@ -162,11 +174,15 @@ module.exports = function lobbySocket(io) {
     });
 
     // ✅ APPROVE (ROOM)
-    socket.on("lobby:approve", async ({ roomCode, reqId, owner }) => {
+    socket.on("lobby:approve", async ({ roomCode, reqId, owner, ownerId }) => {
       const code = safe(roomCode).toUpperCase();
       const room = rooms.get(code);
       if (!room) return;
-      if (lower(room.owner) !== lower(owner)) return;
+
+      const ownerNameMatch = lower(room.owner) === lower(owner);
+      const ownerIdMatch = safe(room.ownerId) && safe(ownerId) && safe(room.ownerId) === safe(ownerId);
+
+      if (!ownerNameMatch && !ownerIdMatch) return;
 
       const list = pending.get(code) || [];
       const req = list.find((r) => r.id === reqId);
@@ -183,7 +199,8 @@ module.exports = function lobbySocket(io) {
       pending.set(code, list);
 
       const appr = approvals.get(code) || new Set();
-      appr.add(lower(req.user));
+      const approvalKey = req.userId ? `id:${safe(req.userId)}` : `name:${lower(req.user)}`;
+      appr.add(approvalKey);
       approvals.set(code, appr);
 
       rooms.set(code, { ...room, members: Number(room.members || 1) + 1 });
@@ -199,15 +216,19 @@ module.exports = function lobbySocket(io) {
 
       emitRooms();
       emitPendingForRoom(code);
-      io.emit("lobby:approved", { roomCode: code, user: req.user });
+      io.emit("lobby:approved", { roomCode: code, user: req.user, userId: req.userId || null });
     });
 
     // ✅ REJECT (ROOM)
-    socket.on("lobby:reject", async ({ roomCode, reqId, owner }) => {
+    socket.on("lobby:reject", async ({ roomCode, reqId, owner, ownerId }) => {
       const code = safe(roomCode).toUpperCase();
       const room = rooms.get(code);
       if (!room) return;
-      if (lower(room.owner) !== lower(owner)) return;
+
+      const ownerNameMatch = lower(room.owner) === lower(owner);
+      const ownerIdMatch = safe(room.ownerId) && safe(ownerId) && safe(room.ownerId) === safe(ownerId);
+
+      if (!ownerNameMatch && !ownerIdMatch) return;
 
       const list = pending.get(code) || [];
       const req = list.find((r) => r.id === reqId);
@@ -229,26 +250,37 @@ module.exports = function lobbySocket(io) {
     });
 
     // ✅ CAN ENTER
-    socket.on("lobby:can-enter", ({ code, user }) => {
+    socket.on("lobby:can-enter", ({ code, user, userId }) => {
       const roomCode = safe(code).toUpperCase();
       const room = rooms.get(roomCode);
       if (!room) return socket.emit("lobby:can-enter:result", { ok: false, reason: "Room not found" });
 
       const who = safe(user);
-      const isOwner = lower(room.owner) === lower(who);
+      const uid = safe(userId);
+
+      const isOwner =
+        (safe(room.ownerId) && uid && safe(room.ownerId) === uid) ||
+        lower(room.owner) === lower(who);
+
       const appr = approvals.get(roomCode) || new Set();
-      const ok = isOwner || appr.has(lower(who));
+      const approvalKey = uid ? `id:${uid}` : `name:${lower(who)}`;
+      const ok = isOwner || appr.has(approvalKey);
+
       socket.emit("lobby:can-enter:result", { ok, room });
     });
 
     // ✅ DELETE ROOM (OWNER ONLY)
-    socket.on("lobby:delete-room", ({ code, owner }) => {
+    socket.on("lobby:delete-room", ({ code, owner, ownerId }) => {
       const roomCode = safe(code).toUpperCase();
       const room = rooms.get(roomCode);
       if (!room) return;
 
-      if (lower(room.owner) !== lower(owner))
+      const ownerNameMatch = lower(room.owner) === lower(owner);
+      const ownerIdMatch = safe(room.ownerId) && safe(ownerId) && safe(room.ownerId) === safe(ownerId);
+
+      if (!ownerNameMatch && !ownerIdMatch) {
         return socket.emit("lobby:error", "Only owner can delete this room.");
+      }
 
       rooms.delete(roomCode);
       approvals.delete(roomCode);
@@ -259,12 +291,10 @@ module.exports = function lobbySocket(io) {
     });
 
     // ✅ NEW: DELETE ROOM (MODERATOR / ADMIN) => "Remove content" for ROOM reports
-    // IMPORTANT: returns "lobby:moderator-delete-room:result" so AdminModeration.jsx can resolve report.
     socket.on("lobby:moderator-delete-room", async ({ code, moderatorId }) => {
       const roomCode = safe(code).toUpperCase();
       const room = rooms.get(roomCode);
 
-      // helper: respond ONLY to requester socket (AdminModeration.jsx waits for this)
       const reply = (ok, message = "", extra = {}) => {
         socket.emit("lobby:moderator-delete-room:result", {
           ok: !!ok,
@@ -275,14 +305,12 @@ module.exports = function lobbySocket(io) {
       };
 
       if (!room) {
-        // also optional legacy event
         try {
           socket.emit("lobby:error", "Room not found.");
         } catch {}
         return reply(false, "Room not found.");
       }
 
-      // verify moderator/admin if User model exists
       if (User) {
         try {
           const mod = await User.findById(moderatorId).select("_id role");
@@ -302,12 +330,10 @@ module.exports = function lobbySocket(io) {
         }
       }
 
-      // delete room from in-memory store
       rooms.delete(roomCode);
       approvals.delete(roomCode);
       pending.delete(roomCode);
 
-      // notify owner (if exists)
       await notify({
         userId: room.ownerId,
         type: "ROOM_REMOVED",
@@ -319,27 +345,31 @@ module.exports = function lobbySocket(io) {
 
       emitRooms();
       io.emit("lobby:pending-updated", { roomCode, pending: [] });
-
-      // optional: allow other UIs to refresh
       io.emit("lobby:room-removed", { roomCode });
 
-      // ✅ the key line: AdminModeration.jsx will now continue + mark report resolved
       return reply(true, "Room deleted.");
     });
 
     // ✅ LEAVE ROOM
-    socket.on("lobby:leave-room", ({ roomCode, user }) => {
+    socket.on("lobby:leave-room", ({ roomCode, user, userId }) => {
       const code = safe(roomCode).toUpperCase();
       const room = rooms.get(code);
       if (!room) return;
 
+      const uid = safe(userId);
       const userL = lower(user);
-      if (userL && lower(room.owner) !== userL) {
+
+      const isOwner =
+        (safe(room.ownerId) && uid && safe(room.ownerId) === uid) ||
+        (userL && lower(room.owner) === userL);
+
+      if (!isOwner) {
         const nextMembers = Math.max(1, Number(room.members || 1) - 1);
         rooms.set(code, { ...room, members: nextMembers });
 
         const appr = approvals.get(code) || new Set();
-        appr.delete(userL);
+        const approvalKey = uid ? `id:${uid}` : `name:${userL}`;
+        appr.delete(approvalKey);
         approvals.set(code, appr);
 
         emitRooms();

@@ -35,7 +35,7 @@ const BellIcon = () => (
 );
 const SettingsIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+    <path d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.22-1.12.52-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.48a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.63-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.42 1.05.73 1.63.94l.36 2.54A.5.5 0 0 0 10.1 23h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.22 1.12-.52 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
   </svg>
 );
 
@@ -118,18 +118,6 @@ export default function CollaborationRoom() {
   const [rooms, setRooms] = useState([]);
   const [pendingByRoom, setPendingByRoom] = useState({}); // {ROOMCODE: [reqs]}
 
-  const myOwnedRooms = useMemo(
-    () => rooms.filter((r) => (r.owner || "").toLowerCase() === (displayName || "").toLowerCase()),
-    [rooms, displayName]
-  );
-  const ownedCodes = useMemo(() => new Set(myOwnedRooms.map((r) => r.code)), [myOwnedRooms]);
-
-  const ownerPending = useMemo(() => {
-    return Object.entries(pendingByRoom)
-      .filter(([code]) => ownedCodes.has(code))
-      .flatMap(([, list]) => (Array.isArray(list) ? list : []).filter((x) => x.status === "pending"));
-  }, [pendingByRoom, ownedCodes]);
-
   const [joinName, setJoinName] = useState(displayName);
   const [joinCode, setJoinCode] = useState("");
 
@@ -138,9 +126,31 @@ export default function CollaborationRoom() {
 
   /* ================== helpers for approval/pending ================== */
   const norm = (v) => String(v || "").trim().toLowerCase();
+  const myUserId = String(user?._id || user?.id || "");
+
+  const isRoomOwner = (room) => {
+    if (!room) return false;
+    if (myUserId && String(room.ownerId || "") === myUserId) return true;
+    return norm(room.owner) === norm(displayName);
+  };
+
+  const myOwnedRooms = useMemo(() => rooms.filter((r) => isRoomOwner(r)), [rooms, myUserId, displayName]);
+  const ownedCodes = useMemo(() => new Set(myOwnedRooms.map((r) => r.code)), [myOwnedRooms]);
+
+  const ownerPending = useMemo(() => {
+    return Object.entries(pendingByRoom)
+      .filter(([code]) => ownedCodes.has(code))
+      .flatMap(([, list]) => (Array.isArray(list) ? list : []).filter((x) => x.status === "pending"));
+  }, [pendingByRoom, ownedCodes]);
 
   const getMyRequestStatusForRoom = (roomCode) => {
     const list = pendingByRoom?.[roomCode] || [];
+
+    if (myUserId) {
+      const foundById = list.find((r) => String(r.userId || "") === myUserId);
+      if (foundById) return foundById.status || null;
+    }
+
     const me = norm(joinName || displayName);
     const found = list.find((r) => norm(r.user) === me);
     return found?.status || null; // "pending" | "approved" | "rejected" | null
@@ -148,8 +158,7 @@ export default function CollaborationRoom() {
 
   const canEnterRoom = (room) => {
     if (!room?.code) return false;
-    const isOwner = norm(room.owner) === norm(displayName);
-    if (isOwner) return true;
+    if (isRoomOwner(room)) return true;
     const st = getMyRequestStatusForRoom(room.code);
     return st === "approved";
   };
@@ -171,7 +180,6 @@ export default function CollaborationRoom() {
 
     setReportSubmitting(true);
     try {
-      // POST /api/reports  { type: "room", target: "<roomCode>", reason: "<text>" }
       await api.post("/reports", {
         type: "room",
         target: reportRoom.code,
@@ -225,8 +233,11 @@ export default function CollaborationRoom() {
       socket.emit("lobby:sync");
     };
 
-    const onApproved = ({ roomCode, user: approvedUser }) => {
-      if (norm(approvedUser) === norm(joinName || displayName)) {
+    const onApproved = ({ roomCode, user: approvedUser, userId: approvedUserId }) => {
+      const sameById = myUserId && String(approvedUserId || "") === myUserId;
+      const sameByName = norm(approvedUser) === norm(joinName || displayName);
+
+      if (sameById || sameByName) {
         alert(`Approved.\nYou can enter the workspace now.\nRoom: ${roomCode}`);
         socket.emit("lobby:sync");
       }
@@ -244,7 +255,6 @@ export default function CollaborationRoom() {
     socket.on("lobby:requested", onRequested);
     socket.on("lobby:approved", onApproved);
 
-    // ✅ IMPORTANT: lobby open pe always sync
     socket.emit("lobby:sync");
 
     return () => {
@@ -258,7 +268,7 @@ export default function CollaborationRoom() {
       socket.off("lobby:requested", onRequested);
       socket.off("lobby:approved", onApproved);
     };
-  }, [navigate, displayName, joinName]);
+  }, [navigate, displayName, joinName, myUserId]);
 
   // ✅ Also sync whenever route is /collaboration (back to lobby case)
   useEffect(() => {
@@ -310,11 +320,21 @@ export default function CollaborationRoom() {
   };
 
   const approveRequest = (req) => {
-    socket.emit("lobby:approve", { roomCode: req.roomCode, reqId: req.id, owner: displayName });
+    socket.emit("lobby:approve", {
+      roomCode: req.roomCode,
+      reqId: req.id,
+      owner: displayName,
+      ownerId: user?._id || user?.id,
+    });
   };
 
   const rejectRequest = (req) => {
-    socket.emit("lobby:reject", { roomCode: req.roomCode, reqId: req.id, owner: displayName });
+    socket.emit("lobby:reject", {
+      roomCode: req.roomCode,
+      reqId: req.id,
+      owner: displayName,
+      ownerId: user?._id || user?.id,
+    });
   };
 
   const copyCode = async (code) => {
@@ -339,7 +359,11 @@ export default function CollaborationRoom() {
     try {
       if (!socket.connected) socket.connect();
     } catch {}
-    socket.emit("lobby:can-enter", { code, user: who });
+    socket.emit("lobby:can-enter", {
+      code,
+      user: who,
+      userId: user?._id || user?.id || "",
+    });
   };
 
   const goToWorkspace = (code) => {
@@ -353,13 +377,21 @@ export default function CollaborationRoom() {
     try {
       if (!socket.connected) socket.connect();
     } catch {}
-    socket.emit("lobby:can-enter", { code: roomCode, user: displayName });
+    socket.emit("lobby:can-enter", {
+      code: roomCode,
+      user: displayName,
+      userId: user?._id || user?.id || "",
+    });
   };
 
   const deleteRoom = (code) => {
     const ok = window.confirm("Delete this room?");
     if (!ok) return;
-    socket.emit("lobby:delete-room", { code, owner: displayName });
+    socket.emit("lobby:delete-room", {
+      code,
+      owner: displayName,
+      ownerId: user?._id || user?.id || "",
+    });
   };
 
   return (
@@ -464,7 +496,7 @@ export default function CollaborationRoom() {
                 <div className="space-y-3">
                   {rooms.map((r, idx) => {
                     const full = r.members >= r.maxMembers;
-                    const isOwner = norm(r.owner) === norm(displayName);
+                    const isOwner = isRoomOwner(r);
 
                     const st = getMyRequestStatusForRoom(r.code);
                     const pendingMe = st === "pending";
@@ -548,15 +580,14 @@ export default function CollaborationRoom() {
                             Enter workspace
                           </button>
 
-                          {/* ✅ NEW: Report room (not for owner) */}
                           {!isOwner ? (
-                           <button
-  onClick={() => openRoomReport(r)}
-  className="px-3 py-1.5 rounded-full text-xs font-semibold transition bg-rose-600 text-white hover:bg-rose-500 inline-flex items-center gap-2"
-  title="Report this room"
->
-  <ReportIcon /> Report
-</button>
+                            <button
+                              onClick={() => openRoomReport(r)}
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold transition bg-rose-600 text-white hover:bg-rose-500 inline-flex items-center gap-2"
+                              title="Report this room"
+                            >
+                              <ReportIcon /> Report
+                            </button>
                           ) : null}
 
                           {isOwner ? (
