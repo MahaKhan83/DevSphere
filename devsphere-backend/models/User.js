@@ -11,8 +11,13 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: ["user", "moderator", "admin"],
+      default: "user",
+    },
 
-      default: "user", // ✅ USER ROLE
+    status: {
+      type: String,
+      enum: ["active", "pending", "blocked"],
+      default: "active",
     },
 
     resetToken: { type: String },

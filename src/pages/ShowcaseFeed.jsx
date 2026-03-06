@@ -187,6 +187,16 @@ const PlusIcon = () => (
   </svg>
 );
 
+// ✅ Report icon
+const ReportIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 21V4a1 1 0 0 1 1-1h10l4 4v14a1 1 0 0 1-1 1H4Z" />
+    <path d="M14 3v5h5" />
+    <path d="M8 11h8" />
+    <path d="M8 15h6" />
+  </svg>
+);
+
 /* ---------- Sidebar item UI ---------- */
 const IconWrap = ({ children }) => (
   <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
@@ -206,7 +216,6 @@ const NavItem = ({ active, icon, label, onClick, badge }) => (
       <span>{label}</span>
     </span>
 
-    {/* ✅ Sidebar badge */}
     {badge !== null && badge !== undefined && badge > 0 && (
       <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
         {badge}
@@ -245,12 +254,8 @@ export default function ShowcaseFeed() {
   const [likedIds, setLikedIds] = useState(() => new Set());
   const [savedIds, setSavedIds] = useState(() => new Set());
 
-  // ✅ Notification count
   const [unreadCount, setUnreadCount] = useState(0);
 
-  /* ---------------------------
-     ✅ Fetch Showcase Feed (Backend)
-  --------------------------- */
   const fetchFeed = async () => {
     try {
       const res = await api.get("/showcase", {
@@ -259,7 +264,6 @@ export default function ShowcaseFeed() {
       const list = res.data.projects || [];
       setProjects(list);
 
-      // ✅ liked/saved state backend se set
       setLikedIds(new Set(list.filter((p) => p.isLiked).map((p) => p.id)));
       setSavedIds(new Set(list.filter((p) => p.isSaved).map((p) => p.id)));
     } catch (e) {
@@ -267,9 +271,6 @@ export default function ShowcaseFeed() {
     }
   };
 
-  /* ---------------------------
-     ✅ Fetch Real Notification Count
-  --------------------------- */
   const fetchRealNotificationCount = async () => {
     try {
       const response = await api.get("/notifications");
@@ -282,22 +283,19 @@ export default function ShowcaseFeed() {
     }
   };
 
-  // ✅ Initial fetch
   useEffect(() => {
     fetchRealNotificationCount();
     // eslint-disable-next-line
   }, []);
 
-  // ✅ Auto refresh every 10 seconds (NOT 5 sec)
   useEffect(() => {
     const id = setInterval(() => {
       fetchRealNotificationCount();
-    }, 10000); // 10s
+    }, 10000);
     return () => clearInterval(id);
     // eslint-disable-next-line
   }, []);
 
-  // ✅ Socket realtime refresh (instant badge update)
   useEffect(() => {
     const myId = user?._id || user?.id;
     if (!myId) return;
@@ -316,7 +314,6 @@ export default function ShowcaseFeed() {
     join();
 
     const onNew = () => {
-      // new notification arrives -> refresh count instantly
       fetchRealNotificationCount();
     };
     socket.on("notification:new", onNew);
@@ -328,15 +325,23 @@ export default function ShowcaseFeed() {
     // eslint-disable-next-line
   }, [user]);
 
-  // ✅ Load feed on page open
   useEffect(() => {
     fetchFeed();
     // eslint-disable-next-line
   }, []);
 
-  // ✅ Reload feed when filters/search change
   useEffect(() => {
     fetchFeed();
+    // eslint-disable-next-line
+  }, [query, techFilter, sortBy]);
+
+  // ✅ AUTO REFRESH FEED (every 5 sec) - so no manual refresh needed
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchFeed();
+    }, 5000);
+
+    return () => clearInterval(id);
     // eslint-disable-next-line
   }, [query, techFilter, sortBy]);
 
@@ -354,7 +359,6 @@ export default function ShowcaseFeed() {
     { label: "Settings", icon: <SettingsIcon />, to: "/settings" },
   ];
 
-  // Modals
   const [openProject, setOpenProject] = useState(null);
   const [openCommentsFor, setOpenCommentsFor] = useState(null);
   const [inviteProject, setInviteProject] = useState(null);
@@ -362,20 +366,20 @@ export default function ShowcaseFeed() {
   const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  // Comments
+  const [reportProject, setReportProject] = useState(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
   const [commentsByProject, setCommentsByProject] = useState(() => ({}));
   const [newComment, setNewComment] = useState("");
 
-  // Invite
   const [inviteTo, setInviteTo] = useState("");
-  const [inviteMsg, setInviteMsg] = useState("Hey! Check this DevSphere project 🔥");
+  const [inviteMsg, setInviteMsg] = useState("Hey! Check this DevSphere project.");
 
-  // Request
   const [requestMsg, setRequestMsg] = useState(
     "Hi! I want to work on this project. Please add me as a collaborator."
   );
 
-  // Upload form
   const [upTitle, setUpTitle] = useState("");
   const [upDesc, setUpDesc] = useState("");
   const [upGithub, setUpGithub] = useState("");
@@ -416,10 +420,7 @@ export default function ShowcaseFeed() {
     return list;
   }, [query, techFilter, sortBy, showSavedOnly, savedIds, projects]);
 
-  const savedProjectsList = useMemo(
-    () => projects.filter((p) => savedIds.has(p.id)),
-    [projects, savedIds]
-  );
+  const savedProjectsList = useMemo(() => projects.filter((p) => savedIds.has(p.id)), [projects, savedIds]);
 
   const toggleLike = async (id) => {
     setLikedIds((prev) => {
@@ -437,7 +438,7 @@ export default function ShowcaseFeed() {
         next.has(id) ? next.delete(id) : next.add(id);
         return next;
       });
-      alert("Login required for like 😭");
+      alert("Login required to like.");
     }
   };
 
@@ -457,7 +458,7 @@ export default function ShowcaseFeed() {
         next.has(id) ? next.delete(id) : next.add(id);
         return next;
       });
-      alert("Login required for save 😭");
+      alert("Login required to save.");
     }
   };
 
@@ -504,7 +505,7 @@ export default function ShowcaseFeed() {
 
       fetchFeed();
     } catch (e) {
-      alert("Login required to comment 😭");
+      alert("Login required to comment.");
     }
   };
 
@@ -522,7 +523,7 @@ export default function ShowcaseFeed() {
 
       fetchFeed();
     } catch (e) {
-      alert("Only your comment can be deleted 😭");
+      alert("Only your comment can be deleted.");
     }
   };
 
@@ -536,7 +537,7 @@ export default function ShowcaseFeed() {
         [projectId]: res.data.comments || [],
       }));
     } catch (e) {
-      alert("Login required to like comment 😭");
+      alert("Login required to like a comment.");
     }
   };
 
@@ -547,7 +548,7 @@ export default function ShowcaseFeed() {
         await navigator.share({ title: project.title, text: shareText, url: project.github });
       } else {
         await navigator.clipboard.writeText(shareText);
-        alert("Link copied ✅");
+        alert("Link copied.");
       }
     } catch {}
   };
@@ -555,14 +556,14 @@ export default function ShowcaseFeed() {
   const openInvite = (project) => {
     setInviteProject(project);
     setInviteTo("");
-    setInviteMsg("Hey! Check this DevSphere project 🔥");
+    setInviteMsg("Hey! Check this DevSphere project.");
   };
 
   const sendInvite = async () => {
     if (!inviteProject) return;
 
     const target = inviteTo.trim();
-    if (!target) return alert("Invite target likho (email/username).");
+    if (!target) return alert("Please enter an email or username.");
 
     try {
       await api.post(`/showcase/${inviteProject.id}/invite`, {
@@ -570,10 +571,10 @@ export default function ShowcaseFeed() {
         message: inviteMsg,
       });
 
-      alert("Invite sent ✅");
+      alert("Invite sent.");
       setInviteProject(null);
     } catch (e) {
-      alert(e?.response?.data?.message || "Invite failed 😭");
+      alert(e?.response?.data?.message || "Invite failed.");
     }
   };
 
@@ -590,10 +591,41 @@ export default function ShowcaseFeed() {
         message: requestMsg,
       });
 
-      alert("Request sent ✅");
+      alert("Request sent.");
       setRequestProject(null);
     } catch (e) {
-      alert(e?.response?.data?.message || "Request failed 😭");
+      alert(e?.response?.data?.message || "Request failed.");
+    }
+  };
+
+  // ✅ Report modal (block owner)
+  const openReport = (project) => {
+    // Owner should not be able to report their own project
+    if (project?.isOwner || project?.author === displayName) return;
+    setReportProject(project);
+    setReportReason("");
+  };
+
+  const submitReport = async () => {
+    if (!reportProject) return;
+    const reason = reportReason.trim();
+    if (!reason) return alert("Please provide a reason.");
+
+    setReportSubmitting(true);
+    try {
+      await api.post("/reports", {
+        type: "showcase",
+        target: reportProject.id,
+        reason,
+      });
+
+      alert("Report submitted.");
+      setReportProject(null);
+      setReportReason("");
+    } catch (e) {
+      alert(e?.response?.data?.message || "Report failed.");
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -603,9 +635,7 @@ export default function ShowcaseFeed() {
     setUpDesc("");
     setUpGithub("");
     setUpTech("React");
-    setUpThumb(
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=60"
-    );
+    setUpThumb("https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=60");
   };
 
   const handleUpload = async () => {
@@ -614,7 +644,7 @@ export default function ShowcaseFeed() {
     const github = upGithub.trim() || "https://github.com/";
     const thumb = upThumb.trim();
 
-    if (!title || !desc || !thumb) return alert("Title + Description + Thumbnail required.");
+    if (!title || !desc || !thumb) return alert("Title, description, and thumbnail are required.");
 
     try {
       await api.post("/showcase", {
@@ -627,9 +657,9 @@ export default function ShowcaseFeed() {
 
       setUploadOpen(false);
       fetchFeed();
-      alert("Project uploaded ✅");
+      alert("Project uploaded.");
     } catch (e) {
-      alert("Upload failed (login required?) 😭");
+      alert("Upload failed (login required?).");
     }
   };
 
@@ -658,19 +688,14 @@ export default function ShowcaseFeed() {
       });
 
       fetchFeed();
-      alert("Project deleted ✅");
+      alert("Project deleted.");
     } catch (e) {
-      alert("Delete failed (only owner can delete) 😭");
+      alert("Delete failed (only owner can delete).");
     }
   };
 
-  // ✅ TOPBAR bell button like your image
   const TopBellButton = () => (
-    <button
-      className="sfBellBtn"
-      title="Notifications"
-      onClick={() => navigate("/notifications")}
-    >
+    <button className="sfBellBtn" title="Notifications" onClick={() => navigate("/notifications")}>
       <BellIcon />
       {unreadCount > 0 && <span className="sfBellBadge">{unreadCount}</span>}
     </button>
@@ -679,7 +704,6 @@ export default function ShowcaseFeed() {
   return (
     <>
       <div className="min-h-screen bg-[#eef3f7] flex overflow-hidden relative">
-        {/* ✅ background pointer-events fixed */}
         <div className="sfBg fixed inset-0 pointer-events-none">
           <div className="sfBlob sfBlob1" />
           <div className="sfBlob sfBlob2" />
@@ -688,7 +712,6 @@ export default function ShowcaseFeed() {
           <div className="sfGrain" />
         </div>
 
-        {/* SIDEBAR */}
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
           <div className="flex items-center gap-3 px-2 mb-8">
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
@@ -721,14 +744,8 @@ export default function ShowcaseFeed() {
           </div>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 p-6 md:p-8 relative z-10">
-          {/* TOPBAR */}
-          <div
-            className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 ${
-              mounted ? "sfIn" : "sfPre"
-            }`}
-          >
+          <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 ${mounted ? "sfIn" : "sfPre"}`}>
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -739,16 +756,11 @@ export default function ShowcaseFeed() {
               </button>
 
               <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-                  Showcase Feed
-                </h1>
-                <p className="text-sm text-slate-600">
-                  Discover projects, connect with developers, and get inspired.
-                </p>
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Showcase Feed</h1>
+                <p className="text-sm text-slate-600">Discover projects, connect with developers, and get inspired.</p>
               </div>
             </div>
 
-            {/* ✅ Search + bell + buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex items-center gap-2 bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
                 <span className="text-slate-400">
@@ -762,14 +774,9 @@ export default function ShowcaseFeed() {
                 />
               </div>
 
-              {/* ✅ TOP bell icon like your image */}
               <TopBellButton />
 
-              <button
-                className="sfTopBtn sfTopBtnDark"
-                onClick={() => setSavedDrawerOpen(true)}
-                title="View saved"
-              >
+              <button className="sfTopBtn sfTopBtnDark" onClick={() => setSavedDrawerOpen(true)} title="View saved">
                 <BookmarkIcon filled={true} />
                 <span>Saved</span>
                 <span className="sfBadge">{savedProjectsList.length}</span>
@@ -782,15 +789,10 @@ export default function ShowcaseFeed() {
             </div>
           </div>
 
-          {/* FILTERS */}
           <div className={`flex flex-wrap items-center gap-3 mb-6 ${mounted ? "sfIn2" : "sfPre"}`}>
             <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
               <span className="text-xs text-slate-500 font-semibold">Tech</span>
-              <select
-                className="text-sm outline-none bg-transparent"
-                value={techFilter}
-                onChange={(e) => setTechFilter(e.target.value)}
-              >
+              <select className="text-sm outline-none bg-transparent" value={techFilter} onChange={(e) => setTechFilter(e.target.value)}>
                 {techOptions.map((t) => (
                   <option key={t} value={t}>
                     {t}
@@ -801,11 +803,7 @@ export default function ShowcaseFeed() {
 
             <div className="bg-white/95 border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex items-center gap-3">
               <span className="text-xs text-slate-500 font-semibold">Sort</span>
-              <select
-                className="text-sm outline-none bg-transparent"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
+              <select className="text-sm outline-none bg-transparent" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 <option value="Trending">Trending</option>
                 <option value="Newest">Newest</option>
                 <option value="MostLiked">Most liked</option>
@@ -814,9 +812,7 @@ export default function ShowcaseFeed() {
 
             <button
               className={`px-3 py-2 rounded-xl border text-sm font-semibold transition ${
-                showSavedOnly
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white/95 text-slate-700 border-slate-200 hover:bg-white"
+                showSavedOnly ? "bg-slate-900 text-white border-slate-900" : "bg-white/95 text-slate-700 border-slate-200 hover:bg-white"
               }`}
               onClick={() => setShowSavedOnly((v) => !v)}
               title="Show only saved projects"
@@ -829,7 +825,6 @@ export default function ShowcaseFeed() {
             </div>
           </div>
 
-          {/* GRID */}
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {filtered.map((p, idx) => {
               const liked = likedIds.has(p.id);
@@ -840,28 +835,21 @@ export default function ShowcaseFeed() {
               return (
                 <article
                   key={p.id}
-                  className={`sfCard sfPulseBorder bg-white/95 rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden ${
-                    mounted ? "sfCardIn" : "sfCardPre"
-                  }`}
+                  className={`sfCard sfPulseBorder bg-white/95 rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden ${mounted ? "sfCardIn" : "sfCardPre"}`}
                   style={{ transitionDelay: `${Math.min(idx, 8) * 70}ms` }}
                 >
-                  {/* Thumb */}
                   <div className="relative h-44 bg-slate-100 overflow-hidden">
                     <img src={p.thumb} alt={p.title} className="w-full h-full object-cover sfImg" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
 
                     <div className="absolute left-3 bottom-3 flex flex-wrap gap-2">
                       {p.tech.slice(0, 2).map((t) => (
-                        <span
-                          key={t}
-                          className="text-xs px-2 py-1 rounded-full bg-white/90 text-slate-800 font-semibold"
-                        >
+                        <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/90 text-slate-800 font-semibold">
                           {t}
                         </span>
                       ))}
                     </div>
 
-                    {/* Invite + Request + Share */}
                     <div className="absolute top-3 right-3 flex gap-2">
                       <button className="sfActionBtn" onClick={() => openInvite(p)} title="Invite">
                         <InviteIcon />
@@ -872,10 +860,16 @@ export default function ShowcaseFeed() {
                       <button className="sfActionBtn" onClick={() => shareProject(p)} title="Share">
                         <ShareIcon />
                       </button>
+
+                      {/* ✅ Report button hidden for owner */}
+                      {!isOwner && (
+                        <button className="sfActionBtn" onClick={() => openReport(p)} title="Report">
+                          <ReportIcon />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Body */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -898,9 +892,7 @@ export default function ShowcaseFeed() {
                       <div className="flex items-center gap-2 text-sm flex-wrap">
                         <button
                           className={`px-3 py-2 rounded-xl border transition inline-flex items-center gap-2 ${
-                            liked
-                              ? "bg-rose-50 border-rose-200 text-rose-600"
-                              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                            liked ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                           }`}
                           onClick={() => toggleLike(p.id)}
                           title="Like"
@@ -928,10 +920,7 @@ export default function ShowcaseFeed() {
                         </button>
                       </div>
 
-                      <button
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition"
-                        onClick={() => setOpenProject(p)}
-                      >
+                      <button className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition" onClick={() => setOpenProject(p)}>
                         View
                       </button>
                     </div>
@@ -941,27 +930,22 @@ export default function ShowcaseFeed() {
             })}
           </section>
 
-          {/* ---------------- Saved Drawer ---------------- */}
           {savedDrawerOpen && (
             <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={() => setSavedDrawerOpen(false)}>
               <div className="w-full max-w-md h-full bg-white shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-slate-900">Saved Projects</h3>
-                  <button
-                    className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center"
-                    onClick={() => setSavedDrawerOpen(false)}
-                  >
+                  <button className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center" onClick={() => setSavedDrawerOpen(false)}>
                     ✕
                   </button>
                 </div>
 
-                <p className="text-sm text-slate-500 mt-1">Bookmarked projects yahan show hotay hain.</p>
+                {/* ✅ Urdu -> English (professional) */}
+                <p className="text-sm text-slate-500 mt-1">Your bookmarked projects appear here.</p>
 
                 <div className="mt-4 space-y-3 overflow-auto h-[calc(100vh-140px)] pr-1">
                   {savedProjectsList.length === 0 ? (
-                    <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                      No saved projects yet.
-                    </div>
+                    <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-4">No saved projects yet.</div>
                   ) : (
                     savedProjectsList.map((p) => (
                       <button
@@ -973,11 +957,7 @@ export default function ShowcaseFeed() {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <img
-                            src={p.thumb}
-                            alt={p.title}
-                            className="w-14 h-14 rounded-xl object-cover border border-slate-200"
-                          />
+                          <img src={p.thumb} alt={p.title} className="w-14 h-14 rounded-xl object-cover border border-slate-200" />
                           <div>
                             <p className="text-sm font-semibold text-slate-900">{p.title}</p>
                             <p className="text-xs text-slate-500">
@@ -1201,6 +1181,49 @@ export default function ShowcaseFeed() {
             </div>
           )}
 
+          {/* ✅ Report Modal */}
+          {reportProject && (
+            <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setReportProject(null)}>
+              <div className="w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-xl sfModal" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Report</h3>
+                    <p className="text-sm text-slate-500">{reportProject.title}</p>
+                  </div>
+                  <button className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center" onClick={() => setReportProject(null)}>
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  <label className="text-xs font-semibold text-slate-600">Reason</label>
+                  <textarea
+                    className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-sky-200 min-h-[130px]"
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="e.g. Inappropriate content, spam, or misleading information."
+                  />
+
+                  <div className="flex flex-wrap gap-3 mt-5">
+                    <button className="px-4 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold hover:bg-slate-50 transition" onClick={() => setReportProject(null)} disabled={reportSubmitting}>
+                      Cancel
+                    </button>
+
+                    <button
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold shadow transition inline-flex items-center gap-2 disabled:opacity-60"
+                      onClick={submitReport}
+                      disabled={reportSubmitting}
+                      title="Submit report"
+                    >
+                      <ReportIcon />
+                      {reportSubmitting ? "Submitting..." : "Submit report"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Project Modal */}
           {openProject && (
             <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpenProject(null)}>
@@ -1241,6 +1264,17 @@ export default function ShowcaseFeed() {
                     <button className="px-4 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold hover:bg-slate-50 transition" onClick={() => openRequest(openProject)}>
                       Request
                     </button>
+
+                    {/* ✅ Report hidden for owner in view modal too */}
+                    {!(openProject?.isOwner || openProject?.author === displayName) && (
+                      <button
+                        className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 text-sm font-semibold hover:bg-rose-50 transition"
+                        onClick={() => openReport(openProject)}
+                      >
+                        Report
+                      </button>
+                    )}
+
                     <button className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-sm font-semibold shadow transition" onClick={() => shareProject(openProject)}>
                       Share
                     </button>
@@ -1352,7 +1386,6 @@ export default function ShowcaseFeed() {
           font-size:12px; font-weight:900;
         }
 
-        /* ✅ TOP bell button like your image */
         .sfBellBtn{
           width:44px; height:44px;
           border-radius:999px;

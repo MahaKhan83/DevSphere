@@ -1,4 +1,13 @@
+// devsphere-backend/sockets/lobbySocket.js
 const Notification = require("../models/Notification");
+
+// ✅ NEW: role check for moderator/admin (used only for moderation delete)
+let User = null;
+try {
+  User = require("../models/User");
+} catch (e) {
+  User = null;
+}
 
 module.exports = function lobbySocket(io) {
   const rooms = new Map();
@@ -43,7 +52,8 @@ module.exports = function lobbySocket(io) {
 
   const genCode = () => {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    const make = () => Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const make = () =>
+      Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     let code = make();
     while (rooms.has(code)) code = make();
     return code;
@@ -231,13 +241,14 @@ module.exports = function lobbySocket(io) {
       socket.emit("lobby:can-enter:result", { ok, room });
     });
 
-    // ✅ DELETE ROOM
+    // ✅ DELETE ROOM (OWNER ONLY)
     socket.on("lobby:delete-room", ({ code, owner }) => {
       const roomCode = safe(code).toUpperCase();
       const room = rooms.get(roomCode);
       if (!room) return;
 
-      if (lower(room.owner) !== lower(owner)) return socket.emit("lobby:error", "Only owner can delete this room.");
+      if (lower(room.owner) !== lower(owner))
+        return socket.emit("lobby:error", "Only owner can delete this room.");
 
       rooms.delete(roomCode);
       approvals.delete(roomCode);
@@ -245,6 +256,75 @@ module.exports = function lobbySocket(io) {
 
       emitRooms();
       io.emit("lobby:pending-updated", { roomCode, pending: [] });
+    });
+
+    // ✅ NEW: DELETE ROOM (MODERATOR / ADMIN) => "Remove content" for ROOM reports
+    // IMPORTANT: returns "lobby:moderator-delete-room:result" so AdminModeration.jsx can resolve report.
+    socket.on("lobby:moderator-delete-room", async ({ code, moderatorId }) => {
+      const roomCode = safe(code).toUpperCase();
+      const room = rooms.get(roomCode);
+
+      // helper: respond ONLY to requester socket (AdminModeration.jsx waits for this)
+      const reply = (ok, message = "", extra = {}) => {
+        socket.emit("lobby:moderator-delete-room:result", {
+          ok: !!ok,
+          roomCode,
+          message: message || undefined,
+          ...extra,
+        });
+      };
+
+      if (!room) {
+        // also optional legacy event
+        try {
+          socket.emit("lobby:error", "Room not found.");
+        } catch {}
+        return reply(false, "Room not found.");
+      }
+
+      // verify moderator/admin if User model exists
+      if (User) {
+        try {
+          const mod = await User.findById(moderatorId).select("_id role");
+          const role = String(mod?.role || "").toLowerCase();
+          const okRole = role === "moderator" || role === "admin";
+          if (!mod || !okRole) {
+            try {
+              socket.emit("lobby:error", "Not allowed.");
+            } catch {}
+            return reply(false, "Not allowed.");
+          }
+        } catch (e) {
+          try {
+            socket.emit("lobby:error", "Not allowed.");
+          } catch {}
+          return reply(false, "Not allowed.");
+        }
+      }
+
+      // delete room from in-memory store
+      rooms.delete(roomCode);
+      approvals.delete(roomCode);
+      pending.delete(roomCode);
+
+      // notify owner (if exists)
+      await notify({
+        userId: room.ownerId,
+        type: "ROOM_REMOVED",
+        title: "Room Removed",
+        message: `Your room "${room.name}" (${roomCode}) was removed by moderation.`,
+        action: { label: "View rooms", path: "/collaboration" },
+        entityType: "room",
+      });
+
+      emitRooms();
+      io.emit("lobby:pending-updated", { roomCode, pending: [] });
+
+      // optional: allow other UIs to refresh
+      io.emit("lobby:room-removed", { roomCode });
+
+      // ✅ the key line: AdminModeration.jsx will now continue + mark report resolved
+      return reply(true, "Room deleted.");
     });
 
     // ✅ LEAVE ROOM

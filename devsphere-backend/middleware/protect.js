@@ -17,6 +17,19 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: "User not found" });
     }
 
+    // ✅ NEW: status check
+    if (user.status === "blocked") {
+      return res.status(403).json({
+        message: "Your account has been blocked by admin",
+      });
+    }
+
+    if (user.status === "pending") {
+      return res.status(403).json({
+        message: "Your account is pending approval by admin",
+      });
+    }
+
     req.user = user;
 
     next();

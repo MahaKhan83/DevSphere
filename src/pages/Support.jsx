@@ -6,8 +6,6 @@ import logo from "../assets/logo.png";
 export default function Support() {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
-
-  // ✅ FAQ accordion
   const [openFaq, setOpenFaq] = useState(0);
 
   useEffect(() => {
@@ -15,36 +13,21 @@ export default function Support() {
     return () => clearTimeout(t);
   }, []);
 
-  const supportEmail = "support@devsphere.com";
+  const goContactSupport = () => {
+    navigate("/contact-support");
+  };
 
   const cards = useMemo(
     () => [
       {
-        title: "Email Support",
-        desc: "Contact our support team for account, billing, or technical issues.",
-        tag: supportEmail,
-        onClick: () => {
-          // opens default mail client
-          window.location.href = `mailto:${supportEmail}`;
-        },
-        btn: "Email Now",
-      },
-      {
-        title: "Documentation",
-        desc: "Learn how to build portfolios, use collaboration rooms, and manage projects.",
-        tag: "Guides • Tutorials",
-        onClick: () => navigate("/docs"), // ✅ change route if you want
-        btn: "Open Docs",
-      },
-      {
-        title: "Community",
-        desc: "Join the DevSphere community to ask questions and share ideas.",
-        tag: "Ask • Share • Grow",
-        onClick: () => navigate("/community"), // ✅ change route if you want
-        btn: "Join",
+        title: "Contact Support",
+        desc: "Submit your issue through the support form and our team will review it.",
+        tag: "Support Ticket",
+        onClick: goContactSupport,
+        btn: "Open Form",
       },
     ],
-    [navigate]
+    []
   );
 
   const faqs = useMemo(
@@ -54,12 +37,16 @@ export default function Support() {
         a: "Go to the Dashboard and open Build Portfolio, then customize sections using drag and drop.",
       },
       {
-        q: "How does real-time collaboration work?",
-        a: "Collaboration rooms allow developers to code and chat together using live sessions powered by WebSockets.",
+        q: "How does collaboration work?",
+        a: "Collaboration rooms allow developers to work together in real-time using shared workspaces.",
       },
       {
         q: "Can I showcase my projects publicly?",
         a: "Yes. Projects shared in the Showcase Feed are visible to other developers.",
+      },
+      {
+        q: "How do I contact DevSphere support?",
+        a: "Use the Contact Support form and our team will review your issue.",
       },
     ],
     []
@@ -67,7 +54,6 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-[#eef3f7] relative overflow-hidden">
-      {/* ✅ STATIC BACKGROUND (NO MOVEMENT) */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="staticBlob staticBlob1" />
         <div className="staticBlob staticBlob2" />
@@ -77,10 +63,8 @@ export default function Support() {
         <div className="staticGrain" />
       </div>
 
-      {/* ================= HEADER ================= */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur shadow-lg">
         <div className="w-full px-6 md:px-10 py-3 flex items-center justify-between relative">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <img
               src={logo}
@@ -92,7 +76,6 @@ export default function Support() {
             </span>
           </Link>
 
-          {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
             className="h-10 px-4 rounded-full
@@ -103,19 +86,16 @@ export default function Support() {
             Back
           </button>
 
-          {/* Static underline glow (no movement) */}
           <div className="navyGlowLineStatic" />
         </div>
       </header>
 
-      {/* ================= PAGE BODY ================= */}
       <div className="pt-32 px-6 pb-14">
         <div
           className={`max-w-5xl mx-auto space-y-10 ${
             mounted ? "pageIn" : "pageBefore"
           }`}
         >
-          {/* HERO */}
           <div className="text-center">
             <p className="text-xs tracking-[0.35em] uppercase text-slate-500 fadeUp-1">
               Help Center
@@ -124,21 +104,22 @@ export default function Support() {
               DevSphere Support
             </h1>
             <p className="mt-3 text-slate-600 max-w-2xl mx-auto fadeUp-3">
-              Need help using DevSphere? We’re here with guides, FAQs, and direct
-              assistance.
+              Need help using DevSphere? Submit your issue and our team will review it.
             </p>
           </div>
 
-          {/* SUPPORT OPTIONS (✅ FULL CLICKABLE CARDS) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fadeUp-4">
+          <div className="grid grid-cols-1 gap-6 fadeUp-4">
             {cards.map((c, idx) => (
-              <button
+              <div
                 key={idx}
-                type="button"
                 onClick={c.onClick}
                 className="infoCard clickableCard bg-white/90 backdrop-blur rounded-2xl border border-slate-200
-                           shadow-sm p-6 relative overflow-hidden text-left
-                           focusRing"
+                           shadow-sm p-6 relative overflow-hidden text-left focusRing cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") c.onClick();
+                }}
               >
                 <div className="cardGlowStatic" />
                 <div className="cardTopLine" />
@@ -153,16 +134,12 @@ export default function Support() {
                     {c.tag}
                   </span>
 
-                  {/* button look (but whole card clickable) */}
-                  <span className="miniBtn">
-                    {c.btn}
-                  </span>
+                  <span className="miniBtn">{c.btn}</span>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
 
-          {/* FAQ SECTION (✅ CLICKABLE ACCORDION) */}
           <div className="faqCard bg-white/90 backdrop-blur rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
             <div className="cardGlowStatic" />
             <div className="cardTopLine" />
@@ -205,31 +182,24 @@ export default function Support() {
             </div>
           </div>
 
-          {/* CONTACT CTA (✅ CLICKABLE) */}
-          <button
-            type="button"
-            onClick={() => navigate("/contact-support")} // ✅ change route if you want
-            className="ctaCard ctaClickable bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white
-                       flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden
-                       focusRing"
-          >
-            <div className="ctaGlowStatic" />
-
-            <div className="relative text-left">
+          <div className="max-w-2xl mx-auto bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-left">
               <h3 className="text-lg font-semibold">Still need help?</h3>
               <p className="text-sm text-slate-300 mt-1">
-                Tap here to contact support — we’ll get back to you shortly.
+                Contact our support team and we will review your issue.
               </p>
             </div>
 
-            <span className="relative px-6 py-2 rounded-full bg-white text-slate-900 font-semibold miniBtnLight">
+            <button
+              onClick={goContactSupport}
+              className="px-6 py-2 rounded-full bg-white text-slate-900 font-semibold hover:opacity-90"
+            >
               Contact Support
-            </span>
-          </button>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ✅ STYLES (NAVI BLUE + CLICKABLE, NO MOVING BACKGROUND) */}
       <style>{`
         .pageBefore{ opacity:0; transform: translateY(10px); }
         .pageIn{ opacity:1; transform: translateY(0); transition: opacity .35s ease, transform .35s ease; }
@@ -247,9 +217,10 @@ export default function Support() {
           0%{ opacity:0; transform: translateY(14px) scale(.99); }
           100%{ opacity:1; transform: translateY(0) scale(1); }
         }
-        .infoCard, .faqCard, .ctaCard{ animation: cardIn .75s cubic-bezier(.2,.9,.2,1) both; }
+        .infoCard, .faqCard{
+          animation: cardIn .75s cubic-bezier(.2,.9,.2,1) both;
+        }
 
-        /* ✅ Focus ring */
         .focusRing:focus{ outline: none; }
         .focusRing:focus-visible{
           box-shadow:
@@ -257,9 +228,7 @@ export default function Support() {
             0 0 0 1px rgba(12,42,92,.15);
         }
 
-        /* ✅ Clickable cards */
         .clickableCard{
-          cursor:pointer;
           transition: transform .25s ease, box-shadow .25s ease, background .25s ease, border-color .25s ease;
         }
         .clickableCard:hover{
@@ -272,7 +241,6 @@ export default function Support() {
         }
         .clickableCard:active{ transform: translateY(-3px) scale(.99); }
 
-        /* ✅ Navy top line highlight */
         .cardTopLine{
           position:absolute;
           left:16px; right:16px; top:10px;
@@ -299,7 +267,6 @@ export default function Support() {
             0 0 0 1px rgba(12,42,92,.08);
         }
 
-        /* ✅ FAQ buttons */
         .qaBtn{
           width:100%;
           border: 1px solid rgba(226,232,240,1);
@@ -341,19 +308,6 @@ export default function Support() {
         }
         .chevOpen{ transform: rotate(180deg); }
 
-        /* ✅ CTA clickable */
-        .ctaClickable{
-          cursor:pointer;
-          transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
-        }
-        .ctaClickable:hover{
-          transform: translateY(-4px);
-          box-shadow:
-            0 18px 55px rgba(12,42,92,.22),
-            0 0 0 1px rgba(56,189,248,.10);
-        }
-        .ctaClickable:active{ transform: translateY(-2px) scale(.99); }
-
         .miniBtn{
           display:inline-flex;
           align-items:center;
@@ -366,11 +320,7 @@ export default function Support() {
           font-weight: 700;
           box-shadow: 0 10px 22px rgba(12,42,92,.18);
         }
-        .miniBtnLight{
-          box-shadow: 0 12px 28px rgba(0,0,0,.18);
-        }
 
-        /* ✅ Static underline glow */
         .navyGlowLineStatic{
           position:absolute; left:0; right:0; bottom:-1px;
           height:2px;
@@ -384,7 +334,6 @@ export default function Support() {
           opacity:.9;
         }
 
-        /* ✅ Button subtle glow (NO movement) */
         .btnGlowSoft{ position:relative; overflow:hidden; }
         .btnGlowSoft::after{
           content:"";
@@ -397,7 +346,6 @@ export default function Support() {
           pointer-events:none;
         }
 
-        /* ✅ Static background (NO movement) */
         .staticBlob{
           position:absolute;
           border-radius:999px;
@@ -446,7 +394,6 @@ export default function Support() {
           pointer-events:none;
         }
 
-        /* Card inner static highlight */
         .cardGlowStatic{
           position:absolute;
           inset:-2px;
@@ -455,18 +402,6 @@ export default function Support() {
             rgba(12,42,92,0) 55%
           );
           opacity:.6;
-          pointer-events:none;
-        }
-
-        /* CTA static highlight */
-        .ctaGlowStatic{
-          position:absolute;
-          inset:-2px;
-          background: radial-gradient(circle at 20% 0%,
-            rgba(56,189,248,.18),
-            rgba(12,42,92,0) 55%
-          );
-          opacity:.55;
           pointer-events:none;
         }
       `}</style>

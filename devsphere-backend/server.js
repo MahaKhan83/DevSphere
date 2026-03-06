@@ -31,6 +31,15 @@ const showcaseRoutes = require("./routes/showcase.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const announcementRoutes = require("./routes/announcement.routes");
 
+// ✅ Admin routes
+const adminRoutes = require("./routes/admin.routes");
+
+// ✅ Reports routes
+const reportRoutes = require("./routes/report.routes");
+
+// ✅ Support routes
+const supportRoutes = require("./routes/support.routes");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -66,6 +75,15 @@ app.set("io", io);
 // ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+// ✅ Admin API Routes
+app.use("/api/admin", adminRoutes);
+
+// ✅ Reports API Routes
+app.use("/api/reports", reportRoutes);
+
+// ✅ Support API Routes
+app.use("/api/support", supportRoutes);
 
 // ✅ Collaboration code save/load endpoints
 app.use("/api/collaboration", collaborationCodeRoutes);

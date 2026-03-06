@@ -71,19 +71,24 @@ exports.createPost = async (req, res) => {
   }
 };
 
-/* ================= DELETE POST ================= */
+/* ================= DELETE POST (OWNER OR MOD/ADMIN) ================= */
 exports.deletePost = async (req, res) => {
   try {
     const post = await ShowcasePost.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    if (String(post.author) !== String(req.user._id))
+    const isOwner = String(post.author) === String(req.user._id);
+    const role = String(req.user?.role || "").toLowerCase();
+    const isStaff = role === "admin" || role === "moderator";
+
+    if (!isOwner && !isStaff) {
       return res.status(403).json({ message: "Not allowed" });
+    }
 
     await post.deleteOne();
-    res.json({ message: "Deleted" });
+    return res.json({ message: "Deleted" });
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    return res.status(500).json({ message: e.message });
   }
 };
 
@@ -205,7 +210,7 @@ exports.addComment = async (req, res) => {
   }
 };
 
-/* ================= DELETE COMMENT ✅ (ROUTE NEEDS IT) ================= */
+/* ================= DELETE COMMENT ✅ (OWNER OR STAFF) ================= */
 exports.deleteComment = async (req, res) => {
   try {
     const post = await ShowcasePost.findById(req.params.id);
@@ -214,7 +219,11 @@ exports.deleteComment = async (req, res) => {
     const comment = post.comments.id(req.params.commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    if (String(comment.user) !== String(req.user._id)) {
+    const isOwner = String(comment.user) === String(req.user._id);
+    const role = String(req.user?.role || "").toLowerCase();
+    const isStaff = role === "admin" || role === "moderator";
+
+    if (!isOwner && !isStaff) {
       return res.status(403).json({ message: "Not allowed" });
     }
 

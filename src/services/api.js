@@ -131,8 +131,6 @@ export const getDashboardData = async () => {
   }
 };
 
-    
-      
 // ======================================================
 // 👤 PORTFOLIO BUILDER MODULE
 // ======================================================
@@ -227,7 +225,7 @@ export const markNotificationRead = async (id) => {
 };
 
 // ------------------------------
-//  CLEAR ALL NOTIFICATIONS
+// CLEAR ALL NOTIFICATIONS
 // ------------------------------
 export const clearAllNotifications = async () => {
   try {
@@ -239,6 +237,37 @@ export const clearAllNotifications = async () => {
     return {
       error: err.response?.data?.message || "Failed to clear notifications",
     };
+  }
+};
+
+// ======================================================
+// 🆘 SUPPORT MODULE
+// ======================================================
+export const createSupportTicket = async (data) => {
+  try {
+    const res = await api.post("/support", data);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to submit support request") };
+  }
+};
+
+export const getAdminSupportTickets = async (status = "") => {
+  try {
+    const query = status ? `?status=${encodeURIComponent(status)}` : "";
+    const res = await api.get(`/support/admin${query}`);
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to load support tickets") };
+  }
+};
+
+export const updateSupportTicketStatus = async (id, status) => {
+  try {
+    const res = await api.patch(`/support/${id}/status`, { status });
+    return res.data;
+  } catch (err) {
+    return { error: getErrorMessage(err, "Failed to update support ticket") };
   }
 };
 

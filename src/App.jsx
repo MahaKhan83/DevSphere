@@ -1,6 +1,11 @@
 // src/App.jsx
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 
 import Landing from "./pages/Landing";
@@ -15,11 +20,13 @@ import Features from "./pages/Features";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Support from "./pages/Support";
+import ContactSupport from "./pages/ContactSupport";
+import AdminSupport from "./pages/AdminSupport";
 
-import ResetPassword from "./pages/ResetPassword"; // ✅ add this
+import ResetPassword from "./pages/ResetPassword";
 import CollaborationWorkspace from "./pages/CollaborationWorkspace";
+
 import AdminUsers from "./pages/AdminUsers";
-import AdminRoles from "./pages/AdminRoles";
 import AdminReports from "./pages/AdminReports";
 import AdminModeration from "./pages/AdminModeration";
 
@@ -27,14 +34,15 @@ import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import RoleRoute from "./components/RoleRoute";
 import AdminPanel from "./pages/AdminPanel";
- import ModeratorPanel from "./pages/ModeratorPanel.jsx";
+import ModeratorPanel from "./pages/ModeratorPanel.jsx";
+
 import "react-toastify/dist/ReactToastify.css";
 
-// ✅ IMPORTANT: must match AuthContext/api token key
 const TOKEN_KEY = "devsphere_token";
 
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem("token"); // legacy fallback
+  const token =
+    localStorage.getItem(TOKEN_KEY) || localStorage.getItem("token");
   if (!token) return <Navigate to="/login" replace />;
   return children;
 };
@@ -116,26 +124,46 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/support" element={<Support />} />
+
             <Route
-  path="/admin"
+              path="/contact-support"
+              element={
+               
+                  <ContactSupport />
+              
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <RoleRoute roles={["admin"]}>
+                  <AdminPanel />
+                </RoleRoute>
+              }
+            />
+
+            <Route
+              path="/moderator"
+              element={
+                <RoleRoute roles={["moderator", "admin"]}>
+                  <ModeratorPanel />
+                </RoleRoute>
+              }
+            />
+
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/moderation" element={<AdminModeration />} />
+            <Route
+  path="/admin/support"
   element={
-    <RoleRoute roles={["admin"]}>
-      <AdminPanel />
+    <RoleRoute roles={["admin", "moderator"]}>
+      <AdminSupport />
     </RoleRoute>
   }
 />
-<Route
-  path="/moderator"
-  element={
-    <RoleRoute roles={["moderator", "admin"]}>
-      <ModeratorPanel />
-    </RoleRoute>
-  }
-/>
-<Route path="/admin/users" element={<AdminUsers />} />
-<Route path="/admin/roles" element={<AdminRoles />} />
-<Route path="/admin/reports" element={<AdminReports />} />
-<Route path="/admin/moderation" element={<AdminModeration />} />
+
             <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </Router>

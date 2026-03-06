@@ -5,6 +5,7 @@ import logo from "../assets/logo.png";
 import { AuthContext } from "../context/AuthContext";
 import { NotificationContext } from "../context/NotificationContext";
 import socket from "../sockets/socket";
+import api from "../services/api"; // ✅ ADD: for report submit
 
 /* ================= Icons ================= */
 const DashboardIcon = () => (
@@ -55,12 +56,26 @@ const XIcon = () => (
   </svg>
 );
 
+// ✅ NEW: Report icon (added)
+const ReportIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 21V4a1 1 0 0 1 1-1h10l4 4v14a1 1 0 0 1-1 1H4Z" />
+    <path d="M14 3v5h5" />
+    <path d="M8 11h8" />
+    <path d="M8 15h6" />
+  </svg>
+);
+
 /* ================= UI Helpers ================= */
 const IconWrap = ({ children }) => (
-  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">{children}</span>
+  <span className="w-9 h-9 rounded-xl bg-slate-800/80 text-slate-100 flex items-center justify-center">
+    {children}
+  </span>
 );
 const BadgePill = ({ children }) => (
-  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">{children}</span>
+  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500 text-white">
+    {children}
+  </span>
 );
 const NavItem = ({ active, icon, label, onClick, badge }) => (
   <button
@@ -139,6 +154,40 @@ export default function CollaborationRoom() {
     return st === "approved";
   };
 
+  /* ================== ✅ NEW: Report room state ================== */
+  const [reportRoom, setReportRoom] = useState(null); // { code, name, owner }
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const openRoomReport = (room) => {
+    setReportRoom({ code: room.code, name: room.name, owner: room.owner });
+    setReportReason("");
+  };
+
+  const submitRoomReport = async () => {
+    if (!reportRoom) return;
+    const reason = reportReason.trim();
+    if (!reason) return alert("Please write a report reason.");
+
+    setReportSubmitting(true);
+    try {
+      // POST /api/reports  { type: "room", target: "<roomCode>", reason: "<text>" }
+      await api.post("/reports", {
+        type: "room",
+        target: reportRoom.code,
+        reason,
+      });
+
+      alert("Report submitted.");
+      setReportRoom(null);
+      setReportReason("");
+    } catch (e) {
+      alert(e?.response?.data?.message || "Report failed.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   /* ✅ Socket lobby listeners */
   useEffect(() => {
     const ensureConnected = () => {
@@ -150,7 +199,7 @@ export default function CollaborationRoom() {
     const onRooms = (list) => setRooms(Array.isArray(list) ? list : []);
 
     const onRoomCreated = (room) => {
-      alert(`Room created! Code: ${room.code}`);
+      alert(`Room created. Code: ${room.code}`);
       socket.emit("lobby:sync");
     };
 
@@ -162,23 +211,23 @@ export default function CollaborationRoom() {
     const onError = (msg) => alert(msg || "Something went wrong.");
 
     const onAlreadyApproved = ({ roomCode }) => {
-      alert("You are already approved. You can enter workspace.");
+      alert("You are already approved. You can enter the workspace.");
       navigate(`/workspace/${roomCode}`);
     };
 
     const onCanEnterResult = ({ ok, room }) => {
-      if (!ok) return alert("Approval required OR wrong code.");
+      if (!ok) return alert("Approval required or invalid code.");
       navigate(`/workspace/${room.code}`);
     };
 
     const onRequested = (req) => {
-      alert(`Request sent ✅\nRoom: ${req?.roomCode}\nWaiting for owner approval...`);
+      alert(`Request sent.\nRoom: ${req?.roomCode}\nWaiting for owner approval.`);
       socket.emit("lobby:sync");
     };
 
     const onApproved = ({ roomCode, user: approvedUser }) => {
       if (norm(approvedUser) === norm(joinName || displayName)) {
-        alert(`Approved ✅\nYou can enter workspace now.\nRoom: ${roomCode}`);
+        alert(`Approved.\nYou can enter the workspace now.\nRoom: ${roomCode}`);
         socket.emit("lobby:sync");
       }
     };
@@ -244,7 +293,7 @@ export default function CollaborationRoom() {
     const nm = (joinName || "").trim() || "Guest";
 
     if (!code) return alert("Enter a room code.");
-    if (!(user?._id || user?.id)) return alert("UserId missing! Please login again.");
+    if (!(user?._id || user?.id)) return alert("UserId missing. Please sign in again.");
 
     try {
       if (!socket.connected) socket.connect();
@@ -271,7 +320,7 @@ export default function CollaborationRoom() {
   const copyCode = async (code) => {
     try {
       await navigator.clipboard.writeText(code);
-      alert("Copied!");
+      alert("Copied.");
     } catch {
       alert("Copy failed.");
     }
@@ -284,7 +333,7 @@ export default function CollaborationRoom() {
 
     const room = rooms.find((r) => String(r.code || "").toUpperCase() === code);
     if (room && !canEnterRoom(room)) {
-      return alert("Approval required. Owner has not approved yet.");
+      return alert("Approval required. The owner has not approved yet.");
     }
 
     try {
@@ -298,7 +347,7 @@ export default function CollaborationRoom() {
     const room = rooms.find((r) => String(r.code || "").toUpperCase() === roomCode);
 
     if (room && !canEnterRoom(room)) {
-      return alert("Approval required. Owner has not approved yet.");
+      return alert("Approval required. The owner has not approved yet.");
     }
 
     try {
@@ -323,7 +372,11 @@ export default function CollaborationRoom() {
         </div>
 
         <aside className={`sidebar ${sidebarOpen ? "sidebarOpen" : "sidebarClosed"}`}>
-          <button onClick={() => navigate("/")} className="flex items-center gap-3 px-2 mb-8 text-left" title="Go to Landing">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-3 px-2 mb-8 text-left"
+            title="Go to landing"
+          >
             <img src={logo} alt="DevSphere" className="w-10 h-10 object-contain drop-shadow-md" />
             <span className="text-xl font-semibold">
               Dev<span className="text-cyan-300">Sphere</span>
@@ -348,10 +401,12 @@ export default function CollaborationRoom() {
           <button
             onClick={() => navigate("/settings")}
             className="mt-6 flex items-center gap-3 px-2 text-left hover:bg-slate-800/40 rounded-xl py-2 transition"
-            title="Open Settings"
+            title="Open settings"
           >
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">{initials || "U"}</div>
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-semibold">
+                {initials || "U"}
+              </div>
               <span
                 className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${
                   isOnline ? "bg-emerald-400" : "bg-slate-400"
@@ -361,7 +416,9 @@ export default function CollaborationRoom() {
 
             <div className="min-w-0">
               <p className="text-sm font-medium truncate max-w-[160px]">{displayName}</p>
-              <p className="text-xs text-slate-300 truncate max-w-[160px]">{isOnline ? "Online" : "Offline"} · Signed in</p>
+              <p className="text-xs text-slate-300 truncate max-w-[160px]">
+                {isOnline ? "Online" : "Offline"} · Signed in
+              </p>
             </div>
           </button>
         </aside>
@@ -433,7 +490,7 @@ export default function CollaborationRoom() {
                                 {pendingMe ? (
                                   <span className="text-amber-600">Status: Pending approval…</span>
                                 ) : approvedMe ? (
-                                  <span className="text-emerald-600">Status: Approved ✅</span>
+                                  <span className="text-emerald-600">Status: Approved</span>
                                 ) : null}
                               </p>
                             ) : (
@@ -469,7 +526,7 @@ export default function CollaborationRoom() {
                             }`}
                             title={
                               isOwner
-                                ? "You are owner"
+                                ? "You are the owner"
                                 : approvedMe
                                 ? "Already approved"
                                 : pendingMe
@@ -491,6 +548,17 @@ export default function CollaborationRoom() {
                             Enter workspace
                           </button>
 
+                          {/* ✅ NEW: Report room (not for owner) */}
+                          {!isOwner ? (
+                           <button
+  onClick={() => openRoomReport(r)}
+  className="px-3 py-1.5 rounded-full text-xs font-semibold transition bg-rose-600 text-white hover:bg-rose-500 inline-flex items-center gap-2"
+  title="Report this room"
+>
+  <ReportIcon /> Report
+</button>
+                          ) : null}
+
                           {isOwner ? (
                             <button
                               onClick={() => deleteRoom(r.code)}
@@ -510,7 +578,7 @@ export default function CollaborationRoom() {
             <div className="space-y-6">
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join a room</h2>
-                <p className="text-xs text-slate-500 mt-1">Request join, then owner approve.</p>
+                <p className="text-xs text-slate-500 mt-1">Send a request first. The owner must approve.</p>
 
                 <div className="mt-4 space-y-3">
                   <input
@@ -550,7 +618,7 @@ export default function CollaborationRoom() {
 
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Create a room</h2>
-                <p className="text-xs text-slate-500 mt-1">Backend creates a real shared room.</p>
+                <p className="text-xs text-slate-500 mt-1">The backend creates a real shared room.</p>
 
                 <div className="mt-4 space-y-3">
                   <input
@@ -590,7 +658,7 @@ export default function CollaborationRoom() {
 
               <section className={`bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sfPulseBorder ${mounted ? "sfIn3" : "sfPre"}`}>
                 <h2 className="text-lg font-semibold text-slate-900">Join requests (Owner)</h2>
-                <p className="text-xs text-slate-500 mt-1">Only your rooms will show here.</p>
+                <p className="text-xs text-slate-500 mt-1">Only requests for your rooms appear here.</p>
 
                 <div className="mt-4 space-y-3">
                   {ownerPending.length === 0 ? (
@@ -624,6 +692,65 @@ export default function CollaborationRoom() {
               </section>
             </div>
           </div>
+
+          {/* ✅ NEW: Report Room Modal */}
+          {reportRoom && (
+            <div
+              className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+              onClick={() => setReportRoom(null)}
+            >
+              <div
+                className="w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-xl sfModal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Report room</h3>
+                    <p className="text-sm text-slate-500">
+                      {reportRoom.name} • Code: {reportRoom.code}
+                    </p>
+                  </div>
+                  <button
+                    className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 transition grid place-items-center"
+                    onClick={() => setReportRoom(null)}
+                    disabled={reportSubmitting}
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  <label className="text-xs font-semibold text-slate-600">Reason</label>
+                  <textarea
+                    className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-200 min-h-[130px]"
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="Describe the issue (spam, abuse, inappropriate content, etc.)"
+                  />
+
+                  <div className="flex flex-wrap gap-3 mt-5">
+                    <button
+                      className="px-4 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold hover:bg-slate-50 transition"
+                      onClick={() => setReportRoom(null)}
+                      disabled={reportSubmitting}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold shadow transition inline-flex items-center gap-2 disabled:opacity-60"
+                      onClick={submitRoomReport}
+                      disabled={reportSubmitting}
+                    >
+                      <ReportIcon />
+                      {reportSubmitting ? "Submitting..." : "Submit report"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 

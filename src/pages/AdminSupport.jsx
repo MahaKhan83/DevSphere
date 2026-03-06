@@ -1,31 +1,26 @@
-// src/pages/AdminReports.jsx
+// src/pages/AdminSupport.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  getAdminSupportTickets,
+  updateSupportTicketStatus,
+} from "../services/api";
 
-// ✅ Users removed
-const FILTERS = ["All", "Showcase", "Rooms"];
-
-const getToken = () => localStorage.getItem("devsphere_token");
-
-const apiTypeFromFilter = (filterType) => {
-  if (filterType === "Showcase") return "showcase";
-  if (filterType === "Rooms") return "room";
-  return ""; // All
-};
-
-const uiType = (apiType) => {
-  const t = String(apiType || "").toLowerCase();
-  if (t === "showcase") return "Showcase";
-  if (t === "room") return "Room";
-  return "Unknown";
-};
+const FILTERS = ["All", "Open", "In Progress", "Resolved"];
 
 const uiStatus = (apiStatus) => {
   const s = String(apiStatus || "").toLowerCase();
   if (s === "open") return "Open";
-  if (s === "in_review") return "In review";
+  if (s === "in_progress") return "In Progress";
   if (s === "resolved") return "Resolved";
   return "Open";
+};
+
+const apiStatusFromFilter = (filter) => {
+  if (filter === "Open") return "open";
+  if (filter === "In Progress") return "in_progress";
+  if (filter === "Resolved") return "resolved";
+  return "";
 };
 
 const timeAgo = (iso) => {
@@ -49,240 +44,142 @@ const timeAgo = (iso) => {
   }
 };
 
-export default function AdminReports() {
+export default function AdminSupport() {
   const navigate = useNavigate();
 
   const [filterType, setFilterType] = useState("All");
-  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
 
-  const [actionMessage, setActionMessage] = useState("Loading reports...");
-  const [reports, setReports] = useState([]);
+  const [actionMessage, setActionMessage] = useState("Loading support tickets...");
+  const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ prevent double-click spam (per report id)
   const [updatingId, setUpdatingId] = useState(null);
 
-  const loadReports = async (typeFilter = "", opts = { silent: false }) => {
+  const loadTickets = async (statusFilter = "", opts = { silent: false }) => {
     setError("");
 
-    // ✅ silent refresh = no spinner flicker
     if (!opts?.silent) setLoading(true);
 
-    const token = getToken();
-    if (!token) {
-      setError("Token missing. Please login again.");
-      setActionMessage("Token missing. Please login again.");
+    const res = await getAdminSupportTickets(statusFilter);
+
+    if (res?.error) {
+      const msg = res.error || "Failed to load support tickets";
+      setError(msg);
+      setActionMessage(msg);
       setLoading(false);
       return;
     }
 
-    const qs = typeFilter ? `?type=${encodeURIComponent(typeFilter)}` : "";
-    try {
-      const res = await fetch(`http://localhost:5000/api/reports/admin${qs}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+    const list = Array.isArray(res?.tickets) ? res.tickets : [];
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
+    const mapped = list.map((t) => ({
+      _id: String(t._id || ""),
+      name: t.name || t.user?.name || "—",
+      email: t.email || t.user?.email || "—",
+      subject: t.subject || "—",
+      message: t.message || "—",
+      status: uiStatus(t.status),
+      rawStatus: String(t.status || "").toLowerCase(),
+      time: timeAgo(t.createdAt),
+    }));
 
-      if (!res.ok) {
-        const msg =
-          data?.message ||
-          (res.status === 401
-            ? "Unauthorized (401). Please login again."
-            : res.status === 403
-            ? "Admin access required (403)."
-            : `Failed to load reports (Error ${res.status}).`);
+    setTickets(mapped);
+    setLoading(false);
 
-        setError(msg);
-        setActionMessage(msg);
-        setLoading(false);
-        return;
-      }
+    if (!opts?.silent) {
+      setActionMessage(
+        mapped.length
+          ? "Support tickets loaded from backend ✅"
+          : "No support tickets found."
+      );
+    }
 
-      const list = Array.isArray(data) ? data : data?.reports || [];
-      const mapped = list.map((r) => ({
-        _id: String(r._id || r.id || ""),
-        type: uiType(r.type),
-        target: r.target || "—",
-        reason: r.reason || "—",
-        status: uiStatus(r.status), // Open | In review | Resolved
-        time: timeAgo(r.createdAt),
-        rawStatus: String(r.status || "").toLowerCase(),
-      }));
-
-      setReports(mapped);
-      setLoading(false);
-
-      if (!opts?.silent) {
-        setActionMessage(
-          mapped.length
-            ? "Reports loaded from backend ✅"
-            : "No reports found for this filter."
-        );
-      }
-
-      if (selectedReportId && !mapped.some((x) => x._id === selectedReportId)) {
-        setSelectedReportId(null);
-      }
-    } catch {
-      const msg = "Backend not reachable. Make sure server is running on :5000";
-      setError(msg);
-      setActionMessage(msg);
-      setLoading(false);
+    if (selectedTicketId && !mapped.some((x) => x._id === selectedTicketId)) {
+      setSelectedTicketId(null);
     }
   };
 
-  // ✅ Update status API call
-  const updateStatus = async (reportId, nextStatus) => {
-    const token = getToken();
-    if (!token) {
-      setError("Token missing. Please login again.");
-      setActionMessage("Token missing. Please login again.");
-      return;
-    }
-
+  const changeStatus = async (ticketId, nextStatus) => {
     try {
-      setUpdatingId(reportId);
+      setUpdatingId(ticketId);
 
-      const res = await fetch(
-        `http://localhost:5000/api/reports/${reportId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: nextStatus }), // open | in_review | resolved
-        }
-      );
+      const res = await updateSupportTicketStatus(ticketId, nextStatus);
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
-      if (!res.ok) {
-        const msg =
-          data?.message ||
-          (res.status === 401
-            ? "Unauthorized (401). Please login again."
-            : res.status === 403
-            ? "Admin access required (403)."
-            : `Update failed (Error ${res.status}).`);
+      if (res?.error) {
+        const msg = res.error || "Failed to update ticket status";
         setError(msg);
         setActionMessage(msg);
         return;
       }
 
-      const t = apiTypeFromFilter(filterType);
-      await loadReports(t, { silent: true });
+      const statusFilter = apiStatusFromFilter(filterType);
+      await loadTickets(statusFilter, { silent: true });
 
       const nice =
         nextStatus === "open"
-          ? "Re-opened ✅"
-          : nextStatus === "in_review"
-          ? "Marked In review ✅"
+          ? "Ticket re-opened ✅"
+          : nextStatus === "in_progress"
+          ? "Marked In Progress ✅"
           : "Marked Resolved ✅";
+
       setActionMessage(nice);
-    } catch {
-      const msg = "Update failed. Backend not reachable.";
-      setError(msg);
-      setActionMessage(msg);
     } finally {
       setUpdatingId(null);
     }
   };
 
-  // ✅ Auto refresh every 5s + reload when filter changes
   useEffect(() => {
-    const t = apiTypeFromFilter(filterType);
+    const statusFilter = apiStatusFromFilter(filterType);
 
-    loadReports(t, { silent: false });
+    loadTickets(statusFilter, { silent: false });
 
     const intervalId = setInterval(() => {
-      loadReports(t, { silent: true });
+      loadTickets(statusFilter, { silent: true });
     }, 5000);
 
     return () => clearInterval(intervalId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType]);
 
-  // ✅ Users filter removed
-  const filteredReports = useMemo(() => {
-    if (filterType === "All") return reports;
-    if (filterType === "Rooms") return reports.filter((r) => r.type === "Room");
-    return reports.filter((r) => r.type === "Showcase");
-  }, [filterType, reports]);
-
-  const openModerationConsole = () => {
-    navigate("/admin/moderation");
-    setActionMessage("Opening moderation console view for detailed actions.");
-  };
+  const filteredTickets = useMemo(() => {
+    if (filterType === "All") return tickets;
+    return tickets.filter((t) => t.status === filterType);
+  }, [filterType, tickets]);
 
   const handleFilterClick = (type) => {
     setFilterType(type);
-    setSelectedReportId(null);
-    setActionMessage(type === "All" ? "Showing all reports." : `Filtered: ${type}`);
+    setSelectedTicketId(null);
+    setActionMessage(type === "All" ? "Showing all support tickets." : `Filtered: ${type}`);
   };
 
-  const handleRowClick = (report) => {
-    setSelectedReportId(report._id);
-
-    // ✅ This is just a status/info message for user
-    setActionMessage(
-      `Selected report ${report._id} about "${report.reason}". You can open it in moderation or view related item.`
-    );
-  };
-
-  const handleOpenInModeration = (report) => {
-    navigate("/admin/moderation", { state: { reportId: report._id } });
-    setActionMessage(`Navigating to moderation console for report ${report._id}.`);
-  };
-
-  const handleViewRelatedItem = (report) => {
-    if (report.type === "Showcase") {
-      navigate("/showcase", { state: { focus: report.target } });
-    } else if (report.type === "Room") {
-      navigate("/collaboration", { state: { roomId: report.target } });
-    }
-    setActionMessage(`Opening related ${report.type.toLowerCase()} item: ${report.target}.`);
+  const handleRowClick = (ticket) => {
+    setSelectedTicketId(ticket._id);
+    setActionMessage(`Selected support ticket: "${ticket.subject}" from ${ticket.name}.`);
   };
 
   const openDashboard = () => {
     navigate("/dashboard");
   };
 
-  const openCount = filteredReports.filter((r) => r.status === "Open").length;
-  const inReviewCount = filteredReports.filter((r) => r.status === "In review").length;
-  const resolvedCount = filteredReports.filter((r) => r.status === "Resolved").length;
+  const openCount = filteredTickets.filter((t) => t.status === "Open").length;
+  const inProgressCount = filteredTickets.filter((t) => t.status === "In Progress").length;
+  const resolvedCount = filteredTickets.filter((t) => t.status === "Resolved").length;
 
   return (
     <>
       <div className="min-h-screen bg-gradient-to-b from-slate-100 via-sky-50/60 to-slate-100 flex">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 w-full">
-          {/* Top */}
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-                Admin · Reports
+                Admin · Support
               </p>
               <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-                Reports center
+                Support center
               </h1>
               <p className="text-sm text-slate-600 mt-1">
-                See content and users that have been flagged by the community.
+                Review support tickets submitted by users.
               </p>
               {error && (
                 <p className="text-[12px] text-rose-600 mt-2 font-semibold">
@@ -290,6 +187,7 @@ export default function AdminReports() {
                 </p>
               )}
             </div>
+
             <button
               onClick={openDashboard}
               className="text-xs md:text-sm px-3 py-1.5 rounded-full bg-slate-900 text-slate-50 font-semibold hover:bg-slate-800 transition"
@@ -298,7 +196,6 @@ export default function AdminReports() {
             </button>
           </div>
 
-          {/* Status pill */}
           <div className="mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-[11px] text-indigo-800 shadow-sm">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
@@ -311,11 +208,10 @@ export default function AdminReports() {
             </div>
           </div>
 
-          {/* Filters + stats + actions */}
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <section className="cardShell sfPulseBorder bg-white/95 border border-slate-200 rounded-2xl shadow-sm px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Filter by type
+                Filter by status
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {FILTERS.map((f) => {
@@ -342,14 +238,9 @@ export default function AdminReports() {
                 Status overview
               </p>
               <p className="text-sm text-slate-700 mt-2">
-                <span className="font-semibold text-slate-900">
-                  {openCount + inReviewCount}
-                </span>{" "}
-                open / in review ·{" "}
-                <span className="font-semibold text-slate-900">
-                  {resolvedCount}
-                </span>{" "}
-                resolved
+                <span className="font-semibold text-slate-900">{openCount}</span> open ·{" "}
+                <span className="font-semibold text-slate-900">{inProgressCount}</span> in progress ·{" "}
+                <span className="font-semibold text-slate-900">{resolvedCount}</span> resolved
               </p>
               <p className="text-[11px] text-slate-500 mt-1">
                 Live data from backend ✅ (auto refresh 5s)
@@ -362,37 +253,35 @@ export default function AdminReports() {
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <button
-                  onClick={openModerationConsole}
+                  onClick={() => loadTickets(apiStatusFromFilter(filterType), { silent: false })}
                   className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-sky-500 text-white hover:bg-sky-400 transition"
                 >
-                  Open moderation console
+                  Refresh tickets
                 </button>
               </div>
             </section>
           </div>
 
-          {/* Reports list card */}
           <section className="cardShell sfPulseBorder bg-white/95 border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
               <p className="text-sm font-semibold text-slate-900">
-                Latest reports
+                Latest support tickets
               </p>
               <span className="text-[11px] text-slate-500">Live backend data</span>
             </div>
 
             <div className="divide-y divide-slate-100">
-              {filteredReports.map((r) => {
-                const selected = selectedReportId === r._id;
+              {filteredTickets.map((t) => {
+                const selected = selectedTicketId === t._id;
 
-                const isOpen = r.status === "Open";
-                const isResolved = r.status === "Resolved";
-
-                const busy = updatingId === r._id;
+                const isOpen = t.status === "Open";
+                const isResolved = t.status === "Resolved";
+                const busy = updatingId === t._id;
 
                 return (
                   <div
-                    key={r._id}
-                    onClick={() => handleRowClick(r)}
+                    key={t._id}
+                    onClick={() => handleRowClick(t)}
                     className={`px-4 py-3 flex items-start justify-between gap-3 sfRow cursor-pointer ${
                       selected ? "bg-sky-50" : "hover:bg-slate-50"
                     }`}
@@ -400,28 +289,37 @@ export default function AdminReports() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-mono text-slate-500">
-                          {r._id}
+                          {t._id}
                         </span>
                         <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold bg-slate-900 text-slate-50">
-                          {r.type}
+                          Support
                         </span>
                         <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
-                          Target: {r.target}
+                          {t.name}
                         </span>
                       </div>
 
                       <p className="text-sm text-slate-900 font-semibold">
-                        {r.reason}
+                        {t.subject}
                       </p>
-                      <p className="text-[11px] text-slate-600 mt-1">
-                        Reported · {r.time}
+
+                      <p className="text-[12px] text-slate-600 mt-1">
+                        {t.email}
+                      </p>
+
+                      <p className="text-[12px] text-slate-700 mt-2 break-words">
+                        {t.message}
+                      </p>
+
+                      <p className="text-[11px] text-slate-600 mt-2">
+                        Submitted · {t.time}
                       </p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            updateStatus(r._id, "in_review");
+                            changeStatus(t._id, "in_progress");
                           }}
                           disabled={!isOpen || busy}
                           className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${
@@ -429,15 +327,14 @@ export default function AdminReports() {
                               ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                               : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                           }`}
-                          title="Mark this report as in review"
                         >
-                          {busy && isOpen ? "Updating..." : "Mark In review"}
+                          {busy && isOpen ? "Updating..." : "Mark In Progress"}
                         </button>
 
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            updateStatus(r._id, "resolved");
+                            changeStatus(t._id, "resolved");
                           }}
                           disabled={isResolved || busy}
                           className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${
@@ -445,7 +342,6 @@ export default function AdminReports() {
                               ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                               : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
                           }`}
-                          title="Resolve this report"
                         >
                           {busy && !isResolved ? "Updating..." : "Mark Resolved"}
                         </button>
@@ -454,7 +350,7 @@ export default function AdminReports() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateStatus(r._id, "open");
+                              changeStatus(t._id, "open");
                             }}
                             disabled={busy}
                             className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${
@@ -462,7 +358,6 @@ export default function AdminReports() {
                                 ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                                 : "bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100"
                             }`}
-                            title="Undo / Re-open this report"
                           >
                             {busy ? "Updating..." : "Re-open"}
                           </button>
@@ -470,53 +365,32 @@ export default function AdminReports() {
                       </div>
                     </div>
 
-                    <div className="text-right space-y-2 min-w-[160px]">
+                    <div className="text-right space-y-2 min-w-[130px]">
                       <span
                         className={`inline-flex px-2 py-[2px] rounded-full text-[10px] font-semibold ${
                           isOpen
                             ? "bg-rose-50 text-rose-700"
-                            : r.status === "In review"
+                            : t.status === "In Progress"
                             ? "bg-amber-50 text-amber-700"
                             : "bg-emerald-50 text-emerald-700"
                         }`}
                       >
-                        {r.status}
+                        {t.status}
                       </span>
-
-                      <div className="flex flex-col gap-1 text-[11px]">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenInModeration(r);
-                          }}
-                          className="text-sky-700 hover:text-sky-600"
-                        >
-                          Open in moderation
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewRelatedItem(r);
-                          }}
-                          className="text-slate-700 hover:text-slate-900"
-                        >
-                          View related item
-                        </button>
-                      </div>
                     </div>
                   </div>
                 );
               })}
 
-              {!loading && filteredReports.length === 0 && (
+              {!loading && filteredTickets.length === 0 && (
                 <div className="px-4 py-6 text-center text-sm text-slate-500">
-                  No reports for the selected filter.
+                  No support tickets for the selected filter.
                 </div>
               )}
             </div>
 
             <div className="px-4 py-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Showing {filteredReports.length} reports</span>
+              <span>Showing {filteredTickets.length} tickets</span>
               <span>Pagination can be added later.</span>
             </div>
           </section>

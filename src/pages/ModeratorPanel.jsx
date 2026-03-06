@@ -5,47 +5,31 @@ import { useNavigate } from "react-router-dom";
 export default function ModeratorPanel() {
   const navigate = useNavigate();
 
-  // 🔹 Moderator actions (sab clickable)
+  // 🔹 Moderator actions
   const actions = [
     {
       title: "Review Showcase & Rooms",
       desc: "Check collaboration rooms and showcase items that need attention.",
       btn: "Open Moderation Console",
-      // 🔗 AdminModeration.jsx
       onClick: () => navigate("/admin/moderation"),
     },
     {
       title: "Handle Reports",
       desc: "View and resolve reported content from users.",
       btn: "Open Reports",
-      // 🔗 AdminReports.jsx
       onClick: () => navigate("/admin/reports"),
     },
     {
       title: "Moderate Users",
       desc: "Warn, restrict or review user activity.",
       btn: "Open User List",
-      // 🔗 AdminUsers.jsx
       onClick: () => navigate("/admin/users"),
-    },
-    {
-      title: "Roles & Permissions",
-      desc: "See which users are Admin / Moderator / User.",
-      btn: "Open Roles View",
-      // 🔗 AdminRoles.jsx
-      onClick: () => navigate("/admin/roles"),
     },
     {
       title: "Bug / Issue Tracker",
       desc: "View bugs and issues reported by users.",
       btn: "Open Support & Bugs",
-      onClick: () => navigate("/support", { state: { section: "bugs" } }),
-    },
-    {
-      title: "Notifications & Alerts",
-      desc: "System and moderation alerts for you.",
-      btn: "Open Notifications",
-      onClick: () => navigate("/notifications"),
+onClick: () => navigate("/admin/support"),
     },
   ];
 
